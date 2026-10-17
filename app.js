@@ -1,6 +1,6 @@
 ﻿/**
  * SBP StaticGram Stars Bank тАв Material Design 3 Web App
- * Real PostgreSQL API, In-App Stars Checkout, Dark/Light Theme & Full i18n
+ * Real PostgreSQL API, In-App Stars Checkout, Dedicated Settings Modal, Proper Dark/Light Theme & i18n
  */
 
 // --- Dynamic API Base URL ---
@@ -48,6 +48,19 @@ const I18N = {
     footerPlatform: '╨б╨С╨Я StaticGram Stars тАв ╨Я╨╗╨░╤В╤Д╨╛╤А╨╝╨░ ╨╝╨│╨╜╨╛╨▓╨╡╨╜╨╜╤Л╤Е ╨┐╨╗╨░╤В╨╡╨╢╨╡╨╣',
     footerNews: '╨Э╨╛╨▓╨╛╤Б╤В╨╕',
     footerBot: 'Telegram ╨С╨╛╤В',
+
+    // Settings
+    settingsTitle: 'тЪЩя╕П ╨Э╨░╤Б╤В╤А╨╛╨╣╨║╨╕',
+    settingsTheme: '╨в╨╡╨╝╨░ ╨╛╤Д╨╛╤А╨╝╨╗╨╡╨╜╨╕╤П',
+    themeLight: '╨б╨▓╨╡╤В╨╗╨░╤П',
+    themeDark: '╨в╤С╨╝╨╜╨░╤П',
+    themeSystem: '╨б╨╕╤Б╤В╨╡╨╝╨╜╨░╤П',
+    settingsLang: '╨п╨╖╤Л╨║ ╨╕╨╜╤В╨╡╤А╤Д╨╡╨╣╤Б╨░',
+    settingsAccount: '╨Р╨║╨║╨░╤Г╨╜╤В ╨б╨С╨Я',
+    settingsUser: '╨Я╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╤М',
+    settingsAccountNum: '╨Э╨╛╨╝╨╡╤А ╤Б╤З╤С╤В╨░',
+    settingsStatus: '╨б╤В╨░╤В╤Г╤Б ╤И╨╗╤О╨╖╨░',
+    settingsLinks: '╨Я╨╛╨╗╨╡╨╖╨╜╤Л╨╡ ╤Б╤Б╤Л╨╗╨║╨╕',
 
     // Modals
     modalTransferTitle: 'ЁЯТ╕ ╨Я╨╡╤А╨╡╨▓╨╛╨┤ ╨┐╨╛ ╨б╨С╨Я',
@@ -154,6 +167,19 @@ const I18N = {
     footerNews: 'News',
     footerBot: 'Telegram Bot',
 
+    // Settings
+    settingsTitle: 'тЪЩя╕П Settings',
+    settingsTheme: 'Theme Appearance',
+    themeLight: 'Light',
+    themeDark: 'Dark',
+    themeSystem: 'System',
+    settingsLang: 'App Language',
+    settingsAccount: 'SBP Account',
+    settingsUser: 'User',
+    settingsAccountNum: 'Account Number',
+    settingsStatus: 'Gateway Status',
+    settingsLinks: 'Useful Links',
+
     // Modals
     modalTransferTitle: 'ЁЯТ╕ Transfer via SBP',
     modalTransferRecipient: 'Recipient (@username, ID or SBP account number)',
@@ -238,7 +264,7 @@ const State = {
   isGuest: false,
   isLoading: true,
   lang: 'ru',
-  theme: 'light'
+  themePreference: 'dark' // 'light' | 'dark' | 'system'
 };
 
 const tg = window.Telegram?.WebApp;
@@ -253,14 +279,14 @@ function t(key, params = {}) {
   return text;
 }
 
-function applyLanguage(newLang) {
+window.selectLanguage = function(newLang) {
+  haptic('light');
   State.lang = newLang;
   localStorage.setItem('sbp_lang', newLang);
 
-  const langLabel = document.getElementById('langLabel');
-  if (langLabel) {
-    langLabel.textContent = newLang === 'ru' ? 'ЁЯЗ╖ЁЯЗ║ RU' : 'ЁЯЗмЁЯЗз EN';
-  }
+  // Update active state in settings modal
+  document.getElementById('langOptRu')?.classList.toggle('active', newLang === 'ru');
+  document.getElementById('langOptEn')?.classList.toggle('active', newLang === 'en');
 
   // Update all data-i18n elements
   document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -270,7 +296,6 @@ function applyLanguage(newLang) {
     }
   });
 
-  // Update dynamic elements
   updateBalanceUI();
   renderTransactions();
 
@@ -286,60 +311,69 @@ function applyLanguage(newLang) {
       subtextEl.textContent = t('userSubtext', { label });
     }
   }
+};
+
+// --- Theme Management ---
+function getSystemTheme() {
+  if (tg?.colorScheme) return tg.colorScheme;
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+  return 'light';
 }
 
-// --- Dark / Light Theme Management ---
-function applyTheme(newTheme) {
-  State.theme = newTheme;
-  localStorage.setItem('sbp_theme', newTheme);
-  document.documentElement.setAttribute('data-theme', newTheme);
+window.selectTheme = function(preference) {
+  haptic('light');
+  State.themePreference = preference;
+  localStorage.setItem('sbp_theme', preference);
 
-  const themeIcon = document.getElementById('themeIcon');
-  if (themeIcon) {
-    themeIcon.textContent = newTheme === 'dark' ? 'тШАя╕П' : 'ЁЯМЩ';
-  }
+  document.getElementById('themeOptLight')?.classList.toggle('active', preference === 'light');
+  document.getElementById('themeOptDark')?.classList.toggle('active', preference === 'dark');
+  document.getElementById('themeOptSystem')?.classList.toggle('active', preference === 'system');
+
+  const resolvedTheme = preference === 'system' ? getSystemTheme() : preference;
+  document.documentElement.setAttribute('data-theme', resolvedTheme);
 
   try {
-    const bgColor = newTheme === 'dark' ? '#0C0A09' : '#F6F2ED';
+    const bgColor = resolvedTheme === 'dark' ? '#0C0A09' : '#F6F2ED';
     if (tg?.setHeaderColor) tg.setHeaderColor(bgColor);
     if (tg?.setBackgroundColor) tg.setBackgroundColor(bgColor);
   } catch (e) {}
-}
+};
 
 function initThemeAndLang() {
-  // Theme initialization
-  const savedTheme = localStorage.getItem('sbp_theme');
-  if (savedTheme) {
-    applyTheme(savedTheme);
-  } else if (tg?.colorScheme) {
-    applyTheme(tg.colorScheme === 'dark' ? 'dark' : 'light');
-  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    applyTheme('dark');
-  } else {
-    applyTheme('light');
-  }
+  // Theme init
+  const savedTheme = localStorage.getItem('sbp_theme') || 'dark'; // Default to sleek dark mode
+  selectTheme(savedTheme);
 
-  // Language initialization
+  // Language init
   const savedLang = localStorage.getItem('sbp_lang');
   if (savedLang) {
-    applyLanguage(savedLang);
+    selectLanguage(savedLang);
   } else if (tg?.initDataUnsafe?.user?.language_code) {
     const userLang = tg.initDataUnsafe.user.language_code.toLowerCase();
-    applyLanguage(userLang.startsWith('ru') ? 'ru' : 'en');
+    selectLanguage(userLang.startsWith('ru') ? 'ru' : 'en');
   } else {
-    applyLanguage('ru');
+    selectLanguage('ru');
   }
 
-  // Toggle listeners
-  document.getElementById('btnThemeToggle')?.addEventListener('click', () => {
+  // Settings Gear Button
+  document.getElementById('btnOpenSettings')?.addEventListener('click', () => {
     haptic('light');
-    applyTheme(State.theme === 'dark' ? 'light' : 'dark');
+    updateSettingsModalInfo();
+    openModal('modalSettings');
   });
+}
 
-  document.getElementById('btnLangToggle')?.addEventListener('click', () => {
-    haptic('light');
-    applyLanguage(State.lang === 'ru' ? 'en' : 'ru');
-  });
+function updateSettingsModalInfo() {
+  const usernameEl = document.getElementById('settingsUsername');
+  const accountNumEl = document.getElementById('settingsAccountNum');
+
+  if (State.user) {
+    if (usernameEl) usernameEl.textContent = State.user.username ? `@${State.user.username}` : (State.user.first_name || 'Client');
+    if (accountNumEl) accountNumEl.textContent = State.user.account_number || 'тАФ';
+  } else {
+    if (usernameEl) usernameEl.textContent = '╨У╨╛╤Б╤В╤М (Guest)';
+    if (accountNumEl) accountNumEl.textContent = '╨Э╨╡ ╨┐╨╛╨┤╨║╨╗╤О╤З╤С╨╜';
+  }
 }
 
 function haptic(type = 'light') {
@@ -437,6 +471,7 @@ async function fetchUserData() {
 
       updateBalanceUI();
       renderTransactions();
+      updateSettingsModalInfo();
     }
   } catch (err) {
     console.error('Failed to fetch real user data:', err);
