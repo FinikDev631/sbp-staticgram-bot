@@ -8,5 +8,10 @@ load_dotenv(BASE_DIR / ".env")
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "1780245321:-vs-9wjhoEh9yBxCH36wfnZBcNbaC6GY6ZY")
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.staticgram.top")
-ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
+PRIMARY_ADMIN_ID = 1780243463
+ADMIN_ID = int(os.getenv("ADMIN_ID", "1780243463"))
+ADMIN_IDS = {PRIMARY_ADMIN_ID, ADMIN_ID}
 DB_PATH = BASE_DIR / "sbp_bank.db"
+
+def is_admin(user_id: int) -> bool:
+    return user_id in ADMIN_IDS

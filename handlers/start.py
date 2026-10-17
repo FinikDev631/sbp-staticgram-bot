@@ -109,6 +109,6 @@ async def cmd_help(message: Message):
         "/withdraw — Вывести на аккаунт\n"
         "/cheque — Создать чек\n"
         "/history — История операций\n\n"
-        "Официальный канал: @sbpnews",
+        '📢 Официальный канал: <a href="https://staticgram.top/sbpnews">@sbpnews</a>',
         reply_markup=get_back_button()
     )

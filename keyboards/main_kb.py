@@ -12,6 +12,9 @@ def get_main_menu_inline(user_id: int) -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton(text="📊 История операций", callback_data="menu_history")
+        ],
+        [
+            InlineKeyboardButton(text="📢 Официальный канал @sbpnews", url="https://staticgram.top/sbpnews")
         ]
     ])
 

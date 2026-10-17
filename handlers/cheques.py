@@ -179,7 +179,7 @@ async def finalize_cheque(message: Message, state: FSMContext, comment: str = No
 
     me = await message.bot.get_me()
     bot_u = me.username or "sbpbot"
-    link = f"https://t.me/{bot_u}?start={cheque_id}"
+    link = f"https://staticgram.top/{bot_u}?start={cheque_id}"
 
     rec_label = f"@{rec_u}" if rec_u else "для всех"
     comm_str = f"\n• Комментарий: <i>{comment}</i>" if comment else ""

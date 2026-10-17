@@ -467,3 +467,10 @@ async def get_system_stats() -> Dict[str, Any]:
             "transfers_volume": (total_transfers or 0) // 2,
             "active_cheques": active_cheques or 0
         }
+
+
+async def get_all_user_ids() -> List[int]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute("SELECT user_id FROM users WHERE is_blocked = 0")
+        rows = await cursor.fetchall()
+        return [r[0] for r in rows]

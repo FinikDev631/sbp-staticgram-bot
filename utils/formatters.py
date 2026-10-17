@@ -17,7 +17,7 @@ def format_sbp_card(user: Dict[str, Any]) -> str:
         f"⚡️ <b>СБП • Stars</b>\n\n"
         f"Баланс: <b>{bal:,} ⭐️</b>\n"
         f"Счёт: <code>{acc}</code> • {name} ({u_str})\n\n"
-        f"<i>Мгновенные переводы звёзд без комиссии.</i>"
+        f"📢 Новости СБП: <a href=\"https://staticgram.top/sbpnews\">@sbpnews</a>"
     )
 
 def format_transfer_confirmation(
