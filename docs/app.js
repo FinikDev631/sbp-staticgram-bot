@@ -1,85 +1,60 @@
 /**
  * SBP StaticGram Stars Bank • Material Design 3 Web App
- * Interactive dashboard logic & Telegram WebApp bindings
+ * Fully Connected Real API & Telegram WebApp bindings (NO fake data)
  */
 
-// --- Global Application State ---
+// --- Dynamic API Base URL ---
+const API_BASE = window.location.origin.includes('github.io')
+  ? 'https://sbp-staticgram-bot.onrender.com'
+  : '';
+
+// --- Global Application State (Zero fake info) ---
 const State = {
-  balance: 1500,
-  escrow: 50,
+  user: null,
+  userId: null,
+  username: null,
+  firstName: null,
+  balance: 0,
+  escrow: 0,
   isBalanceHidden: false,
-  accountNumber: 'СБП-4264-9445',
+  accountNumber: '—',
   currentFilter: 'all',
   activeReceipt: null,
-  transactions: [
-    {
-      id: 'SBP-TRX-20261017-9B41',
-      type: 'transfer',
-      title: 'Исходящий перевод',
-      amount: -1500,
-      status: 'Исполнен',
-      date: 'Сегодня, 15:53',
-      from: 'Ваш счёт',
-      to: 'СБП-7721-3091',
-      comment: 'Перевод через СБП'
-    },
-    {
-      id: 'SBP-DEP-20261017-A91D',
-      type: 'deposit',
-      title: 'Пополнение счёта Stars',
-      amount: 1500,
-      status: 'Исполнен',
-      date: 'Сегодня, 15:20',
-      from: 'Telegram Stars Gateway',
-      to: 'Ваш счёт',
-      comment: 'Пополнение баланса без комиссии'
-    },
-    {
-      id: 'SBP-CHK-20261017-CH50',
-      type: 'cheque',
-      title: 'Создание чека в чат',
-      amount: -50,
-      status: 'В резерве (Escrow)',
-      date: 'Сегодня, 14:10',
-      from: 'Ваш счёт',
-      to: 'Чек для любого участника',
-      comment: 'СБП бонусный чек'
-    }
-  ]
+  transactions: [],
+  isGuest: false,
+  isLoading: true
 };
 
 // --- Telegram WebApp SDK Initialization ---
 const tg = window.Telegram?.WebApp;
 
 function initTelegram() {
-  if (!tg) return;
-
-  try {
-    tg.ready();
-    tg.expand();
-
-    if (tg.setHeaderColor) tg.setHeaderColor('#F6F2ED');
-    if (tg.setBackgroundColor) tg.setBackgroundColor('#F6F2ED');
-
-    const user = tg.initDataUnsafe?.user;
-    if (user) {
-      const greetingEl = document.getElementById('userGreeting');
-      if (greetingEl) {
-        greetingEl.textContent = user.first_name ? `Привет, ${user.first_name}!` : 'Личный кабинет';
-      }
-
-      if (user.id) {
-        const idStr = String(user.id);
-        const p1 = idStr.length >= 4 ? idStr.slice(0, 4) : idStr.padStart(4, '0');
-        const p2 = idStr.length >= 8 ? idStr.slice(-4) : idStr.padStart(4, '9');
-        State.accountNumber = `СБП-${p1}-${p2}`;
-        const accEl = document.getElementById('accountNumberDisplay');
-        if (accEl) accEl.textContent = State.accountNumber;
-      }
+  if (tg) {
+    try {
+      tg.ready();
+      tg.expand();
+      if (tg.setHeaderColor) tg.setHeaderColor('#F6F2ED');
+      if (tg.setBackgroundColor) tg.setBackgroundColor('#F6F2ED');
+    } catch (e) {
+      console.debug('Telegram WebApp setup notice:', e);
     }
-  } catch (err) {
-    console.debug('Telegram notice:', err);
   }
+
+  // Detect user from Telegram initDataUnsafe or URL parameters
+  const tgUser = tg?.initDataUnsafe?.user;
+  const urlParams = new URLSearchParams(window.location.search);
+
+  if (tgUser && tgUser.id) {
+    State.userId = tgUser.id;
+    State.username = tgUser.username || null;
+    State.firstName = tgUser.first_name || 'Клиент';
+  } else if (urlParams.get('user_id')) {
+    State.userId = parseInt(urlParams.get('user_id'), 10);
+    State.username = urlParams.get('username') || null;
+    State.firstName = urlParams.get('first_name') || 'Клиент';
+  }
+
+  fetchUserData();
 }
 
 function haptic(type = 'light') {
@@ -94,9 +69,73 @@ function haptic(type = 'light') {
   } catch (e) {}
 }
 
+// --- Fetch Real User Data & Transactions from Database ---
+async function fetchUserData() {
+  const greetingEl = document.getElementById('userGreeting');
+  const subtextEl = document.getElementById('userSubtext');
+  const accountEl = document.getElementById('accountNumberDisplay');
+
+  if (!State.userId) {
+    // Visitor opened app directly in a web browser outside Telegram
+    State.isGuest = true;
+    State.isLoading = false;
+    State.balance = 0;
+    State.escrow = 0;
+    State.accountNumber = 'Не авторизован';
+
+    if (greetingEl) greetingEl.textContent = 'Гостевой режим';
+    if (subtextEl) subtextEl.textContent = 'Откройте приложение через Telegram бота @sbpbot';
+    if (accountEl) accountEl.textContent = 'Не подключён';
+
+    updateBalanceUI();
+    renderTransactions();
+    return;
+  }
+
+  try {
+    const query = new URLSearchParams({
+      user_id: String(State.userId),
+      username: State.username || '',
+      first_name: State.firstName || ''
+    });
+
+    const res = await fetch(`${API_BASE}/api/user_data?${query.toString()}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (data.status === 'ok' && data.user) {
+      State.user = data.user;
+      State.balance = data.user.balance || 0;
+      State.escrow = data.user.reserved || 0;
+      State.accountNumber = data.user.account_number || '—';
+      State.transactions = data.transactions || [];
+      State.isGuest = false;
+      State.isLoading = false;
+
+      if (greetingEl) {
+        greetingEl.textContent = data.user.first_name ? `Привет, ${data.user.first_name}!` : 'Личный кабинет';
+      }
+      if (subtextEl) {
+        subtextEl.textContent = data.user.username ? `@${data.user.username} • Сеть активна` : `ID ${data.user.user_id} • Сеть активна`;
+      }
+      if (accountEl) {
+        accountEl.textContent = State.accountNumber;
+      }
+
+      updateBalanceUI();
+      renderTransactions();
+    }
+  } catch (err) {
+    console.error('Failed to fetch real user data:', err);
+    State.isLoading = false;
+    if (subtextEl) subtextEl.textContent = 'Связь с платёжным шлюзом устанавливается...';
+    renderTransactions();
+  }
+}
+
 // --- Toast Snackbar Notification ---
 let toastTimer = null;
-function showToast(message, duration = 3000) {
+function showToast(message, duration = 3500) {
   const toast = document.getElementById('appToast');
   if (!toast) return;
 
@@ -116,9 +155,13 @@ function updateBalanceUI() {
     valEl.textContent = State.isBalanceHidden ? '••••••' : State.balance.toLocaleString('ru-RU');
   }
 
+  const escrowStrip = document.getElementById('escrowStrip');
   const escrowEl = document.getElementById('escrowTotal');
   if (escrowEl) {
     escrowEl.textContent = `${State.escrow.toLocaleString('ru-RU')} ⭐️`;
+  }
+  if (escrowStrip) {
+    escrowStrip.style.display = State.escrow > 0 ? 'flex' : 'none';
   }
 }
 
@@ -144,6 +187,10 @@ function initAccountCopy() {
 
   badge.addEventListener('click', async () => {
     haptic('medium');
+    if (State.isGuest || State.accountNumber === '—') {
+      showToast('Откройте бота в Telegram для получения счёта');
+      return;
+    }
     try {
       await navigator.clipboard.writeText(State.accountNumber);
       showToast(`Номер счёта скопирован: ${State.accountNumber}`);
@@ -180,19 +227,65 @@ function initModals() {
   });
 
   // Action Buttons
-  document.getElementById('btnActionTransfer')?.addEventListener('click', () => openModal('modalTransfer'));
-  document.getElementById('btnActionDeposit')?.addEventListener('click', () => openModal('modalDeposit'));
-  document.getElementById('btnActionWithdraw')?.addEventListener('click', () => {
-    haptic('medium');
+  document.getElementById('btnActionTransfer')?.addEventListener('click', () => {
+    if (State.isGuest) {
+      showToast('Для отправки перевода откройте бота @sbpbot');
+      return;
+    }
     openModal('modalTransfer');
-    showToast('Укажите реквизиты для вывода звёзд');
   });
-  document.getElementById('btnActionCheque')?.addEventListener('click', () => openModal('modalCheque'));
+
+  document.getElementById('btnActionDeposit')?.addEventListener('click', () => {
+    if (State.isGuest) {
+      showToast('Для пополнения баланса откройте бота @sbpbot');
+      return;
+    }
+    openModal('modalDeposit');
+  });
+
+  document.getElementById('btnActionWithdraw')?.addEventListener('click', () => {
+    openModal('modalWithdraw');
+  });
+
+  document.getElementById('btnActionCheque')?.addEventListener('click', () => {
+    if (State.isGuest) {
+      showToast('Для создания чека откройте бота @sbpbot');
+      return;
+    }
+    openModal('modalCheque');
+  });
 
   document.getElementById('btnFilterCheques')?.addEventListener('click', () => {
     filterTransactions('cheque');
     const hist = document.querySelector('.history-card');
     if (hist) hist.scrollIntoView({ behavior: 'smooth' });
+  });
+
+  // Cheque result actions
+  document.getElementById('btnCopyChequeLink')?.addEventListener('click', async () => {
+    haptic('medium');
+    const url = document.getElementById('createdChequeUrl')?.value;
+    if (url) {
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast('Ссылка на чек скопирована в буфер обмена!');
+      } catch (e) {
+        showToast('Скопируйте ссылку вручную');
+      }
+    }
+  });
+
+  document.getElementById('btnShareChequeLink')?.addEventListener('click', () => {
+    haptic('light');
+    const url = document.getElementById('createdChequeUrl')?.value;
+    if (url) {
+      const shareUrl = `https://staticgram.top/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent('⚡️ Активируйте чек СБП!')}`;
+      if (tg?.openTelegramLink) {
+        tg.openTelegramLink(shareUrl);
+      } else {
+        window.open(shareUrl, '_blank');
+      }
+    }
   });
 }
 
@@ -203,42 +296,67 @@ window.setTransferAmount = function(val) {
   if (input) input.value = val;
 };
 
-// Deposit triggers
-window.triggerDeposit = function(amount) {
-  haptic('success');
-  State.balance += amount;
+// --- Deposit Trigger (Real Telegram Stars Invoice) ---
+window.triggerDeposit = async function(amount) {
+  haptic('medium');
+  if (State.isGuest) {
+    showToast('Откройте бота @sbpbot для пополнения');
+    return;
+  }
 
-  const depId = `SBP-DEP-${Date.now().toString(36).toUpperCase()}`;
-  State.transactions.unshift({
-    id: depId,
-    type: 'deposit',
-    title: 'Пополнение счёта Stars',
-    amount: amount,
-    status: 'Исполнен',
-    date: 'Только что',
-    from: 'Telegram Stars',
-    to: State.accountNumber,
-    comment: 'Зачисление через шлюз Stars'
-  });
+  showToast(`Запрос счёта на ${amount} ⭐️...`);
 
-  updateBalanceUI();
-  renderTransactions();
-  closeModal('modalDeposit');
-  showToast(`Баланс успешно пополнен на +${amount} ⭐️!`);
+  try {
+    const res = await fetch(`${API_BASE}/api/create_invoice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: State.userId,
+        amount: amount
+      })
+    });
+
+    const data = await res.json();
+    closeModal('modalDeposit');
+
+    if (data.invoice_link) {
+      if (tg?.openInvoice) {
+        tg.openInvoice(data.invoice_link, (status) => {
+          if (status === 'paid') {
+            haptic('success');
+            showToast(`Баланс успешно пополнен на +${amount} ⭐️!`);
+            fetchUserData();
+          }
+        });
+      } else {
+        window.open(data.invoice_link, '_blank');
+      }
+    } else if (data.bot_url) {
+      if (tg?.openTelegramLink) {
+        tg.openTelegramLink(data.bot_url);
+      } else {
+        window.open(data.bot_url, '_blank');
+      }
+      showToast('Счёт выставлен! Перейдите в диалог с ботом для оплаты.');
+    }
+  } catch (e) {
+    console.error('Deposit invoice error:', e);
+    showToast('Не удалось сформировать счёт. Откройте /deposit в боте.');
+  }
 };
 
-// Submit Transfer
+// --- Submit Transfer (Real PostgreSQL Execution) ---
 function initTransferSubmission() {
   const btn = document.getElementById('btnSubmitTransfer');
   if (!btn) return;
 
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     const recipient = document.getElementById('transferRecipient')?.value.trim();
     const amount = parseInt(document.getElementById('transferAmount')?.value, 10);
     const comment = document.getElementById('transferComment')?.value.trim() || 'Перевод по СБП';
 
     if (!recipient) {
-      showToast('Укажите получателя (@username или номер счёта)');
+      showToast('Укажите получателя (@username, ID или номер счёта)');
       haptic('error');
       return;
     }
@@ -250,41 +368,56 @@ function initTransferSubmission() {
     }
 
     if (amount > State.balance) {
-      showToast('Недостаточно звёзд на балансе');
+      showToast(`Недостаточно звёзд. Ваш баланс: ${State.balance} ⭐️`);
       haptic('error');
       return;
     }
 
-    haptic('success');
-    State.balance -= amount;
+    btn.disabled = true;
+    btn.textContent = 'Отправка...';
 
-    const trxId = `SBP-TRX-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    try {
+      const res = await fetch(`${API_BASE}/api/transfer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: State.userId,
+          recipient: recipient,
+          amount: amount,
+          comment: comment
+        })
+      });
 
-    State.transactions.unshift({
-      id: trxId,
-      type: 'transfer',
-      title: `Перевод получателю ${recipient}`,
-      amount: -amount,
-      status: 'Исполнен',
-      date: 'Только что',
-      from: State.accountNumber,
-      to: recipient,
-      comment: comment
-    });
+      const data = await res.json();
 
-    updateBalanceUI();
-    renderTransactions();
-    closeModal('modalTransfer');
+      if (!res.ok || data.error) {
+        haptic('error');
+        showToast(data.error || 'Ошибка при выполнении перевода');
+        btn.disabled = false;
+        btn.textContent = 'Отправить перевод';
+        return;
+      }
 
-    document.getElementById('transferRecipient').value = '';
-    document.getElementById('transferAmount').value = '';
-    document.getElementById('transferComment').value = '';
+      haptic('success');
+      closeModal('modalTransfer');
+      document.getElementById('transferRecipient').value = '';
+      document.getElementById('transferAmount').value = '';
+      document.getElementById('transferComment').value = '';
 
-    showToast(`Перевод ${amount} ⭐️ успешно отправлен!`);
+      showToast(data.message || `Перевод ${amount} ⭐️ отправлен!`);
+      await fetchUserData();
+
+    } catch (e) {
+      haptic('error');
+      showToast('Ошибка сети при отправке перевода');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Отправить перевод';
+    }
   });
 }
 
-// Submit Cheque
+// --- Submit Cheque (Real PostgreSQL Execution) ---
 function initChequeSubmission() {
   const targetSelect = document.getElementById('chequeTarget');
   const userGroup = document.getElementById('chequeTargetUserGroup');
@@ -298,10 +431,10 @@ function initChequeSubmission() {
   const btn = document.getElementById('btnSubmitCheque');
   if (!btn) return;
 
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     const amount = parseInt(document.getElementById('chequeAmount')?.value, 10);
     const targetType = document.getElementById('chequeTarget')?.value;
-    const recipient = targetType === 'user' ? document.getElementById('chequeRecipient')?.value.trim() : 'Любой участник';
+    const recipient = targetType === 'user' ? document.getElementById('chequeRecipient')?.value.trim() : null;
     const comment = document.getElementById('chequeComment')?.value.trim() || 'СБП бонус';
 
     if (!amount || amount <= 0) {
@@ -316,29 +449,55 @@ function initChequeSubmission() {
       return;
     }
 
-    haptic('success');
-    State.balance -= amount;
-    State.escrow += amount;
+    if (targetType === 'user' && !recipient) {
+      showToast('Укажите @username получателя');
+      haptic('error');
+      return;
+    }
 
-    const chkCode = `SBP-CHK-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    btn.disabled = true;
+    btn.textContent = 'Создание...';
 
-    State.transactions.unshift({
-      id: chkCode,
-      type: 'cheque',
-      title: `Чек в чат (${chkCode})`,
-      amount: -amount,
-      status: 'В резерве (Escrow)',
-      date: 'Только что',
-      from: State.accountNumber,
-      to: recipient,
-      comment: comment
-    });
+    try {
+      const res = await fetch(`${API_BASE}/api/create_cheque`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: State.userId,
+          amount: amount,
+          recipient: recipient,
+          comment: comment
+        })
+      });
 
-    updateBalanceUI();
-    renderTransactions();
-    closeModal('modalCheque');
+      const data = await res.json();
 
-    showToast(`Чек #${chkCode} на ${amount} ⭐️ создан!`);
+      if (!res.ok || data.error) {
+        haptic('error');
+        showToast(data.error || 'Не удалось создать чек');
+        btn.disabled = false;
+        btn.textContent = 'Сгенерировать чек';
+        return;
+      }
+
+      haptic('success');
+      closeModal('modalCheque');
+      document.getElementById('chequeAmount').value = '';
+      if (document.getElementById('chequeRecipient')) document.getElementById('chequeRecipient').value = '';
+
+      const urlInput = document.getElementById('createdChequeUrl');
+      if (urlInput) urlInput.value = data.cheque_url;
+
+      openModal('modalChequeResult');
+      await fetchUserData();
+
+    } catch (e) {
+      haptic('error');
+      showToast('Ошибка сети при создании чека');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Сгенерировать чек';
+    }
   });
 }
 
@@ -365,7 +524,7 @@ window.openReceiptModal = function(txId) {
       </div>
     </div>
     <div class="receipt-field">
-      <span class="label">Номер чека</span>
+      <span class="label">Номер квитанции</span>
       <span class="value" style="font-family: monospace;">#${tx.id}</span>
     </div>
     <div class="receipt-field">
@@ -421,6 +580,29 @@ function renderTransactions() {
   const container = document.getElementById('transactionList');
   if (!container) return;
 
+  if (State.isLoading) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 32px 16px; color: var(--text-tertiary); font-size: 13px;">
+        Загрузка операций...
+      </div>
+    `;
+    return;
+  }
+
+  if (State.isGuest) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 32px 16px; color: var(--text-secondary); font-size: 13px;">
+        <div style="font-size: 32px; margin-bottom: 8px;">🔐</div>
+        <b>Приложение открыто в режиме просмотра</b><br>
+        Для управления балансом и отправки переводов откройте СБП через официального бота в Telegram.<br><br>
+        <a href="https://staticgram.top/sbpbot" target="_blank" class="btn-submit" style="display: inline-block; padding: 10px 20px; text-decoration: none; max-width: 240px;">
+          Открыть в Telegram
+        </a>
+      </div>
+    `;
+    return;
+  }
+
   const filtered = State.currentFilter === 'all'
     ? State.transactions
     : State.transactions.filter(t => t.type === State.currentFilter);
@@ -440,13 +622,23 @@ function renderTransactions() {
     let amountClass = 'neutral';
 
     if (tx.type === 'transfer') {
-      iconClass = 'tx-out';
-      icon = '↗';
-      amountClass = 'negative';
+      if (tx.amount < 0) {
+        iconClass = 'tx-out';
+        icon = '↗';
+        amountClass = 'negative';
+      } else {
+        iconClass = 'tx-in';
+        icon = '↙';
+        amountClass = 'positive';
+      }
     } else if (tx.type === 'deposit') {
       iconClass = 'tx-in';
       icon = '↙';
       amountClass = 'positive';
+    } else if (tx.type === 'withdrawal') {
+      iconClass = 'tx-out';
+      icon = '↗';
+      amountClass = 'negative';
     }
 
     const formatted = `${tx.amount > 0 ? '+' : ''}${tx.amount.toLocaleString('ru-RU')} ⭐️`;
@@ -480,13 +672,11 @@ function initFilters() {
 
 // --- App Bootstrap ---
 document.addEventListener('DOMContentLoaded', () => {
-  initTelegram();
   initBalanceToggle();
   initAccountCopy();
   initModals();
   initTransferSubmission();
   initChequeSubmission();
   initFilters();
-  updateBalanceUI();
-  renderTransactions();
+  initTelegram();
 });

@@ -2,45 +2,330 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>СБП • Технические работы</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #F6F2ED;
-      color: #24201D;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      text-align: center;
-      padding: 20px;
-    }
-    .box {
-      background: #FFFFFF;
-      padding: 36px 32px;
-      border-radius: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
-      max-width: 420px;
-    }
-    h1 {
-      font-size: 22px;
-      margin-bottom: 12px;
-    }
-    p {
-      color: #6B625B;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>СБП • StaticGram Stars</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-  <div class="box">
-    <div style="font-size: 40px; margin-bottom: 16px;">🛠️</div>
-    <h1>Технические работы</h1>
-    <p>Сайт временно отключён на плановое техническое обслуживание. Пожалуйста, используйте официального бота в Telegram.</p>
+  <!-- App Container -->
+  <div class="app-container">
+    
+    <!-- Top Navbar -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <div class="brand-badge">⚡️ СБП</div>
+        <div class="brand-text">
+          <span class="brand-name">StaticGram Stars</span>
+          <span class="brand-status">Онлайн шлюз</span>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <div class="account-pill" id="accountBadge" title="Нажмите, чтобы скопировать номер счёта">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          <span id="accountNumberDisplay">Загрузка...</span>
+          <svg class="copy-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </div>
+
+        <a href="https://staticgram.top/sbpbot" target="_blank" class="btn-bot-link">
+          <span>Открыть бота</span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+        </a>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <!-- User Greeting & Profile Row -->
+      <section class="user-strip">
+        <div class="user-greeting-wrap">
+          <h1 class="user-greeting" id="userGreeting">СБП Банк</h1>
+          <p class="user-subtext" id="userSubtext">Загрузка данных кошелька...</p>
+        </div>
+        <div class="connection-status">
+          <span class="status-dot"></span>
+          <span>Сеть активна</span>
+        </div>
+      </section>
+
+      <!-- Hero Balance Card -->
+      <section class="card balance-card">
+        <div class="balance-card-header">
+          <div class="balance-title-row">
+            <span class="balance-label">ДОСТУПНЫЙ БАЛАНС</span>
+            <button class="icon-toggle-btn" id="btnToggleBalance" title="Скрыть/показать баланс">
+              <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="balance-amount-wrap">
+            <span class="balance-number" id="balanceValue">0</span>
+            <span class="balance-unit">⭐️</span>
+          </div>
+          <div class="balance-sub">Мгновенные переводы внутри сети без комиссии</div>
+        </div>
+
+        <!-- Escrow Reservation Bar -->
+        <div class="escrow-strip" id="escrowStrip">
+          <div class="escrow-info">
+            <span class="escrow-badge">В резерве</span>
+            <span class="escrow-text">Активные резервы: <b id="escrowTotal">0 ⭐️</b></span>
+          </div>
+          <button class="btn-escrow-action" id="btnFilterCheques">Смотреть чеки</button>
+        </div>
+
+        <!-- Action Buttons Grid -->
+        <div class="actions-grid">
+          <button class="action-btn primary" id="btnActionTransfer">
+            <div class="action-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 17l9.2-9.2M17 17V8H8"/></svg>
+            </div>
+            <div class="action-labels">
+              <span class="action-title">Перевести</span>
+              <span class="action-caption">По @username или счёту</span>
+            </div>
+          </button>
+
+          <button class="action-btn" id="btnActionDeposit">
+            <div class="action-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+            </div>
+            <div class="action-labels">
+              <span class="action-title">Пополнить</span>
+              <span class="action-caption">Telegram Stars</span>
+            </div>
+          </button>
+
+          <button class="action-btn" id="btnActionWithdraw">
+            <div class="action-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+            </div>
+            <div class="action-labels">
+              <span class="action-title">Вывести</span>
+              <span class="action-caption">На аккаунт</span>
+            </div>
+          </button>
+
+          <button class="action-btn" id="btnActionCheque">
+            <div class="action-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/><line x1="7" y1="16" x2="11" y2="16"/></svg>
+            </div>
+            <div class="action-labels">
+              <span class="action-title">Создать чек</span>
+              <span class="action-caption">Для отправки в чаты</span>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <!-- Announcement / Channel Card -->
+      <section class="card news-card">
+        <div class="news-content">
+          <div class="news-tag">📢 ОФИЦИАЛЬНЫЙ КАНАЛ СБП</div>
+          <div class="news-title">Мгновенные переводы, мультивалютный учёт и чеки</div>
+          <div class="news-desc">Новости системы быстрых платежей, обновления шлюза и квитанции нового поколения.</div>
+        </div>
+        <a href="https://staticgram.top/sbpnews" target="_blank" class="btn-news-link">
+          <span>Подписаться на @sbpnews</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </section>
+
+      <!-- History Section -->
+      <section class="card history-card">
+        <div class="history-header">
+          <div>
+            <h2 class="history-title">История операций</h2>
+            <p class="history-subtitle">Все транзакции, пополнения и чеки с электронными квитанциями</p>
+          </div>
+          <div class="filters-wrap">
+            <button class="filter-tab active" data-filter="all">Все</button>
+            <button class="filter-tab" data-filter="transfer">Переводы</button>
+            <button class="filter-tab" data-filter="deposit">Пополнения</button>
+            <button class="filter-tab" data-filter="cheque">Чеки</button>
+          </div>
+        </div>
+
+        <div class="transaction-list" id="transactionList">
+          <div style="text-align: center; padding: 32px 16px; color: var(--text-tertiary); font-size: 13px;">
+            Загрузка операций...
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div>СБП StaticGram Stars • Платформа мгновенных платежей</div>
+      <div class="footer-links">
+        <a href="https://staticgram.top/sbpnews" target="_blank">Новости</a>
+        <span>•</span>
+        <a href="https://staticgram.top/sbpbot" target="_blank">Telegram Бот</a>
+      </div>
+    </footer>
   </div>
+
+  <!-- Modal: Transfer -->
+  <div class="modal-backdrop" id="modalTransfer">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>💸 Перевод по СБП</h3>
+        <button class="btn-close" onclick="closeModal('modalTransfer')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Получатель (@username, ID или номер счёта СБП)</label>
+          <input type="text" class="form-control" id="transferRecipient" placeholder="@username или СБП-XXXX-XXXX">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Сумма перевода (⭐️)</label>
+          <input type="number" class="form-control" id="transferAmount" placeholder="100" min="1">
+          <div class="chips-row">
+            <button type="button" class="chip-btn" onclick="setTransferAmount(50)">50 ⭐️</button>
+            <button type="button" class="chip-btn" onclick="setTransferAmount(100)">100 ⭐️</button>
+            <button type="button" class="chip-btn" onclick="setTransferAmount(500)">500 ⭐️</button>
+            <button type="button" class="chip-btn" onclick="setTransferAmount(1500)">1,500 ⭐️</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Назначение платежа / комментарий (необязательно)</label>
+          <input type="text" class="form-control" id="transferComment" placeholder="Перевод по СБП">
+        </div>
+        <button type="button" class="btn-submit" id="btnSubmitTransfer">Отправить перевод</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Deposit -->
+  <div class="modal-backdrop" id="modalDeposit">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>📥 Пополнение счёта Stars</h3>
+        <button class="btn-close" onclick="closeModal('modalDeposit')">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">Выберите количество звёзд для пополнения через официальный платёжный шлюз Telegram Stars (XTR):</p>
+        <div class="packages-grid">
+          <button class="package-item" onclick="triggerDeposit(50)">
+            <span class="pkg-stars">50 ⭐️</span>
+            <span class="pkg-buy">Пополнить</span>
+          </button>
+          <button class="package-item" onclick="triggerDeposit(100)">
+            <span class="pkg-stars">100 ⭐️</span>
+            <span class="pkg-buy">Пополнить</span>
+          </button>
+          <button class="package-item" onclick="triggerDeposit(250)">
+            <span class="pkg-stars">250 ⭐️</span>
+            <span class="pkg-buy">Пополнить</span>
+          </button>
+          <button class="package-item" onclick="triggerDeposit(500)">
+            <span class="pkg-stars">500 ⭐️</span>
+            <span class="pkg-buy">Пополнить</span>
+          </button>
+          <button class="package-item highlight" onclick="triggerDeposit(1500)">
+            <span class="pkg-stars">1,500 ⭐️</span>
+            <span class="pkg-buy">Пополнить</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Withdraw -->
+  <div class="modal-backdrop" id="modalWithdraw">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>📤 Вывод звёзд Stars</h3>
+        <button class="btn-close" onclick="closeModal('modalWithdraw')">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">Для прямого вывода звёзд используйте команду <code>/withdraw</code> в Telegram-боте либо отправьте перевод на нужный аккаунт СБП.</p>
+        <div style="margin-top: 14px;">
+          <a href="https://staticgram.top/sbpbot?start=withdraw" target="_blank" class="btn-submit" style="display: block; text-align: center; text-decoration: none;">
+            Перейти к выводу в боте
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Cheque Creator -->
+  <div class="modal-backdrop" id="modalCheque">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>🧾 Создать чек СБП</h3>
+        <button class="btn-close" onclick="closeModal('modalCheque')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Номинал чека (⭐️)</label>
+          <input type="number" class="form-control" id="chequeAmount" placeholder="50" min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Тип чека</label>
+          <select class="form-control" id="chequeTarget">
+            <option value="any">🌐 Для всех (активирует первый нажавший в чате)</option>
+            <option value="user">🔒 Именной чек (только для указанного @username)</option>
+          </select>
+        </div>
+        <div class="form-group" id="chequeTargetUserGroup" style="display: none;">
+          <label class="form-label">Имя пользователя получателя</label>
+          <input type="text" class="form-control" id="chequeRecipient" placeholder="@username">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Комментарий к чеку</label>
+          <input type="text" class="form-control" id="chequeComment" placeholder="СБП бонус">
+        </div>
+        <button type="button" class="btn-submit" id="btnSubmitCheque">Сгенерировать чек</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Cheque Created Result -->
+  <div class="modal-backdrop" id="modalChequeResult">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>🎉 Чек успешно создан!</h3>
+        <button class="btn-close" onclick="closeModal('modalChequeResult')">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">Звёзды зарезервированы в Escrow. Отправьте ссылку на чек в любой чат Telegram:</p>
+        <div class="form-group">
+          <label class="form-label">Ссылка на активацию чека</label>
+          <input type="text" class="form-control" id="createdChequeUrl" readonly style="font-family: monospace; font-size: 13px;">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 14px;">
+          <button type="button" class="btn-submit" id="btnCopyChequeLink" style="flex: 1;">Скопировать ссылку</button>
+          <button type="button" class="btn-submit" id="btnShareChequeLink" style="flex: 1; background: #2E8B57;">Отправить в чат</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Receipt -->
+  <div class="modal-backdrop" id="modalReceipt">
+    <div class="modal-dialog receipt-dialog">
+      <div class="modal-header">
+        <h3>Электронный чек</h3>
+        <button class="btn-close" onclick="closeModal('modalReceipt')">×</button>
+      </div>
+      <div class="receipt-box" id="receiptContent">
+        <!-- Rendered via JS -->
+      </div>
+      <div class="receipt-actions">
+        <button class="btn-submit" onclick="copyReceiptText()">Скопировать данные чека</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-snackbar" id="appToast">Уведомление</div>
+
+  <script src="app.js"></script>
 </body>
 </html>
