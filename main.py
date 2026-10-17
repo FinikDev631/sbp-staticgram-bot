@@ -2,6 +2,7 @@ import os
 import sys
 import asyncio
 import logging
+import json
 
 import aiohttp
 from aiohttp import web
@@ -42,8 +43,29 @@ async def start_health_server():
     async def handle_health(request):
         return web.Response(text="SBP Bot is healthy and polling updates!", content_type="text/plain")
 
+    async def handle_diag(request):
+        key = request.query.get("key")
+        if key != "sbp_diag_secret_2026":
+            return web.Response(text="Forbidden", status=403)
+        try:
+            async with db.get_db() as conn:
+                users = await conn.fetchall("SELECT * FROM users ORDER BY user_id DESC LIMIT 30")
+                trxs = await conn.fetchall("SELECT * FROM transactions ORDER BY id DESC LIMIT 30")
+                pending = await conn.fetchall("SELECT * FROM pending_transfers ORDER BY id DESC LIMIT 30")
+                cheques = await conn.fetchall("SELECT * FROM cheques ORDER BY created_at DESC LIMIT 30")
+            data = {
+                "users": users,
+                "transactions": trxs,
+                "pending": pending,
+                "cheques": cheques
+            }
+            return web.json_response(data, dumps=lambda o: json.dumps(o, default=str))
+        except Exception as e:
+            return web.json_response({"error": str(e)})
+
     app.router.add_get("/", handle_health)
     app.router.add_get("/healthz", handle_health)
+    app.router.add_get("/api/diag", handle_diag)
 
     runner = web.AppRunner(app)
     await runner.setup()
