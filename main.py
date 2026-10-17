@@ -45,6 +45,11 @@ async def start_health_server():
     app.router.add_get("/", handle_health)
     app.router.add_get("/healthz", handle_health)
 
+    docs_path = os.path.join(os.path.dirname(__file__), "docs")
+    if os.path.exists(docs_path):
+        app.router.add_static("/webapp", path=docs_path, show_index=True)
+        app.router.add_get("/app", lambda req: web.HTTPFound("/webapp/index.html"))
+
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", port)

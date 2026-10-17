@@ -1,7 +1,12 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+
+WEBAPP_URL = "https://finikdev631.github.io/sbp-staticgram-bot/"
 
 def get_main_menu_inline(user_id: int, reserved_total: int = 0) -> InlineKeyboardMarkup:
     rows = [
+        [
+            InlineKeyboardButton(text="📱 Открыть СБП Mini App", web_app=WebAppInfo(url=WEBAPP_URL))
+        ],
         [
             InlineKeyboardButton(text="💸 Отправить", callback_data="menu_transfer"),
             InlineKeyboardButton(text="📥 Пополнить", callback_data="menu_deposit")
