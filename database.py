@@ -226,18 +226,21 @@ async def direct_transfer(sender_id: int, recipient_id: int, amount: int, commen
         sender_label = f"@{sender['username']}" if sender['username'] else f"{sender['first_name']} (ID {sender['user_id']})"
         recipient_label = f"@{recipient['username']}" if recipient['username'] else f"{recipient['first_name']} (ID {recipient['user_id']})"
 
+        trx_id_out = f"{trx_id}-OUT"
+        trx_id_in = f"{trx_id}-IN"
+
         # Sender transaction (transfer_out)
         await db.execute(
             """INSERT INTO transactions (trx_id, user_id, counterparty, counterparty_id, amount, type, status, comment)
                VALUES (?, ?, ?, ?, ?, 'transfer_out', 'success', ?)""",
-            (trx_id, sender_id, recipient_label, recipient_id, amount, comment or "Перевод по СБП")
+            (trx_id_out, sender_id, recipient_label, recipient_id, amount, comment or "Перевод по СБП")
         )
 
         # Recipient transaction (transfer_in)
         await db.execute(
             """INSERT INTO transactions (trx_id, user_id, counterparty, counterparty_id, amount, type, status, comment)
                VALUES (?, ?, ?, ?, ?, 'transfer_in', 'success', ?)""",
-            (trx_id, recipient_id, sender_label, sender_id, amount, comment or "Перевод по СБП")
+            (trx_id_in, recipient_id, sender_label, sender_id, amount, comment or "Перевод по СБП")
         )
 
         await db.commit()
@@ -441,7 +444,7 @@ async def get_user_transactions(user_id: int, limit: int = 10) -> List[Dict[str,
 async def get_transaction(trx_id: str) -> Optional[Dict[str, Any]]:
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
-        cursor = await db.execute("SELECT * FROM transactions WHERE trx_id = ?", (trx_id,))
+        cursor = await db.execute("SELECT * FROM transactions WHERE trx_id = ? OR trx_id LIKE ? LIMIT 1", (trx_id, f"{trx_id}%"))
         row = await cursor.fetchone()
         return dict(row) if row else None
 
