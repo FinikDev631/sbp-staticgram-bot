@@ -96,6 +96,11 @@ pip install -r requirements.txt
 python main.py
 ```
 
+#### Запуск на Render (render.com):
+1. Создайте сервис типа **Background Worker** (рекомендуется для ботов на polling).
+2. Build Command: `pip install -r requirements.txt`
+3. Start Command: `python main.py`
+
 #### Запуск в фоне через systemd (Linux VPS):
 Создайте `/etc/systemd/system/sbpbot.service`:
 ```ini
