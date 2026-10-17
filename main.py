@@ -1,7 +1,9 @@
+import os
+import sys
 import asyncio
 import logging
-import sys
 
+from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
@@ -22,6 +24,33 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger("sbp_bot")
+
+
+async def start_health_server():
+    """Starts a lightweight HTTP server on $PORT for Render Web Services."""
+    port_str = os.getenv("PORT")
+    if not port_str:
+        return None
+    try:
+        port = int(port_str)
+    except ValueError:
+        return None
+
+    app = web.Application()
+
+    async def handle_health(request):
+        return web.Response(text="SBP Bot is healthy and polling updates!", content_type="text/plain")
+
+    app.router.add_get("/", handle_health)
+    app.router.add_get("/healthz", handle_health)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    logger.info(f"Health check HTTP server listening on port {port} for Render")
+    return runner
+
 
 async def setup_bot_profile(bot: Bot):
     """Sets commands, name and descriptions in StaticGram Bot API."""
@@ -61,7 +90,10 @@ async def main():
     await db.init_db()
     logger.info("Database initialized successfully.")
 
-    # 2. Configure AiohttpSession with custom StaticGram API server
+    # 2. Start health check server if running on Render / Cloud host
+    web_runner = await start_health_server()
+
+    # 3. Configure AiohttpSession with custom StaticGram API server
     session = AiohttpSession(api=TelegramAPIServer.from_base(API_BASE_URL))
 
     bot = Bot(
@@ -73,17 +105,26 @@ async def main():
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(main_router)
 
-    # 3. Verify connection and setup
+    # 4. Verify connection and setup
     me = await bot.get_me()
     logger.info(f"Connected to StaticGram as @{me.username} (ID: {me.id}, Name: {me.first_name})")
 
     await setup_bot_profile(bot)
 
-    # 4. Start polling
+    # 5. Clear stale webhooks and drop pending conflicts
+    try:
+        await bot.delete_webhook(drop_pending_updates=True)
+        logger.info("Stale webhooks cleared.")
+    except Exception as e:
+        logger.warning(f"Could not clear webhook: {e}")
+
+    # 6. Start polling
     logger.info("SBP Bot is now running and polling updates from StaticGram...")
     try:
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
+        if web_runner:
+            await web_runner.cleanup()
         await bot.session.close()
         logger.info("Bot stopped.")
 
