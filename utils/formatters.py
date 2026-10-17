@@ -6,16 +6,26 @@ def mask_name(first_name: str, last_name: Optional[str] = None) -> str:
         return f"{first_name} {last_name[0]}."
     return first_name
 
-def format_sbp_card(user: Dict[str, Any]) -> str:
+def format_sbp_card(user: Dict[str, Any], reserved: Optional[Dict[str, Any]] = None) -> str:
     """Sleek minimalist fintech card."""
     name = mask_name(user.get("first_name", "Клиент"), user.get("last_name"))
     acc = user.get("account_number", "SBP-0000-0000")
     bal = user.get("balance", 0)
     u_str = f"@{user['username']}" if user.get("username") else f"id{user['user_id']}"
 
+    res_lines = []
+    if reserved:
+        if reserved.get("cheques_sum", 0) > 0:
+            res_lines.append(f"• 🧾 В активных чеках: <b>{reserved['cheques_sum']:,} ⭐️</b> ({reserved['cheques_count']} шт.)")
+        if reserved.get("pending_sum", 0) > 0:
+            res_lines.append(f"• ⏳ В ожидании получения: <b>{reserved['pending_sum']:,} ⭐️</b> ({reserved['pending_count']} шт.)")
+
+    res_block = ("\n" + "\n".join(res_lines) + "\n") if res_lines else ""
+
     return (
         f"⚡️ <b>СБП • Stars</b>\n\n"
-        f"Баланс: <b>{bal:,} ⭐️</b>\n"
+        f"Баланс: <b>{bal:,} ⭐️</b>"
+        f"{res_block}\n"
         f"Счёт: <code>{acc}</code> • {name} ({u_str})\n\n"
         f"📢 Новости СБП: <a href=\"https://staticgram.top/sbpnews\">@sbpnews</a>"
     )

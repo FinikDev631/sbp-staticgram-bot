@@ -61,8 +61,9 @@ async def cmd_start(message: Message, state: FSMContext):
             await message.answer("Чек не найден или аннулирован.", reply_markup=get_back_button())
             return
 
-    text = format_sbp_card(user)
-    await message.answer(text, reply_markup=get_main_menu_inline(user_id))
+    reserved = await db.get_user_reserved_summary(user_id)
+    text = format_sbp_card(user, reserved)
+    await message.answer(text, reply_markup=get_main_menu_inline(user_id, reserved["total_reserved"]))
 
     if user.get("claimed_pending"):
         for cp in user["claimed_pending"]:
@@ -98,11 +99,12 @@ async def cb_back_to_menu(callback: CallbackQuery, state: FSMContext):
             callback.from_user.last_name
         )
 
-    text = format_sbp_card(user)
+    reserved = await db.get_user_reserved_summary(user_id)
+    text = format_sbp_card(user, reserved)
     try:
-        await callback.message.edit_text(text, reply_markup=get_main_menu_inline(user_id))
+        await callback.message.edit_text(text, reply_markup=get_main_menu_inline(user_id, reserved["total_reserved"]))
     except Exception:
-        await callback.message.answer(text, reply_markup=get_main_menu_inline(user_id))
+        await callback.message.answer(text, reply_markup=get_main_menu_inline(user_id, reserved["total_reserved"]))
     await callback.answer()
 
 
@@ -111,12 +113,90 @@ async def cb_cancel_action(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     user_id = callback.from_user.id
     user = await db.get_user(user_id)
-    text = format_sbp_card(user)
+    reserved = await db.get_user_reserved_summary(user_id)
+    text = format_sbp_card(user, reserved)
     try:
-        await callback.message.edit_text(text, reply_markup=get_main_menu_inline(user_id))
+        await callback.message.edit_text(text, reply_markup=get_main_menu_inline(user_id, reserved["total_reserved"]))
     except Exception:
-        await callback.message.answer(text, reply_markup=get_main_menu_inline(user_id))
+        await callback.message.answer(text, reply_markup=get_main_menu_inline(user_id, reserved["total_reserved"]))
     await callback.answer()
+
+
+@router.callback_query(F.data == "menu_reserved")
+async def cb_menu_reserved(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    items = await db.get_user_reserved_items(user_id)
+    cheques = items["cheques"]
+    pending = items["pending"]
+
+    if not cheques and not pending:
+        await callback.answer("У вас нет зарезервированных средств.", show_alert=True)
+        user = await db.get_user(user_id)
+        reserved = await db.get_user_reserved_summary(user_id)
+        await callback.message.edit_text(format_sbp_card(user, reserved), reply_markup=get_main_menu_inline(user_id, 0))
+        return
+
+    text = "⏳ <b>Ваши зарезервированные средства</b>\n\n"
+    text += "<i>Здесь находятся звёзды, которые временно списаны с баланса, но ещё не были забраны. Вы можете вернуть их на свой счёт в 1 клик:</i>\n\n"
+
+    rows = []
+
+    if cheques:
+        text += "<b>🧾 Активные чеки:</b>\n"
+        for ch in cheques:
+            rec = f"@{ch['recipient_username']}" if ch.get('recipient_username') else "любой"
+            text += f"• Чек <code>{ch['cheque_id']}</code>: <b>{ch['amount']:,} ⭐️</b> ({rec})\n"
+            rows.append([
+                InlineKeyboardButton(
+                    text=f"↩️ Вернуть чек на {ch['amount']:,} ⭐️",
+                    callback_data=f"cancel_res_ch:{ch['cheque_id']}"
+                )
+            ])
+        text += "\n"
+
+    if pending:
+        text += "<b>⏳ Отложенные переводы:</b>\n"
+        for pt in pending:
+            text += f"• Перевод <code>{pt['trx_id']}</code>: <b>{pt['amount']:,} ⭐️</b> (для @{pt['recipient_username']})\n"
+            rows.append([
+                InlineKeyboardButton(
+                    text=f"↩️ Вернуть перевод на {pt['amount']:,} ⭐️",
+                    callback_data=f"cancel_res_pt:{pt['trx_id']}"
+                )
+            ])
+
+    rows.append([InlineKeyboardButton(text="← В главное меню", callback_data="back_to_menu")])
+    kb = InlineKeyboardMarkup(inline_keyboard=rows)
+
+    try:
+        await callback.message.edit_text(text, reply_markup=kb)
+    except Exception:
+        await callback.message.answer(text, reply_markup=kb)
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("cancel_res_ch:"))
+async def cb_cancel_res_cheque(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    cheque_id = callback.data.split(":", 1)[1]
+    ok = await db.cancel_cheque(cheque_id, user_id)
+    if ok:
+        await callback.answer("Чек аннулирован, звёзды возвращены на ваш баланс!", show_alert=True)
+    else:
+        await callback.answer("Чек уже активирован или не существует.", show_alert=True)
+    await cb_menu_reserved(callback)
+
+
+@router.callback_query(F.data.startswith("cancel_res_pt:"))
+async def cb_cancel_res_pending(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    trx_id = callback.data.split(":", 1)[1]
+    pt = await db.cancel_pending_transfer(trx_id, sender_id=user_id)
+    if pt:
+        await callback.answer(f"Перевод отменён, {pt['amount']:,} ⭐️ возвращены на ваш баланс!", show_alert=True)
+    else:
+        await callback.answer("Перевод уже получен или отменён.", show_alert=True)
+    await cb_menu_reserved(callback)
 
 
 @router.message(Command("help"))

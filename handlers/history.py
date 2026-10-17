@@ -87,10 +87,22 @@ async def view_transaction_check(callback: CallbackQuery):
         dt_str=tx.get("created_at")
     )
 
-    back_kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="← К истории", callback_data="menu_history")],
-        [InlineKeyboardButton(text="В меню", callback_data="back_to_menu")]
+    rows = []
+    if tx["type"] == "cheque_created":
+        ch_id = tx.get("counterparty", "").replace("Чек ", "").strip()
+        ch = await db.get_cheque(ch_id)
+        if ch and ch["status"] == "active":
+            rows.append([InlineKeyboardButton(text=f"↩️ Аннулировать чек ({ch['amount']:,} ⭐️)", callback_data=f"cancel_res_ch:{ch['cheque_id']}")])
+    elif tx["type"] == "transfer_out":
+        pt = await db.get_pending_transfer_by_query(tx["trx_id"])
+        if pt and pt["status"] == "pending":
+            rows.append([InlineKeyboardButton(text=f"↩️ Отменить перевод ({pt['amount']:,} ⭐️)", callback_data=f"cancel_res_pt:{pt['trx_id']}")])
+
+    rows.append([
+        InlineKeyboardButton(text="← К истории", callback_data="menu_history"),
+        InlineKeyboardButton(text="В меню", callback_data="back_to_menu")
     ])
+    back_kb = InlineKeyboardMarkup(inline_keyboard=rows)
 
     await callback.message.edit_text(receipt, reply_markup=back_kb)
     await callback.answer()

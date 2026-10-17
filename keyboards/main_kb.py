@@ -1,7 +1,7 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-def get_main_menu_inline(user_id: int) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
+def get_main_menu_inline(user_id: int, reserved_total: int = 0) -> InlineKeyboardMarkup:
+    rows = [
         [
             InlineKeyboardButton(text="💸 Отправить", callback_data="menu_transfer"),
             InlineKeyboardButton(text="📥 Пополнить", callback_data="menu_deposit")
@@ -12,11 +12,22 @@ def get_main_menu_inline(user_id: int) -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton(text="📊 История операций", callback_data="menu_history")
-        ],
-        [
-            InlineKeyboardButton(text="📢 Официальный канал @sbpnews", url="https://staticgram.top/sbpnews")
         ]
+    ]
+
+    if reserved_total > 0:
+        rows.append([
+            InlineKeyboardButton(
+                text=f"⏳ Зарезервировано: {reserved_total:,} ⭐️ (управление)",
+                callback_data="menu_reserved"
+            )
+        ])
+
+    rows.append([
+        InlineKeyboardButton(text="📢 Официальный канал @sbpnews", url="https://staticgram.top/sbpnews")
     ])
+
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 def get_cancel_kb(callback_data: str = "back_to_menu") -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[

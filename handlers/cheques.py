@@ -191,6 +191,7 @@ async def finalize_cheque(message: Message, state: FSMContext, comment: str = No
 
     text = (
         f"✅ <b>Чек на {amount:,} ⭐️ создан</b>\n\n"
+        f"💡 <i>Сумма {amount:,} ⭐️ временно списана с баланса в этот чек. Если чек не заберут, вы можете в любой момент аннулировать его кнопкой ниже и вернуть звёзды.</i>\n\n"
         f"• Получатель: {rec_label}{comm_str}\n"
         f"• Ссылка: <code>{link}</code>\n\n"
         f"Нажмите кнопку ниже, чтобы отправить чек в чат:"

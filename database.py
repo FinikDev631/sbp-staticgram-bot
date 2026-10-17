@@ -172,7 +172,7 @@ async def get_user_by_account(account_number: str) -> Optional[Dict[str, Any]]:
 
 
 async def admin_find_user(query: str) -> Optional[Dict[str, Any]]:
-    """Flexible user search for admin by @username, ID, or SBP account."""
+    """Flexible user search for admin by @username, ID, SBP account, or name."""
     q = query.strip()
     if q.startswith("@"):
         return await get_user_by_username(q[1:])
@@ -185,7 +185,18 @@ async def admin_find_user(query: str) -> Optional[Dict[str, Any]]:
     u = await get_user_by_username(q)
     if u:
         return u
-    return await get_user_by_account(q)
+    acc = await get_user_by_account(q)
+    if acc:
+        return acc
+
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT * FROM users WHERE first_name LIKE ? OR username LIKE ? LIMIT 1",
+            (f"%{q}%", f"%{q}%")
+        )
+        row = await cursor.fetchone()
+        return dict(row) if row else None
 
 
 async def credit_balance(user_id: int, amount: int, trx_type: str, comment: str, counterparty: str = "СБП Банк", custom_trx_id: Optional[str] = None) -> str:
@@ -633,3 +644,37 @@ async def get_all_user_ids() -> List[int]:
         cursor = await db.execute("SELECT user_id FROM users WHERE is_blocked = 0")
         rows = await cursor.fetchall()
         return [r[0] for r in rows]
+
+
+async def get_user_reserved_summary(user_id: int) -> Dict[str, Any]:
+    """Returns totals for active cheques and pending transfers created by this user."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        c1 = await db.execute("SELECT COUNT(*), SUM(amount) FROM cheques WHERE creator_id = ? AND status = 'active'", (user_id,))
+        ch_count, ch_sum = await c1.fetchone()
+
+        c2 = await db.execute("SELECT COUNT(*), SUM(amount) FROM pending_transfers WHERE sender_id = ? AND status = 'pending'", (user_id,))
+        pt_count, pt_sum = await c2.fetchone()
+
+        return {
+            "cheques_count": ch_count or 0,
+            "cheques_sum": ch_sum or 0,
+            "pending_count": pt_count or 0,
+            "pending_sum": pt_sum or 0,
+            "total_reserved": (ch_sum or 0) + (pt_sum or 0)
+        }
+
+
+async def get_user_reserved_items(user_id: int) -> Dict[str, Any]:
+    """Returns full lists of active cheques and pending transfers created by this user."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        c1 = await db.execute("SELECT * FROM cheques WHERE creator_id = ? AND status = 'active' ORDER BY created_at DESC", (user_id,))
+        cheques = [dict(r) for r in await c1.fetchall()]
+
+        c2 = await db.execute("SELECT * FROM pending_transfers WHERE sender_id = ? AND status = 'pending' ORDER BY created_at DESC", (user_id,))
+        pending = [dict(r) for r in await c2.fetchall()]
+
+        return {
+            "cheques": cheques,
+            "pending": pending
+        }
