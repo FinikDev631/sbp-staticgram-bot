@@ -12,7 +12,7 @@ from utils.formatters import (
     format_cheque_claimed_message,
     mask_name
 )
-from keyboards.cheque_kb import get_inline_claim_kb, get_inline_bill_kb
+from keyboards.cheque_kb import get_inline_claim_kb, get_inline_bill_kb, get_inline_bill_confirm_kb
 
 router = Router()
 
@@ -160,8 +160,13 @@ async def process_claim_inline_cheque(callback: CallbackQuery):
         await callback.answer("Чек не найден или аннулирован.", show_alert=True)
 
 
-@router.callback_query(F.data.startswith("pay_bill:"))
-async def process_pay_inline_bill(callback: CallbackQuery):
+@router.callback_query(F.data == "ignore_action")
+async def process_ignore_action(callback: CallbackQuery):
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("ask_pay:") | F.data.startswith("pay_bill:"))
+async def process_ask_pay_inline_bill(callback: CallbackQuery):
     parts = callback.data.split(":")
     creator_id = int(parts[1])
     amount = int(parts[2])
@@ -174,22 +179,58 @@ async def process_pay_inline_bill(callback: CallbackQuery):
     payer = await db.get_user(payer_id)
     if not payer or payer["balance"] < amount:
         bal = payer['balance'] if payer else 0
-        await callback.answer(f"Недостаточно звёзд. Баланс: {bal:,} ⭐️.", show_alert=True)
+        await callback.answer(f"Недостаточно звёзд на балансе. Ваш баланс: {bal:,} ⭐️.", show_alert=True)
+        return
+
+    creator = await db.get_user(creator_id)
+    creator_name = f"@{creator['username']}" if creator and creator.get("username") else (creator.get("first_name") if creator else f"ID {creator_id}")
+
+    # Prompt user with inline confirmation buttons
+    try:
+        await callback.message.edit_reply_markup(
+            reply_markup=get_inline_bill_confirm_kb(creator_id, amount, payer_id)
+        )
+    except Exception:
+        pass
+
+    await callback.answer(
+        f"⚠️ Действительно хотите заплатить {amount:,} ⭐️ получателю {creator_name}?",
+        show_alert=False
+    )
+
+
+@router.callback_query(F.data.startswith("conf_pay:"))
+async def process_confirm_pay_inline_bill(callback: CallbackQuery):
+    parts = callback.data.split(":")
+    creator_id = int(parts[1])
+    amount = int(parts[2])
+    expected_payer_id = int(parts[3])
+
+    actual_payer_id = callback.from_user.id
+    if actual_payer_id != expected_payer_id:
+        await callback.answer("Подтверждение открыто для другого пользователя.", show_alert=True)
+        return
+
+    payer = await db.get_user(actual_payer_id)
+    if not payer or payer["balance"] < amount:
+        bal = payer['balance'] if payer else 0
+        await callback.answer(f"Недостаточно звёзд. Ваш баланс: {bal:,} ⭐️.", show_alert=True)
         return
 
     comment = f"Оплата счёта в чате на {amount:,} ⭐️"
-    res = await db.direct_transfer(payer_id, creator_id, amount, comment)
+    res = await db.direct_transfer(actual_payer_id, creator_id, amount, comment)
     if not res:
-        await callback.answer("Ошибка при оплате.", show_alert=True)
+        await callback.answer("Ошибка при обработке платежа.", show_alert=True)
         return
 
     payer_label = f"@{payer['username']}" if payer.get("username") else f"{payer['first_name']}"
-    await callback.answer(f"Счёт на {amount:,} ⭐️ оплачен!", show_alert=True)
+    await callback.answer(f"Оплата на {amount:,} ⭐️ успешно выполнена!", show_alert=True)
 
     try:
         updated_text = (
             f"✅ <b>Счёт на {amount:,} ⭐️ оплачен</b>\n"
-            f"Оплатил: {payer_label}"
+            f"Оплатил: {payer_label}\n"
+            f"Квитанция: <code>#{res['trx_id']}</code>"
         )
         await callback.message.edit_text(updated_text, reply_markup=None)
     except Exception:
@@ -198,7 +239,24 @@ async def process_pay_inline_bill(callback: CallbackQuery):
     try:
         await callback.bot.send_message(
             creator_id,
-            f"Пользователь {payer_label} оплатил ваш счёт на <b>+{amount:,} ⭐️</b>"
+            f"⚡️ Пользователь {payer_label} оплатил ваш счёт на <b>+{amount:,} ⭐️</b>\n"
+            f"Квитанция: <code>#{res['trx_id']}</code>"
         )
     except Exception:
         pass
+
+
+@router.callback_query(F.data.startswith("cancel_pay:"))
+async def process_cancel_pay_inline_bill(callback: CallbackQuery):
+    parts = callback.data.split(":")
+    creator_id = int(parts[1])
+    amount = int(parts[2])
+
+    try:
+        await callback.message.edit_reply_markup(
+            reply_markup=get_inline_bill_kb(creator_id, amount)
+        )
+    except Exception:
+        pass
+
+    await callback.answer("Оплата отменена.", show_alert=False)

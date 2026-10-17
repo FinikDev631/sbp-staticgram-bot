@@ -53,7 +53,27 @@ def get_inline_bill_kb(creator_id: int, amount: int) -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton(
                 text=f"Оплатить {amount:,} ⭐️",
-                callback_data=f"pay_bill:{creator_id}:{amount}"
+                callback_data=f"ask_pay:{creator_id}:{amount}"
+            )
+        ]
+    ])
+
+def get_inline_bill_confirm_kb(creator_id: int, amount: int, payer_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text=f"⚠️ Действительно хотите заплатить {amount:,} ⭐️?",
+                callback_data="ignore_action"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=f"✅ Да, заплатить {amount:,} ⭐️",
+                callback_data=f"conf_pay:{creator_id}:{amount}:{payer_id}"
+            ),
+            InlineKeyboardButton(
+                text="❌ Отмена",
+                callback_data=f"cancel_pay:{creator_id}:{amount}"
             )
         ]
     ])
