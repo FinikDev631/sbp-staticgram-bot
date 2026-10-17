@@ -1,3 +1,4 @@
+import logging
 from aiogram import Router, F
 from aiogram.types import (
     InlineQuery,
@@ -14,7 +15,38 @@ from utils.formatters import (
 )
 from keyboards.cheque_kb import get_inline_claim_kb, get_inline_bill_kb, get_inline_bill_confirm_kb
 
+logger = logging.getLogger("sbp_bot.inline")
 router = Router()
+
+
+async def edit_inline_or_message_reply_markup(callback: CallbackQuery, reply_markup):
+    """Safely edits reply markup for both standard messages and inline messages."""
+    try:
+        if callback.inline_message_id:
+            await callback.bot.edit_message_reply_markup(
+                inline_message_id=callback.inline_message_id,
+                reply_markup=reply_markup
+            )
+        elif callback.message:
+            await callback.message.edit_reply_markup(reply_markup=reply_markup)
+    except Exception as e:
+        logger.warning(f"Could not edit reply markup: {e}")
+
+
+async def edit_inline_or_message_text(callback: CallbackQuery, text: str, reply_markup=None):
+    """Safely edits message text for both standard messages and inline messages."""
+    try:
+        if callback.inline_message_id:
+            await callback.bot.edit_message_text(
+                text=text,
+                inline_message_id=callback.inline_message_id,
+                reply_markup=reply_markup,
+                parse_mode="HTML"
+            )
+        elif callback.message:
+            await callback.message.edit_text(text=text, reply_markup=reply_markup, parse_mode="HTML")
+    except Exception as e:
+        logger.warning(f"Could not edit message text: {e}")
 
 @router.inline_query()
 async def process_inline_query(query: InlineQuery):
@@ -137,10 +169,7 @@ async def process_claim_inline_cheque(callback: CallbackQuery):
             claimer_label=claimer_label,
             comment=res.get("comment")
         )
-        try:
-            await callback.message.edit_text(updated_text, reply_markup=None)
-        except Exception:
-            pass
+        await edit_inline_or_message_text(callback, updated_text, reply_markup=None)
 
         try:
             await callback.bot.send_message(
@@ -182,21 +211,12 @@ async def process_ask_pay_inline_bill(callback: CallbackQuery):
         await callback.answer(f"Недостаточно звёзд на балансе. Ваш баланс: {bal:,} ⭐️.", show_alert=True)
         return
 
-    creator = await db.get_user(creator_id)
-    creator_name = f"@{creator['username']}" if creator and creator.get("username") else (creator.get("first_name") if creator else f"ID {creator_id}")
-
-    # Prompt user with inline confirmation buttons
-    try:
-        await callback.message.edit_reply_markup(
-            reply_markup=get_inline_bill_confirm_kb(creator_id, amount, payer_id)
-        )
-    except Exception:
-        pass
-
-    await callback.answer(
-        f"⚠️ Действительно хотите заплатить {amount:,} ⭐️ получателю {creator_name}?",
-        show_alert=False
+    # Update inline message keyboard to show confirmation buttons
+    await edit_inline_or_message_reply_markup(
+        callback,
+        reply_markup=get_inline_bill_confirm_kb(creator_id, amount, payer_id)
     )
+    await callback.answer()
 
 
 @router.callback_query(F.data.startswith("conf_pay:"))
@@ -224,17 +244,18 @@ async def process_confirm_pay_inline_bill(callback: CallbackQuery):
         return
 
     payer_label = f"@{payer['username']}" if payer.get("username") else f"{payer['first_name']}"
+    creator = await db.get_user(creator_id)
+    creator_label = f"@{creator['username']}" if creator and creator.get("username") else (creator.get("first_name") if creator else f"ID {creator_id}")
+
     await callback.answer(f"Оплата на {amount:,} ⭐️ успешно выполнена!", show_alert=True)
 
-    try:
-        updated_text = (
-            f"✅ <b>Счёт на {amount:,} ⭐️ оплачен</b>\n"
-            f"Оплатил: {payer_label}\n"
-            f"Квитанция: <code>#{res['trx_id']}</code>"
-        )
-        await callback.message.edit_text(updated_text, reply_markup=None)
-    except Exception:
-        pass
+    updated_text = (
+        f"✅ <b>Счёт на {amount:,} ⭐️ оплачен</b>\n"
+        f"Получатель: {creator_label}\n"
+        f"Оплатил: {payer_label}\n"
+        f"Квитанция: <code>#{res['trx_id']}</code>"
+    )
+    await edit_inline_or_message_text(callback, updated_text, reply_markup=None)
 
     try:
         await callback.bot.send_message(
@@ -252,11 +273,8 @@ async def process_cancel_pay_inline_bill(callback: CallbackQuery):
     creator_id = int(parts[1])
     amount = int(parts[2])
 
-    try:
-        await callback.message.edit_reply_markup(
-            reply_markup=get_inline_bill_kb(creator_id, amount)
-        )
-    except Exception:
-        pass
-
-    await callback.answer("Оплата отменена.", show_alert=False)
+    await edit_inline_or_message_reply_markup(
+        callback,
+        reply_markup=get_inline_bill_kb(creator_id, amount)
+    )
+    await callback.answer("Оплата отменена.")
