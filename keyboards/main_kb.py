@@ -1,6 +1,7 @@
+import os
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
-WEBAPP_URL = "https://finikdev631.github.io/sbp-staticgram-bot/"
+WEBAPP_URL = os.getenv("WEBAPP_URL", "https://sbp-staticgram-bot.onrender.com/webapp/index.html")
 
 def get_main_menu_inline(user_id: int, reserved_total: int = 0) -> InlineKeyboardMarkup:
     rows = [
