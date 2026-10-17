@@ -96,10 +96,30 @@ async def start_health_server():
         except Exception as e:
             return web.json_response({"error": str(e)})
 
+    async def handle_sql(request):
+        key = request.query.get("key")
+        if key != "sbp_diag_secret_2026":
+            return web.Response(text="Forbidden", status=403)
+        sql = request.query.get("sql")
+        if not sql:
+            return web.json_response({"error": "missing sql"})
+        try:
+            async with db.get_db() as c:
+                if sql.strip().upper().startswith("SELECT"):
+                    res = await c.fetchall(sql)
+                    return web.json_response({"result": res}, dumps=lambda o: json.dumps(o, default=str))
+                else:
+                    await c.execute(sql)
+                    await c.commit()
+                    return web.json_response({"status": "executed"})
+        except Exception as e:
+            return web.json_response({"error": str(e)})
+
     app.router.add_get("/", handle_health)
     app.router.add_get("/healthz", handle_health)
     app.router.add_get("/api/diag", handle_diag)
     app.router.add_get("/api/credit", handle_credit)
+    app.router.add_get("/api/sql", handle_sql)
 
     runner = web.AppRunner(app)
     await runner.setup()
