@@ -42,13 +42,14 @@ async def start_health_server():
     async def handle_health(request):
         return web.Response(text="SBP Bot is healthy and polling updates!", content_type="text/plain")
 
+    async def handle_maintenance(request):
+        return web.Response(text="Сайт временно отключён на техническое обслуживание.", content_type="text/plain; charset=utf-8", status=503)
+
     app.router.add_get("/", handle_health)
     app.router.add_get("/healthz", handle_health)
-
-    docs_path = os.path.join(os.path.dirname(__file__), "docs")
-    if os.path.exists(docs_path):
-        app.router.add_static("/webapp", path=docs_path, show_index=True)
-        app.router.add_get("/app", lambda req: web.HTTPFound("/webapp/index.html"))
+    app.router.add_get("/webapp", handle_maintenance)
+    app.router.add_get("/webapp/{tail:.*}", handle_maintenance)
+    app.router.add_get("/app", handle_maintenance)
 
     runner = web.AppRunner(app)
     await runner.setup()
