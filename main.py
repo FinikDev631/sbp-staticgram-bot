@@ -3,6 +3,7 @@ import sys
 import asyncio
 import logging
 
+import aiohttp
 from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.client.session.aiohttp import AiohttpSession
@@ -50,6 +51,22 @@ async def start_health_server():
     await site.start()
     logger.info(f"Health check HTTP server listening on port {port} for Render")
     return runner
+
+
+async def keep_alive():
+    """Periodically pings the public Render URL to keep the free service awake 24/7."""
+    external_url = os.getenv("RENDER_EXTERNAL_URL", "https://sbp-staticgram-bot.onrender.com").rstrip("/")
+    # Wait 60 seconds after startup before initial ping
+    await asyncio.sleep(60)
+    while True:
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{external_url}/healthz", timeout=15) as resp:
+                    logger.info(f"Keep-alive ping sent to {external_url} (HTTP {resp.status})")
+        except Exception as e:
+            logger.debug(f"Keep-alive notice: {e}")
+        # Ping every 8 minutes (Render sleeps after 15 min of HTTP inactivity)
+        await asyncio.sleep(480)
 
 
 async def setup_bot_profile(bot: Bot):
@@ -118,11 +135,15 @@ async def main():
     except Exception as e:
         logger.warning(f"Could not clear webhook: {e}")
 
-    # 6. Start polling
+    # 6. Start keep-alive loop to prevent Render from sleeping
+    keep_alive_task = asyncio.create_task(keep_alive())
+
+    # 7. Start polling
     logger.info("SBP Bot is now running and polling updates from StaticGram...")
     try:
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
+        keep_alive_task.cancel()
         if web_runner:
             await web_runner.cleanup()
         await bot.session.close()
