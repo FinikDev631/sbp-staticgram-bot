@@ -211,9 +211,21 @@ async def process_ask_pay_inline_bill(callback: CallbackQuery):
         await callback.answer(f"Недостаточно звёзд на балансе. Ваш баланс: {bal:,} ⭐️.", show_alert=True)
         return
 
-    # Update inline message keyboard to show confirmation buttons
-    await edit_inline_or_message_reply_markup(
+    creator = await db.get_user(creator_id)
+    creator_label = f"@{creator['username']}" if creator and creator.get("username") else (creator.get("first_name") if creator else f"ID {creator_id}")
+    payer_label = f"@{payer['username']}" if payer.get("username") else f"{payer['first_name']}"
+
+    confirm_text = (
+        f"⚠️ <b>Подтверждение платежа</b>\n\n"
+        f"Вы действительно хотите заплатить <b>{amount:,} ⭐️</b> получателю {creator_label}?\n\n"
+        f"Плательщик: {payer_label}\n"
+        f"Подтвердите отправку перевода:"
+    )
+
+    # Update inline message text and keyboard to show confirmation prompt with Yes / No
+    await edit_inline_or_message_text(
         callback,
+        text=confirm_text,
         reply_markup=get_inline_bill_confirm_kb(creator_id, amount, payer_id)
     )
     await callback.answer()
@@ -257,10 +269,23 @@ async def process_confirm_pay_inline_bill(callback: CallbackQuery):
     )
     await edit_inline_or_message_text(callback, updated_text, reply_markup=None)
 
+    # Notify recipient
     try:
         await callback.bot.send_message(
             creator_id,
             f"⚡️ Пользователь {payer_label} оплатил ваш счёт на <b>+{amount:,} ⭐️</b>\n"
+            f"Квитанция: <code>#{res['trx_id']}</code>"
+        )
+    except Exception:
+        pass
+
+    # Notify payer in PM
+    try:
+        await callback.bot.send_message(
+            actual_payer_id,
+            f"✅ <b>Счёт успешно оплачен</b>\n\n"
+            f"Получатель: {creator_label}\n"
+            f"Списано: <b>{amount:,} ⭐️</b>\n"
             f"Квитанция: <code>#{res['trx_id']}</code>"
         )
     except Exception:
@@ -273,8 +298,18 @@ async def process_cancel_pay_inline_bill(callback: CallbackQuery):
     creator_id = int(parts[1])
     amount = int(parts[2])
 
-    await edit_inline_or_message_reply_markup(
+    creator = await db.get_user(creator_id)
+    creator_label = f"@{creator['username']}" if creator and creator.get("username") else (creator.get("first_name") if creator else f"ID {creator_id}")
+
+    original_text = (
+        f"<b>Счёт на {amount:,} ⭐️</b>\n"
+        f"Получатель: {creator_label}\n\n"
+        f"Нажмите кнопку для оплаты со счёта СБП:"
+    )
+
+    await edit_inline_or_message_text(
         callback,
+        text=original_text,
         reply_markup=get_inline_bill_kb(creator_id, amount)
     )
     await callback.answer("Оплата отменена.")

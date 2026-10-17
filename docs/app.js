@@ -126,7 +126,8 @@ const I18N = {
     toastChequeCreating: 'Создание...',
     toastChequeSubmit: 'Сгенерировать чек',
     toastChequeCopied: 'Ссылка на чек скопирована в буфер обмена!',
-    toastReceiptCopied: 'Данные чека скопированы в буфер!'
+    toastReceiptCopied: 'Данные чека скопированы в буфер!',
+    confirmTransferPrompt: 'Действительно хотите отправить {amount} ⭐️ получателю {recipient}?'
   },
   en: {
     brandName: 'StaticGram Stars',
@@ -244,7 +245,8 @@ const I18N = {
     toastChequeCreating: 'Creating...',
     toastChequeSubmit: 'Generate Cheque',
     toastChequeCopied: 'Cheque link copied to clipboard!',
-    toastReceiptCopied: 'Receipt details copied to clipboard!'
+    toastReceiptCopied: 'Receipt details copied to clipboard!',
+    confirmTransferPrompt: 'Do you really want to send {amount} ⭐️ to {recipient}?'
   }
 };
 
@@ -742,46 +744,62 @@ function initTransferSubmission() {
       return;
     }
 
-    btn.disabled = true;
-    btn.textContent = t('toastTransferSending');
+    const confirmText = t('confirmTransferPrompt', { amount, recipient });
 
-    try {
-      const res = await fetch(`${API_BASE}/api/transfer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: State.userId,
-          recipient: recipient,
-          amount: amount,
-          comment: comment
-        })
-      });
+    const proceedTransfer = async () => {
+      btn.disabled = true;
+      btn.textContent = t('toastTransferSending');
 
-      const data = await res.json();
+      try {
+        const res = await fetch(`${API_BASE}/api/transfer`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: State.userId,
+            recipient: recipient,
+            amount: amount,
+            comment: comment
+          })
+        });
 
-      if (!res.ok || data.error) {
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          haptic('error');
+          showToast(data.error || 'Ошибка при выполнении перевода');
+          btn.disabled = false;
+          btn.textContent = t('modalTransferSubmit');
+          return;
+        }
+
+        haptic('success');
+        closeModal('modalTransfer');
+        document.getElementById('transferRecipient').value = '';
+        document.getElementById('transferAmount').value = '';
+        document.getElementById('transferComment').value = '';
+
+        showToast(data.message || t('toastTransferSuccess', { amount }));
+        await fetchUserData();
+
+      } catch (e) {
         haptic('error');
-        showToast(data.error || 'Ошибка при выполнении перевода');
+        showToast('Ошибка сети при отправке перевода');
+      } finally {
         btn.disabled = false;
         btn.textContent = t('modalTransferSubmit');
-        return;
       }
+    };
 
-      haptic('success');
-      closeModal('modalTransfer');
-      document.getElementById('transferRecipient').value = '';
-      document.getElementById('transferAmount').value = '';
-      document.getElementById('transferComment').value = '';
-
-      showToast(data.message || t('toastTransferSuccess', { amount }));
-      await fetchUserData();
-
-    } catch (e) {
-      haptic('error');
-      showToast('Ошибка сети при отправке перевода');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = t('modalTransferSubmit');
+    if (tg?.showConfirm) {
+      tg.showConfirm(confirmText, (confirmed) => {
+        if (confirmed) {
+          proceedTransfer();
+        }
+      });
+    } else {
+      if (window.confirm(confirmText)) {
+        proceedTransfer();
+      }
     }
   });
 }
