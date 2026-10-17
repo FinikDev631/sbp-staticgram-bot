@@ -43,7 +43,11 @@ class AdminTakeState(StatesGroup):
 def get_admin_dashboard_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="🔍 Проверить чек / перевод", callback_data="admin_check_cheque"),
+            InlineKeyboardButton(text="🧾 Чеки платежей (Операции)", callback_data="admin_list_trxs:all:0"),
+            InlineKeyboardButton(text="🔍 Проверить чек / платёж", callback_data="admin_check_cheque")
+        ],
+        [
+            InlineKeyboardButton(text="🎁 Чеки СБП (Ваучеры)", callback_data="admin_list_cheques:all:0"),
             InlineKeyboardButton(text="👤 Пользователь", callback_data="admin_find_user")
         ],
         [
@@ -159,38 +163,99 @@ def get_admin_pending_transfer_kb(pt: Dict[str, Any]) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def format_admin_trx_card(trx: Dict[str, Any]) -> str:
+async def format_admin_trx_card(trx: Dict[str, Any]) -> str:
     type_map = {
-        "deposit": "📥 Пополнение (звёзды)",
-        "withdrawal": "📤 Вывод звёзд",
-        "transfer_out": "↗️ Исходящий перевод",
-        "transfer_in": "↙️ Входящий перевод",
-        "transfer_refund": "↩️ Возврат перевода",
-        "cheque_created": "🧾 Создание чека",
-        "cheque_claimed": "✅ Активация чека",
-        "cheque_refund": "↩️ Возврат чека",
-        "admin_give": "➕ Начисление администратором",
-        "admin_take": "➖ Списание администратором",
+        "deposit": ("📥", "Пополнение Telegram Stars (XTR)"),
+        "withdrawal": ("📤", "Вывод звёзд на аккаунт"),
+        "transfer_out": ("↗️", "Исходящий перевод СБП"),
+        "transfer_in": ("↙️", "Входящий перевод СБП"),
+        "transfer_refund": ("↩️", "Возврат перевода СБП"),
+        "cheque_created": ("🧾", "Создание чека СБП (Escrow)"),
+        "cheque_claimed": ("⚡️", "Активация чека СБП"),
+        "cheque_refund": ("↩️", "Возврат чека СБП"),
+        "admin_deposit": ("➕", "Начисление администратором"),
+        "admin_give": ("➕", "Начисление администратором"),
+        "admin_debit": ("➖", "Списание администратором"),
+        "admin_take": ("➖", "Списание администратором"),
     }
-    t_name = type_map.get(trx.get("type", ""), trx.get("type", "Операция"))
-    comm = f"\n• <b>Комментарий:</b> <i>{trx['comment']}</i>" if trx.get("comment") else ""
+    icon, t_name = type_map.get(trx.get("type", ""), ("💳", trx.get("type", "Платёж")))
+    comm = f"\n• <b>Назначение платежа:</b> <i>{trx['comment']}</i>" if trx.get("comment") else ""
+
+    user = await db.get_user(trx["user_id"]) if trx.get("user_id") else None
+    if user:
+        u_label = f"@{user['username']}" if user.get("username") else f"{user.get('first_name', 'Клиент')}"
+        user_str = f"{u_label} (ID: <code>{trx['user_id']}</code> | Счёт: <code>{user.get('account_number', '—')}</code>)"
+    else:
+        user_str = f"ID: <code>{trx.get('user_id', '—')}</code>"
+
+    cp_str = str(trx.get("counterparty") or "—")
+    if trx.get("counterparty_id"):
+        cp_user = await db.get_user(trx["counterparty_id"])
+        if cp_user:
+            cp_label = f"@{cp_user['username']}" if cp_user.get("username") else cp_user.get("first_name", "")
+            cp_str = f"{cp_label} (ID: <code>{trx['counterparty_id']}</code>)"
+
     return (
-        f"🧾 <b>Транзакция:</b> <code>{trx['trx_id']}</code>\n"
+        f"🧾 <b>Электронный чек платежа СБП</b>\n"
         f"────────────────────────\n"
-        f"• <b>Тип:</b> {t_name}\n"
+        f"• <b>Номер квитанции:</b> <code>#{trx['trx_id']}</code>\n"
+        f"• <b>Тип операции:</b> {icon} <b>{t_name}</b>\n"
         f"• <b>Сумма:</b> <b>{trx['amount']:,} ⭐️</b>\n"
-        f"• <b>Пользователь (ID):</b> <code>{trx['user_id']}</code>\n"
-        f"• <b>Контрагент:</b> <b>{trx.get('counterparty', '—')}</b>\n"
-        f"• <b>Статус:</b> <code>{trx.get('status', 'success')}</code>\n"
-        f"• <b>Дата:</b> <code>{trx.get('created_at', '—')}</code>{comm}"
+        f"• <b>Статус:</b> ✅ <b>Исполнен (успешно)</b>\n\n"
+        f"👤 <b>Участники платежа:</b>\n"
+        f"• <b>Владелец счёта:</b> {user_str}\n"
+        f"• <b>Контрагент:</b> <b>{cp_str}</b>\n\n"
+        f"📋 <b>Реквизиты операции:</b>\n"
+        f"• <b>Дата и время:</b> <code>{trx.get('created_at', '—')}</code>\n"
+        f"• <b>Платёжный шлюз:</b> <code>StaticGram Stars SBP Gateway</code>\n"
+        f"• <b>Системный ID:</b> <code>#{trx.get('id', '—')}</code>{comm}"
     )
+
+
+def get_admin_trx_kb(trx: Dict[str, Any]) -> InlineKeyboardMarkup:
+    rows = []
+    first_row = []
+    if trx.get("user_id"):
+        first_row.append(InlineKeyboardButton(text="👤 Профиль клиента", callback_data=f"adm_user_view:{trx['user_id']}"))
+    if trx.get("counterparty_id"):
+        first_row.append(InlineKeyboardButton(text="👤 Контрагент", callback_data=f"adm_user_view:{trx['counterparty_id']}"))
+    if first_row:
+        rows.append(first_row)
+
+    rows.append([
+        InlineKeyboardButton(text="📋 Чеки платежей", callback_data="admin_list_trxs:all:0"),
+        InlineKeyboardButton(text="🔍 Найти другой чек", callback_data="admin_check_cheque")
+    ])
+    rows.append([
+        InlineKeyboardButton(text="← В главное меню админки", callback_data="admin_menu")
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 async def render_operation_search_result(target_event: Message | CallbackQuery, query: str) -> bool:
     res = await db.admin_find_any_operation(query)
     if not res:
-        text = f"❌ Операция по запросу <code>{query}</code> не найдена в базе данных."
+        # Also check if it's a user query
+        user = await db.admin_find_user(query)
+        if user:
+            trxs = await db.get_user_transactions(user["user_id"], limit=5)
+            text = format_admin_user_card(user, trxs)
+            kb = get_admin_user_kb(user["user_id"])
+            if isinstance(target_event, CallbackQuery):
+                try:
+                    await target_event.message.edit_text(text, reply_markup=kb)
+                except Exception:
+                    await target_event.message.answer(text, reply_markup=kb)
+            else:
+                await target_event.answer(text, reply_markup=kb)
+            return True
+
+        text = (
+            f"❌ Чек / операция по запросу <code>{query}</code> не найдена в базе данных.\n\n"
+            f"Попробуйте ввести номер квитанции (#SBP-TRX-...), ID чека (ch_...) или @username."
+        )
         kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📋 Все чеки платежей", callback_data="admin_list_trxs:all:0")],
             [InlineKeyboardButton(text="🔍 Попробовать снова", callback_data="admin_check_cheque")],
             [InlineKeyboardButton(text="← В админку", callback_data="admin_menu")]
         ])
@@ -212,11 +277,8 @@ async def render_operation_search_result(target_event: Message | CallbackQuery, 
         text = format_admin_pending_transfer_card(data)
         kb = get_admin_pending_transfer_kb(data)
     else:
-        text = format_admin_trx_card(data)
-        kb = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="🔍 Найти другую операцию", callback_data="admin_check_cheque")],
-            [InlineKeyboardButton(text="← В админку", callback_data="admin_menu")]
-        ])
+        text = await format_admin_trx_card(data)
+        kb = get_admin_trx_kb(data)
 
     if isinstance(target_event, CallbackQuery):
         try:
@@ -446,25 +508,46 @@ async def cb_admin_check_cheque(callback: CallbackQuery, state: FSMContext):
 async def prompt_cheque_search(message: Message, state: FSMContext, is_edit: bool = False):
     await state.set_state(AdminChequeState.waiting_for_cheque_query)
 
-    recent_cheques = await db.admin_get_recent_cheques(limit=5)
+    recent_trxs = await db.admin_get_recent_transactions(limit=4)
+    recent_cheques = await db.admin_get_recent_cheques(limit=3)
     rows = []
+
+    # Quick access buttons
+    rows.append([
+        InlineKeyboardButton(text="🧾 Все чеки платежей", callback_data="admin_list_trxs:all:0"),
+        InlineKeyboardButton(text="🎁 Все чеки СБП", callback_data="admin_list_cheques:all:0")
+    ])
+
+    if recent_trxs:
+        for t in recent_trxs:
+            t_type = t.get("type", "")
+            icon = "↗️" if "out" in t_type else ("↙️" if "in" in t_type else ("📥" if "dep" in t_type else ("📤" if "with" in t_type else "💳")))
+            short_id = t["trx_id"].split("-")[-1] if "-" in t["trx_id"] else t["trx_id"][:6]
+            cp = t.get("counterparty") or "Stars"
+            if len(cp) > 14:
+                cp = cp[:13] + "…"
+            amt = t.get("amount", 0)
+            btn_text = f"{icon} {amt:,} ⭐️ | {cp} (#{short_id})"
+            rows.append([InlineKeyboardButton(text=btn_text, callback_data=f"adm_view_trx:{t['id']}")])
 
     if recent_cheques:
         for ch in recent_cheques:
             icon = "🟢" if ch["status"] == "active" else ("✅" if ch["status"] == "claimed" else "❌")
-            btn_text = f"{icon} {ch['amount']:,} ⭐️ | {ch['cheque_id'][:12]}..."
+            cr = f"@{ch['creator_username']}" if ch.get("creator_username") else f"id{ch['creator_id']}"
+            btn_text = f"{icon} Чек {ch['amount']:,} ⭐️ | {cr} ({ch['cheque_id'][:10]}...)"
             rows.append([InlineKeyboardButton(text=btn_text, callback_data=f"adm_view_ch:{ch['cheque_id']}")])
 
     rows.append([InlineKeyboardButton(text="❌ Отмена", callback_data="admin_menu")])
     kb = InlineKeyboardMarkup(inline_keyboard=rows)
 
     text = (
-        "🔍 <b>Проверка операции / чека / перевода</b>\n\n"
+        "🔍 <b>Проверка операции / чека платежа / перевода</b>\n\n"
         "Отправьте в чат:\n"
-        "• <b>Номер перевода / транзакции</b> (например: <code>1C5RC</code> или <code>#SBP-TRX-20261017-1C5RC</code>)\n"
-        "• <b>ID чека</b> (например: <code>ch_abc123</code>)\n"
+        "• <b>Номер квитанции платежа</b> (например: <code>8DULN</code> или <code>#SBP-TRX-20261017-8DULN-IN</code>)\n"
+        "• <b>ID чека СБП</b> (например: <code>ch_f183da2bb1b5</code>)\n"
+        "• <b>@username</b> или <b>ID пользователя</b>\n"
         "• Или <b>ссылку на чек</b>\n\n"
-        "<i>Или выберите один из недавних чеков:</i>"
+        "<i>Или выберите чек/операцию из списка ниже:</i>"
     )
 
     if is_edit:
@@ -474,6 +557,243 @@ async def prompt_cheque_search(message: Message, state: FSMContext, is_edit: boo
             await message.answer(text, reply_markup=kb)
     else:
         await message.answer(text, reply_markup=kb)
+
+
+@router.message(Command("trxs"))
+@router.message(Command("receipts"))
+@router.callback_query(F.data.startswith("admin_list_trxs:"))
+async def cb_admin_list_transactions(event: Message | CallbackQuery):
+    user_id = event.from_user.id
+    if not is_admin(user_id):
+        if isinstance(event, CallbackQuery):
+            await event.answer("Доступ запрещен", show_alert=True)
+        return
+
+    filter_type = "all"
+    offset = 0
+
+    if isinstance(event, CallbackQuery):
+        parts = event.data.split(":")
+        if len(parts) >= 2:
+            filter_type = parts[1]
+        if len(parts) >= 3:
+            offset = int(parts[2])
+    elif isinstance(event, Message):
+        args = event.text.split()
+        if len(args) > 1:
+            filter_type = args[1].lower()
+
+    LIMIT = 8
+    total_count = await db.admin_count_transactions(filter_type=filter_type)
+    trxs = await db.admin_get_recent_transactions(limit=LIMIT, offset=offset, filter_type=filter_type)
+
+    total_pages = max(1, (total_count + LIMIT - 1) // LIMIT)
+    current_page = (offset // LIMIT) + 1
+
+    type_titles = {
+        "all": "Все операции",
+        "transfer": "💸 Переводы",
+        "deposit": "📥 Пополнения",
+        "withdrawal": "📤 Выводы",
+        "cheque": "🧾 Чеки СБП"
+    }
+    filter_label = type_titles.get(filter_type, filter_type)
+
+    text = (
+        f"🧾 <b>Чеки платежей и операции СБП</b>\n"
+        f"────────────────────────\n"
+        f"• Фильтр: <b>{filter_label}</b>\n"
+        f"• Всего записей: <b>{total_count:,}</b>\n"
+        f"• Страница: <b>{current_page} из {total_pages}</b>\n\n"
+        f"<i>Нажмите на любой чек для просмотра электронной квитанции:</i>"
+    )
+
+    # Filter tabs
+    filter_row = [
+        InlineKeyboardButton(text="• Все •" if filter_type == "all" else "Все", callback_data="admin_list_trxs:all:0"),
+        InlineKeyboardButton(text="• Переводы •" if filter_type == "transfer" else "💸 Переводы", callback_data="admin_list_trxs:transfer:0"),
+        InlineKeyboardButton(text="• Пополнения •" if filter_type == "deposit" else "📥 Пополнения", callback_data="admin_list_trxs:deposit:0"),
+        InlineKeyboardButton(text="• Выводы •" if filter_type == "withdrawal" else "📤 Выводы", callback_data="admin_list_trxs:withdrawal:0")
+    ]
+    rows = [filter_row]
+
+    if trxs:
+        for t in trxs:
+            t_type = t.get("type", "")
+            icon = "↗️" if "out" in t_type else ("↙️" if "in" in t_type else ("📥" if "dep" in t_type else ("📤" if "with" in t_type else "🧾")))
+            short_id = t["trx_id"].split("-")[-1] if "-" in t["trx_id"] else t["trx_id"][:6]
+            cp = t.get("counterparty") or "Stars"
+            if len(cp) > 14:
+                cp = cp[:13] + "…"
+            amt = t.get("amount", 0)
+            btn_text = f"{icon} {amt:,} ⭐️ | {cp} (#{short_id})"
+            rows.append([InlineKeyboardButton(text=btn_text, callback_data=f"adm_view_trx:{t['id']}")])
+    else:
+        rows.append([InlineKeyboardButton(text="— Нет операций в этой категории —", callback_data="ignore_action")])
+
+    # Pagination controls
+    nav_row = []
+    if offset > 0:
+        prev_offset = max(0, offset - LIMIT)
+        nav_row.append(InlineKeyboardButton(text="« Назад", callback_data=f"admin_list_trxs:{filter_type}:{prev_offset}"))
+    nav_row.append(InlineKeyboardButton(text=f"Стр. {current_page}/{total_pages}", callback_data="ignore_action"))
+    if offset + LIMIT < total_count:
+        next_offset = offset + LIMIT
+        nav_row.append(InlineKeyboardButton(text="Вперёд »", callback_data=f"admin_list_trxs:{filter_type}:{next_offset}"))
+    rows.append(nav_row)
+
+    rows.append([
+        InlineKeyboardButton(text="🔍 Найти чек по номеру", callback_data="admin_check_cheque"),
+        InlineKeyboardButton(text="← В админку", callback_data="admin_menu")
+    ])
+
+    kb = InlineKeyboardMarkup(inline_keyboard=rows)
+
+    if isinstance(event, CallbackQuery):
+        try:
+            await event.message.edit_text(text, reply_markup=kb)
+        except Exception:
+            await event.message.answer(text, reply_markup=kb)
+        await event.answer()
+    else:
+        await event.answer(text, reply_markup=kb)
+
+
+@router.callback_query(F.data.startswith("adm_view_trx:"))
+async def cb_adm_view_transaction(callback: CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        await callback.answer("Доступ запрещен", show_alert=True)
+        return
+
+    trx_id = callback.data.split(":", 1)[1]
+    trx = await db.admin_find_transaction(trx_id)
+    if not trx:
+        await callback.answer("Чек платежа не найден", show_alert=True)
+        return
+
+    text = await format_admin_trx_card(trx)
+    kb = get_admin_trx_kb(trx)
+
+    try:
+        await callback.message.edit_text(text, reply_markup=kb)
+    except Exception:
+        await callback.message.answer(text, reply_markup=kb)
+    await callback.answer()
+
+
+@router.message(Command("cheques"))
+@router.callback_query(F.data.startswith("admin_list_cheques:"))
+async def cb_admin_list_cheques(event: Message | CallbackQuery):
+    user_id = event.from_user.id
+    if not is_admin(user_id):
+        if isinstance(event, CallbackQuery):
+            await event.answer("Доступ запрещен", show_alert=True)
+        return
+
+    status_filter = "all"
+    offset = 0
+
+    if isinstance(event, CallbackQuery):
+        parts = event.data.split(":")
+        if len(parts) >= 2:
+            status_filter = parts[1]
+        if len(parts) >= 3:
+            offset = int(parts[2])
+
+    LIMIT = 8
+    total_count = await db.admin_count_cheques(status_filter=status_filter)
+    cheques = await db.admin_get_cheques(limit=LIMIT, offset=offset, status_filter=status_filter)
+
+    total_pages = max(1, (total_count + LIMIT - 1) // LIMIT)
+    current_page = (offset // LIMIT) + 1
+
+    status_titles = {
+        "all": "Все чеки",
+        "active": "🟢 Активные",
+        "claimed": "✅ Активированные",
+        "cancelled": "❌ Аннулированные"
+    }
+    status_label = status_titles.get(status_filter, status_filter)
+
+    text = (
+        f"🎁 <b>Чеки СБП (Gift / Escrow Ваучеры)</b>\n"
+        f"────────────────────────\n"
+        f"• Фильтр: <b>{status_label}</b>\n"
+        f"• Всего записей: <b>{total_count:,}</b>\n"
+        f"• Страница: <b>{current_page} из {total_pages}</b>\n\n"
+        f"<i>Нажмите на чек для просмотра карточки или аннулирования:</i>"
+    )
+
+    filter_row = [
+        InlineKeyboardButton(text="• Все •" if status_filter == "all" else "Все", callback_data="admin_list_cheques:all:0"),
+        InlineKeyboardButton(text="• Активные •" if status_filter == "active" else "🟢 Активные", callback_data="admin_list_cheques:active:0"),
+        InlineKeyboardButton(text="• Забранные •" if status_filter == "claimed" else "✅ Забранные", callback_data="admin_list_cheques:claimed:0"),
+        InlineKeyboardButton(text="• Отменённые •" if status_filter == "cancelled" else "❌ Отменённые", callback_data="admin_list_cheques:cancelled:0")
+    ]
+    rows = [filter_row]
+
+    if cheques:
+        for ch in cheques:
+            icon = "🟢" if ch["status"] == "active" else ("✅" if ch["status"] == "claimed" else "❌")
+            cr = f"@{ch['creator_username']}" if ch.get("creator_username") else f"id{ch['creator_id']}"
+            btn_text = f"{icon} {ch['amount']:,} ⭐️ | {cr} ({ch['cheque_id'][:10]}...)"
+            rows.append([InlineKeyboardButton(text=btn_text, callback_data=f"adm_view_ch:{ch['cheque_id']}")])
+    else:
+        rows.append([InlineKeyboardButton(text="— Нет чеков в этой категории —", callback_data="ignore_action")])
+
+    # Pagination controls
+    nav_row = []
+    if offset > 0:
+        prev_offset = max(0, offset - LIMIT)
+        nav_row.append(InlineKeyboardButton(text="« Назад", callback_data=f"admin_list_cheques:{status_filter}:{prev_offset}"))
+    nav_row.append(InlineKeyboardButton(text=f"Стр. {current_page}/{total_pages}", callback_data="ignore_action"))
+    if offset + LIMIT < total_count:
+        next_offset = offset + LIMIT
+        nav_row.append(InlineKeyboardButton(text="Вперёд »", callback_data=f"admin_list_cheques:{status_filter}:{next_offset}"))
+    rows.append(nav_row)
+
+    rows.append([
+        InlineKeyboardButton(text="🔍 Найти чек / платёж", callback_data="admin_check_cheque"),
+        InlineKeyboardButton(text="← В админку", callback_data="admin_menu")
+    ])
+
+    kb = InlineKeyboardMarkup(inline_keyboard=rows)
+
+    if isinstance(event, CallbackQuery):
+        try:
+            await event.message.edit_text(text, reply_markup=kb)
+        except Exception:
+            await event.message.answer(text, reply_markup=kb)
+        await event.answer()
+    else:
+        await event.answer(text, reply_markup=kb)
+
+
+@router.callback_query(F.data.startswith("adm_user_view:"))
+async def cb_adm_user_view(callback: CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        await callback.answer("Доступ запрещен", show_alert=True)
+        return
+
+    uid_str = callback.data.split(":", 1)[1]
+    if not uid_str.isdigit():
+        await callback.answer("Неверный ID пользователя", show_alert=True)
+        return
+
+    user = await db.get_user(int(uid_str))
+    if not user:
+        await callback.answer("Пользователь не найден", show_alert=True)
+        return
+
+    trxs = await db.get_user_transactions(user["user_id"], limit=5)
+    text = format_admin_user_card(user, trxs)
+    kb = get_admin_user_kb(user["user_id"])
+
+    try:
+        await callback.message.edit_text(text, reply_markup=kb)
+    except Exception:
+        await callback.message.answer(text, reply_markup=kb)
+    await callback.answer()
 
 
 @router.message(AdminChequeState.waiting_for_cheque_query)

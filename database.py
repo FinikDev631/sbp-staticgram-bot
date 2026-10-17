@@ -690,7 +690,7 @@ async def admin_find_any_operation(query_str: str) -> Optional[Dict[str, Any]]:
     if ch:
         return {"type": "cheque", "data": ch}
 
-    trx = await get_transaction(q)
+    trx = await admin_find_transaction(q)
     if trx:
         return {"type": "transaction", "data": trx}
 
@@ -700,6 +700,101 @@ async def admin_find_any_operation(query_str: str) -> Optional[Dict[str, Any]]:
 async def admin_get_recent_cheques(limit: int = 5) -> List[Dict[str, Any]]:
     async with get_db() as db:
         return await db.fetchall("SELECT * FROM cheques ORDER BY created_at DESC LIMIT ?", (limit,))
+
+
+async def admin_get_cheques(limit: int = 10, offset: int = 0, status_filter: Optional[str] = None) -> List[Dict[str, Any]]:
+    async with get_db() as db:
+        if status_filter and status_filter != "all":
+            return await db.fetchall(
+                "SELECT * FROM cheques WHERE status = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                (status_filter, limit, offset)
+            )
+        else:
+            return await db.fetchall(
+                "SELECT * FROM cheques ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                (limit, offset)
+            )
+
+
+async def admin_count_cheques(status_filter: Optional[str] = None) -> int:
+    async with get_db() as db:
+        if status_filter and status_filter != "all":
+            r = await db.fetchone("SELECT COUNT(*) as c FROM cheques WHERE status = ?", (status_filter,))
+        else:
+            r = await db.fetchone("SELECT COUNT(*) as c FROM cheques")
+        return r["c"] if r else 0
+
+
+async def admin_find_transaction(query_str: str) -> Optional[Dict[str, Any]]:
+    clean = query_str.strip().lstrip("#")
+    async with get_db() as db:
+        # 1. Exact match
+        row = await db.fetchone("SELECT * FROM transactions WHERE trx_id = ?", (clean,))
+        if row:
+            return row
+        # 2. Case-insensitive substring
+        row = await db.fetchone("SELECT * FROM transactions WHERE trx_id LIKE ? LIMIT 1", (f"%{clean}%",))
+        if row:
+            return row
+        # 3. Numeric ID
+        if clean.isdigit():
+            row = await db.fetchone("SELECT * FROM transactions WHERE id = ?", (int(clean),))
+            if row:
+                return row
+        return None
+
+
+async def admin_get_recent_transactions(limit: int = 10, offset: int = 0, filter_type: Optional[str] = None) -> List[Dict[str, Any]]:
+    async with get_db() as db:
+        if filter_type and filter_type != "all":
+            if filter_type == "transfer":
+                return await db.fetchall(
+                    "SELECT * FROM transactions WHERE type IN ('transfer_out', 'transfer_in') ORDER BY id DESC LIMIT ? OFFSET ?",
+                    (limit, offset)
+                )
+            elif filter_type == "deposit":
+                return await db.fetchall(
+                    "SELECT * FROM transactions WHERE type IN ('deposit', 'admin_deposit', 'admin_give') ORDER BY id DESC LIMIT ? OFFSET ?",
+                    (limit, offset)
+                )
+            elif filter_type == "withdrawal":
+                return await db.fetchall(
+                    "SELECT * FROM transactions WHERE type IN ('withdrawal', 'admin_debit', 'admin_take') ORDER BY id DESC LIMIT ? OFFSET ?",
+                    (limit, offset)
+                )
+            elif filter_type == "cheque":
+                return await db.fetchall(
+                    "SELECT * FROM transactions WHERE type IN ('cheque_created', 'cheque_claimed', 'cheque_refund') ORDER BY id DESC LIMIT ? OFFSET ?",
+                    (limit, offset)
+                )
+            else:
+                return await db.fetchall(
+                    "SELECT * FROM transactions WHERE type = ? ORDER BY id DESC LIMIT ? OFFSET ?",
+                    (filter_type, limit, offset)
+                )
+        else:
+            return await db.fetchall(
+                "SELECT * FROM transactions ORDER BY id DESC LIMIT ? OFFSET ?",
+                (limit, offset)
+            )
+
+
+async def admin_count_transactions(filter_type: Optional[str] = None) -> int:
+    async with get_db() as db:
+        if filter_type and filter_type != "all":
+            if filter_type == "transfer":
+                r = await db.fetchone("SELECT COUNT(*) as c FROM transactions WHERE type IN ('transfer_out', 'transfer_in')")
+            elif filter_type == "deposit":
+                r = await db.fetchone("SELECT COUNT(*) as c FROM transactions WHERE type IN ('deposit', 'admin_deposit', 'admin_give')")
+            elif filter_type == "withdrawal":
+                r = await db.fetchone("SELECT COUNT(*) as c FROM transactions WHERE type IN ('withdrawal', 'admin_debit', 'admin_take')")
+            elif filter_type == "cheque":
+                r = await db.fetchone("SELECT COUNT(*) as c FROM transactions WHERE type IN ('cheque_created', 'cheque_claimed', 'cheque_refund')")
+            else:
+                r = await db.fetchone("SELECT COUNT(*) as c FROM transactions WHERE type = ?", (filter_type,))
+        else:
+            r = await db.fetchone("SELECT COUNT(*) as c FROM transactions")
+        return r["c"] if r else 0
 
 
 async def get_active_cheques_by_user(user_id: int) -> List[Dict[str, Any]]:
@@ -719,12 +814,8 @@ async def get_user_transactions(user_id: int, limit: int = 10) -> List[Dict[str,
 
 
 async def get_transaction(trx_id: str) -> Optional[Dict[str, Any]]:
-    clean_trx = trx_id.strip().lstrip("#")
-    async with get_db() as db:
-        return await db.fetchone(
-            "SELECT * FROM transactions WHERE trx_id = ? OR trx_id LIKE ? LIMIT 1",
-            (clean_trx, f"%{clean_trx}%")
-        )
+    return await admin_find_transaction(trx_id)
+
 
 
 async def get_system_stats() -> Dict[str, Any]:
