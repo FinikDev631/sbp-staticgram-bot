@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>СБП • StaticGram Stars Bank</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body class="theme-clay">
+  <!-- Outer Canvas Container -->
+  <div class="canvas-container" id="canvasContainer">
+
+    <!-- Top Navigation Bar (Desktop / Web preview) -->
+    <header class="topbar" id="desktopTopbar">
+      <div class="topbar-left">
+        <div class="logo-pill">
+          <span class="logo-dot"></span>
+          <span class="logo-title">СБП • Stars</span>
+        </div>
+      </div>
+
+      <div class="topbar-center">
+        <label class="switch-pill" title="Показать настройки оформления">
+          <span class="switch-label">Tweaks</span>
+          <input type="checkbox" id="tweaksToggle" checked>
+          <span class="switch-slider"></span>
+        </label>
+        <span class="topbar-divider"></span>
+        <div class="segmented-tools">
+          <button class="tool-btn" id="toolViewCheques" title="Просмотр чеков">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>Чеки</span>
+          </button>
+          <button class="tool-btn active" id="toolPay" title="Переводы">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span>СБП</span>
+          </button>
+          <button class="tool-btn" id="toolHistory" title="История операций">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>История</span>
+          </button>
+          <button class="tool-btn" id="toolResetZoom" title="Масштаб">
+            <span>100%</span>
+          </button>
+          <button class="tool-btn icon-only" id="toolFullscreen" title="На весь экран">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <button class="topbar-btn" id="btnShareApp">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          <span>Share</span>
+        </button>
+        <a href="https://staticgram.top/sbpbot" target="_blank" class="topbar-btn dark-btn">
+          <span>Открыть бота</span>
+        </a>
+        <div class="user-avatar-pill" id="userAvatarPill">
+          <span id="userAvatarInitials">SB</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      <!-- Device Mockup Frame (iPhone 16 Pro styling) -->
+      <div class="device-frame" id="deviceFrame">
+        <!-- Dynamic Island -->
+        <div class="dynamic-island-wrapper">
+          <div class="status-bar-time" id="liveClock">9:41</div>
+          <div class="dynamic-island" id="dynamicIsland" title="Статус СБП">
+            <div class="island-content">
+              <span class="island-star">⭐️</span>
+              <span class="island-text">СБП Онлайн</span>
+            </div>
+          </div>
+          <div class="status-bar-icons">
+            <svg width="15" height="12" viewBox="0 0 17 12" fill="currentColor"><path d="M1 9h2V3H1v6zm4 2h2V1H5v10zm4-4h2V5H9v4zm4-2h2V7h-2v2z"/></svg>
+            <svg width="15" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 10a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-4.9-3.4a7 7 0 0 1 9.8 0l1.1-1.1a8.5 8.5 0 0 0-12 0l1.1 1.1zm-2.1-2.1a10 10 0 0 1 14 0l1.1-1.1a11.5 11.5 0 0 0-16.2 0l1.1 1.1z"/></svg>
+            <svg width="22" height="11" viewBox="0 0 25 12" fill="currentColor"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor"/><rect x="2" y="2" width="16" height="8" rx="2"/><path d="M23 4v4a2 2 0 0 0 1-1.7V5.7A2 2 0 0 0 23 4z"/></svg>
+          </div>
+        </div>
+
+        <!-- Phone App Viewport -->
+        <div class="phone-screen" id="phoneScreen">
+          <!-- App Header -->
+          <div class="app-header">
+            <div class="app-eyebrow">СБП • БАНКОВСКИЙ СЧЁТ</div>
+            <div class="app-title-row">
+              <h1 class="user-greeting" id="userGreeting">Привет, Jared</h1>
+              <span class="status-pill active" id="userStatusPill">Онлайн ✅</span>
+            </div>
+            <div class="account-badge" id="accountBadge" title="Нажмите, чтобы скопировать номер счёта">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+              <span id="accountNumberDisplay">СБП-4264-9445</span>
+              <svg class="copy-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </div>
+          </div>
+
+          <!-- Balance Hero Card (Material 3 Card) -->
+          <div class="card balance-card">
+            <div class="balance-top">
+              <span class="balance-label">ДОСТУПНЫЙ БАЛАНС</span>
+              <button class="eye-toggle-btn" id="btnToggleBalance" title="Скрыть/показать баланс">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <div class="balance-amount-row">
+              <span class="balance-value" id="balanceValue">1,500</span>
+              <span class="balance-star">⭐️</span>
+            </div>
+            <div class="balance-footer">
+              <span class="balance-note">Мгновенные переводы без комиссии</span>
+              <span class="balance-cur">XTR</span>
+            </div>
+          </div>
+
+          <!-- Escrow / Reserved Banner (Appears if user has active cheques or pending transfers) -->
+          <div class="card escrow-card" id="escrowCard">
+            <div class="escrow-icon">⏳</div>
+            <div class="escrow-info">
+              <div class="escrow-title">Зарезервировано: <b id="escrowTotal">50 ⭐️</b></div>
+              <div class="escrow-desc" id="escrowDesc">В активных чеках: 50 ⭐️ (1 шт.)</div>
+            </div>
+            <button class="escrow-action-btn" id="btnManageEscrow">Управление</button>
+          </div>
+
+          <!-- Quick Actions Grid (Material Design 3 rounded pills) -->
+          <div class="actions-grid">
+            <button class="action-btn" id="btnActionTransfer">
+              <div class="action-icon-circle action-transfer">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 17l9.2-9.2M17 17V8H8"/></svg>
+              </div>
+              <span class="action-name">Перевести</span>
+            </button>
+
+            <button class="action-btn" id="btnActionDeposit">
+              <div class="action-icon-circle action-deposit">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+              </div>
+              <span class="action-name">Пополнить</span>
+            </button>
+
+            <button class="action-btn" id="btnActionWithdraw">
+              <div class="action-icon-circle action-withdraw">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+              </div>
+              <span class="action-name">Вывести</span>
+            </button>
+
+            <button class="action-btn" id="btnActionCheque">
+              <div class="action-icon-circle action-cheque">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </div>
+              <span class="action-name">Чек</span>
+            </button>
+          </div>
+
+          <!-- Section: Daily Intention / Announcement Banner -->
+          <div class="card intention-card" id="intentionCard">
+            <div class="intention-eyebrow">ОФИЦИАЛЬНЫЙ КАНАЛ</div>
+            <div class="intention-body">
+              Мгновенные переводы звёзд, чеки в чаты и электронные квитанции нового поколения.
+            </div>
+            <a href="https://staticgram.top/sbpnews" target="_blank" class="intention-link">
+              <span>Новости СБП @sbpnews</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+          </div>
+
+          <!-- Section: Transactions History -->
+          <div class="section-block" id="transactionsSection">
+            <div class="section-header">
+              <h2 class="section-title">История операций</h2>
+              <button class="section-link" id="btnAllHistory">Все</button>
+            </div>
+
+            <!-- Segmented Filter Pills -->
+            <div class="segmented-filter">
+              <button class="filter-pill active" data-filter="all">Все</button>
+              <button class="filter-pill" data-filter="transfer">Переводы</button>
+              <button class="filter-pill" data-filter="cheque">Чеки</button>
+              <button class="filter-pill" data-filter="deposit">Пополнения</button>
+            </div>
+
+            <!-- Transaction List Items -->
+            <div class="transaction-list" id="transactionList">
+              <!-- Item 1 -->
+              <div class="tx-item" data-type="transfer" onclick="openTxReceipt('SBP-TRX-20261017-1C5RC')">
+                <div class="tx-icon tx-out">↗</div>
+                <div class="tx-details">
+                  <div class="tx-title">Перевод @makapob</div>
+                  <div class="tx-time">Сегодня, 15:53 • Исполнен</div>
+                </div>
+                <div class="tx-amount negative">-1,500 ⭐️</div>
+              </div>
+
+              <!-- Item 2 -->
+              <div class="tx-item" data-type="deposit" onclick="openTxReceipt('SBP-DEP-20261017-A91D')">
+                <div class="tx-icon tx-in">↙</div>
+                <div class="tx-details">
+                  <div class="tx-title">Пополнение Stars</div>
+                  <div class="tx-time">Сегодня, 15:20 • Исполнен</div>
+                </div>
+                <div class="tx-amount positive">+1,500 ⭐️</div>
+              </div>
+
+              <!-- Item 3 -->
+              <div class="tx-item" data-type="cheque" onclick="openTxReceipt('SBP-CHK-20261017-CH50')">
+                <div class="tx-icon tx-cheque">🧾</div>
+                <div class="tx-details">
+                  <div class="tx-title">Создание чека (активен)</div>
+                  <div class="tx-time">Сегодня, 14:10 • В резерве</div>
+                </div>
+                <div class="tx-amount neutral">-50 ⭐️</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Padding for safe scrolling -->
+          <div class="bottom-spacer"></div>
+        </div>
+      </div>
+
+      <!-- Floating TWEAKS Panel (matches uploaded screenshot) -->
+      <aside class="tweaks-panel" id="tweaksPanel">
+        <div class="tweaks-header">
+          <span class="tweaks-title">TWEAKS</span>
+          <button class="tweaks-close-btn" id="btnTweakClose" title="Закрыть панель">×</button>
+        </div>
+
+        <div class="tweak-group">
+          <label class="tweak-label">DEVICE PREVIEW</label>
+          <div class="segmented-control" id="deviceSegmented">
+            <button class="seg-btn" data-device="desktop">Desktop</button>
+            <button class="seg-btn active" data-device="mobile">Mobile</button>
+            <button class="seg-btn" data-device="tablet">Tablet</button>
+          </div>
+        </div>
+
+        <div class="tweak-group flex-row">
+          <label class="tweak-label" for="darkModeSwitch">Dark mode</label>
+          <label class="switch-pill mini-switch">
+            <input type="checkbox" id="darkModeSwitch">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <div class="tweak-group">
+          <label class="tweak-label">THEME</label>
+          <div class="theme-swatches" id="themeSwatches">
+            <button class="swatch-btn" data-theme="stone" title="Stone">
+              <span class="swatch-circle" style="background: #E6E1DA;"></span>
+              <span class="swatch-name">Stone</span>
+            </button>
+            <button class="swatch-btn" data-theme="moss" title="Moss">
+              <span class="swatch-circle" style="background: #A3B18A;"></span>
+              <span class="swatch-name">Moss</span>
+            </button>
+            <button class="swatch-btn" data-theme="mist" title="Mist">
+              <span class="swatch-circle" style="background: #CCD5AE;"></span>
+              <span class="swatch-name">Mist</span>
+            </button>
+            <button class="swatch-btn active" data-theme="clay" title="Clay">
+              <span class="swatch-circle" style="background: #C86D49;"></span>
+              <span class="swatch-name">Clay</span>
+            </button>
+            <button class="swatch-btn" data-theme="dusk" title="Dusk">
+              <span class="swatch-circle" style="background: #B8B8D1;"></span>
+              <span class="swatch-name">Dusk</span>
+            </button>
+            <button class="swatch-btn" data-theme="sakura" title="Sakura">
+              <span class="swatch-circle" style="background: #E8C2B3;"></span>
+              <span class="swatch-name">Sakura</span>
+            </button>
+            <button class="swatch-btn" data-theme="ink" title="Ink">
+              <span class="swatch-circle" style="background: #4A4440;"></span>
+              <span class="swatch-name">Ink</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="tweak-group">
+          <label class="tweak-label">TYPOGRAPHY</label>
+          <div class="slider-control">
+            <div class="slider-row">
+              <span class="slider-name">Heading size</span>
+              <span class="slider-val" id="headingSizeVal">100%</span>
+            </div>
+            <input type="range" min="80" max="130" value="100" id="sliderHeading">
+          </div>
+          <div class="slider-control">
+            <div class="slider-row">
+              <span class="slider-name">Body size</span>
+              <span class="slider-val" id="bodySizeVal">90%</span>
+            </div>
+            <input type="range" min="75" max="120" value="90" id="sliderBody">
+          </div>
+        </div>
+
+        <div class="tweak-group">
+          <label class="tweak-label">SECTIONS</label>
+          <div class="toggle-row">
+            <span class="toggle-name">Escrow баннер</span>
+            <label class="switch-pill mini-switch">
+              <input type="checkbox" id="toggleEscrowSection" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-name">Анонс @sbpnews</span>
+            <label class="switch-pill mini-switch">
+              <input type="checkbox" id="toggleNewsSection" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Modal / Bottom Sheet: Transfer -->
+  <div class="modal-backdrop" id="modalTransfer">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">💸 Перевод по СБП</h3>
+        <button class="modal-close-btn" onclick="closeModal('modalTransfer')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label class="input-label">Получатель (@username, ID или номер счёта)</label>
+          <input type="text" class="input-field" id="transferRecipient" placeholder="@makapob или СБП-XXXX-XXXX">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Сумма перевода (⭐️)</label>
+          <input type="number" class="input-field" id="transferAmount" placeholder="1500" min="1">
+          <div class="quick-chips">
+            <button class="chip" onclick="setTransferAmount(50)">50 ⭐️</button>
+            <button class="chip" onclick="setTransferAmount(100)">100 ⭐️</button>
+            <button class="chip" onclick="setTransferAmount(500)">500 ⭐️</button>
+            <button class="chip" onclick="setTransferAmount(1500)">1,500 ⭐️</button>
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Комментарий (необязательно)</label>
+          <input type="text" class="input-field" id="transferComment" placeholder="За обед, подарок...">
+        </div>
+        <button class="btn-primary" id="btnSubmitTransfer">Отправить по СБП</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal / Bottom Sheet: Deposit -->
+  <div class="modal-backdrop" id="modalDeposit">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">📥 Пополнение счёта СБП</h3>
+        <button class="modal-close-btn" onclick="closeModal('modalDeposit')">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">Оплата через официальный шлюз Telegram Stars (XTR) без комиссии:</p>
+        <div class="deposit-grid">
+          <button class="dep-card" onclick="triggerDeposit(50)">
+            <span class="dep-stars">50 ⭐️</span>
+            <span class="dep-btn">Оплатить</span>
+          </button>
+          <button class="dep-card" onclick="triggerDeposit(100)">
+            <span class="dep-stars">100 ⭐️</span>
+            <span class="dep-btn">Оплатить</span>
+          </button>
+          <button class="dep-card" onclick="triggerDeposit(250)">
+            <span class="dep-stars">250 ⭐️</span>
+            <span class="dep-btn">Оплатить</span>
+          </button>
+          <button class="dep-card" onclick="triggerDeposit(500)">
+            <span class="dep-stars">500 ⭐️</span>
+            <span class="dep-btn">Оплатить</span>
+          </button>
+          <button class="dep-card" onclick="triggerDeposit(1500)">
+            <span class="dep-stars">1,500 ⭐️</span>
+            <span class="dep-btn">Оплатить</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal / Bottom Sheet: Cheque Creator -->
+  <div class="modal-backdrop" id="modalCheque">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">🧾 Создать чек СБП</h3>
+        <button class="modal-close-btn" onclick="closeModal('modalCheque')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label class="input-label">Сумма чека (⭐️)</label>
+          <input type="number" class="input-field" id="chequeAmount" placeholder="50" min="1">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Кому доступен чек</label>
+          <select class="input-field" id="chequeTarget">
+            <option value="any">🌐 Для всех (любой участник в чате)</option>
+            <option value="user">🔒 Только для конкретного @username</option>
+          </select>
+        </div>
+        <div class="input-group" id="chequeTargetUserGroup" style="display: none;">
+          <label class="input-label">@username получателя</label>
+          <input type="text" class="input-field" id="chequeRecipient" placeholder="@username">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Комментарий к чеку</label>
+          <input type="text" class="input-field" id="chequeComment" placeholder="СБП бонус">
+        </div>
+        <button class="btn-primary" id="btnSubmitCheque">Сгенерировать чек</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal / Bottom Sheet: Electronic Receipt -->
+  <div class="modal-backdrop" id="modalReceipt">
+    <div class="modal-card receipt-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Электронный чек</h3>
+        <button class="modal-close-btn" onclick="closeModal('modalReceipt')">×</button>
+      </div>
+      <div class="receipt-content" id="receiptContent">
+        <!-- Rendered via JS -->
+      </div>
+      <button class="btn-primary" onclick="closeModal('modalReceipt')">Готово</button>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="appToast">Текст уведомления</div>
+
+  <script src="app.js"></script>
+</body>
+</html>
