@@ -25,16 +25,6 @@
       </div>
 
       <div class="nav-actions">
-        <!-- Theme Toggle -->
-        <button class="nav-icon-btn" id="btnThemeToggle" title="Сменить тему">
-          <span id="themeIcon">🌙</span>
-        </button>
-
-        <!-- Language Switcher -->
-        <button class="nav-lang-btn" id="btnLangToggle" title="Сменить язык">
-          <span id="langLabel">🇷🇺 RU</span>
-        </button>
-
         <!-- Account Pill -->
         <div class="account-pill" id="accountBadge" title="Нажмите, чтобы скопировать номер счёта">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
@@ -42,11 +32,10 @@
           <svg class="copy-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </div>
 
-        <!-- Bot Link -->
-        <a href="https://staticgram.top/sbpbot" target="_blank" class="btn-bot-link">
-          <span data-i18n="openBot">Бот</span>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
-        </a>
+        <!-- Settings Gear Button -->
+        <button class="nav-icon-btn" id="btnOpenSettings" title="Настройки">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
       </div>
     </header>
 
@@ -180,6 +169,93 @@
         <a href="https://staticgram.top/sbpbot" target="_blank" data-i18n="footerBot">Telegram Бот</a>
       </div>
     </footer>
+  </div>
+
+  <!-- Modal: Settings -->
+  <div class="modal-backdrop" id="modalSettings">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 data-i18n="settingsTitle">⚙️ Настройки</h3>
+        <button class="btn-close" onclick="closeModal('modalSettings')">×</button>
+      </div>
+      <div class="modal-body" style="gap: 16px;">
+        
+        <!-- Theme Section -->
+        <div class="settings-group">
+          <div class="settings-group-title" data-i18n="settingsTheme">Тема оформления</div>
+          <div class="theme-options-grid">
+            <button type="button" class="theme-option-card" id="themeOptLight" onclick="selectTheme('light')">
+              <span class="theme-option-icon">☀️</span>
+              <span class="theme-option-name" data-i18n="themeLight">Светлая</span>
+            </button>
+            <button type="button" class="theme-option-card" id="themeOptDark" onclick="selectTheme('dark')">
+              <span class="theme-option-icon">🌙</span>
+              <span class="theme-option-name" data-i18n="themeDark">Тёмная</span>
+            </button>
+            <button type="button" class="theme-option-card" id="themeOptSystem" onclick="selectTheme('system')">
+              <span class="theme-option-icon">📱</span>
+              <span class="theme-option-name" data-i18n="themeSystem">Системная</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Language Section -->
+        <div class="settings-group">
+          <div class="settings-group-title" data-i18n="settingsLang">Язык интерфейса</div>
+          <div class="lang-options-grid">
+            <button type="button" class="lang-option-card" id="langOptRu" onclick="selectLanguage('ru')">
+              <span class="lang-option-flag">🇷🇺</span>
+              <div class="lang-option-text">
+                <span class="lang-name">Русский</span>
+                <span class="lang-code">RU</span>
+              </div>
+            </button>
+            <button type="button" class="lang-option-card" id="langOptEn" onclick="selectLanguage('en')">
+              <span class="lang-option-flag">🇬🇧</span>
+              <div class="lang-option-text">
+                <span class="lang-name">English</span>
+                <span class="lang-code">EN</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Account Info Section -->
+        <div class="settings-group">
+          <div class="settings-group-title" data-i18n="settingsAccount">Аккаунт СБП</div>
+          <div class="settings-info-card">
+            <div class="settings-info-row">
+              <span class="info-label" data-i18n="settingsUser">Пользователь</span>
+              <span class="info-val" id="settingsUsername">—</span>
+            </div>
+            <div class="settings-info-row">
+              <span class="info-label" data-i18n="settingsAccountNum">Номер счёта</span>
+              <span class="info-val" id="settingsAccountNum">—</span>
+            </div>
+            <div class="settings-info-row">
+              <span class="info-label" data-i18n="settingsStatus">Статус шлюза</span>
+              <span class="info-val green" data-i18n="networkActive">Сеть активна</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Links Section -->
+        <div class="settings-group">
+          <div class="settings-group-title" data-i18n="settingsLinks">Полезные ссылки</div>
+          <div class="settings-links-grid">
+            <a href="https://staticgram.top/sbpnews" target="_blank" class="settings-link-btn">
+              <span>📢 @sbpnews</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <a href="https://staticgram.top/sbpbot" target="_blank" class="settings-link-btn">
+              <span>🤖 @sbpbot</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
   </div>
 
   <!-- Modal: Transfer -->
