@@ -681,28 +681,47 @@ window.triggerDeposit = async function(amount) {
     const data = await res.json();
 
     if (data.invoice_link) {
-      // In-app Telegram WebApp Stars Checkout
+      let invoiceUrl = data.invoice_link;
+      if (invoiceUrl && !invoiceUrl.includes('t.me')) {
+        const slug = invoiceUrl.split('/').pop().replace('$', '');
+        invoiceUrl = `https://t.me/$${slug}`;
+      }
+
       if (tg?.openInvoice) {
-        tg.openInvoice(data.invoice_link, (status) => {
-          if (status === 'paid') {
-            haptic('success');
-            showToast(t('toastDepositSuccess', { amount }));
-            closeModal('modalDeposit');
-            // Allow server to process webhook and update balance
-            setTimeout(fetchUserData, 800);
-            setTimeout(fetchUserData, 2500);
-          } else if (status === 'cancelled') {
-            showToast(t('toastDepositCancel'));
-          } else {
-            showToast(t('toastDepositFail'));
-          }
-        });
+        try {
+          tg.openInvoice(invoiceUrl, (status) => {
+            if (status === 'paid') {
+              haptic('success');
+              showToast(t('toastDepositSuccess', { amount }));
+              closeModal('modalDeposit');
+              setTimeout(fetchUserData, 800);
+              setTimeout(fetchUserData, 2500);
+            } else if (status === 'cancelled') {
+              showToast(t('toastDepositCancel'));
+            } else {
+              // Invoice was sent directly into the user's chat with the bot
+              showToast(State.lang === 'en'
+                ? `Invoice sent to bot chat! Open @sbpbot to pay.`
+                : `Счёт на ${amount} ⭐️ отправлен в чат с ботом! Откройте @sbpbot для оплаты.`);
+              closeModal('modalDeposit');
+            }
+          });
+        } catch (invoiceErr) {
+          console.warn('openInvoice threw, falling back to chat invoice:', invoiceErr);
+          showToast(State.lang === 'en'
+            ? `Invoice sent to bot chat! Open @sbpbot to pay.`
+            : `Счёт на ${amount} ⭐️ отправлен в чат с ботом! Откройте @sbpbot для оплаты.`);
+          closeModal('modalDeposit');
+        }
       } else {
         // Desktop browser fallback
-        window.open(data.invoice_link, '_blank');
+        window.open(data.raw_link || data.invoice_link, '_blank');
         closeModal('modalDeposit');
       }
     } else if (data.bot_url) {
+      showToast(State.lang === 'en'
+        ? `Invoice sent to bot chat! Open @sbpbot to pay.`
+        : `Счёт на ${amount} ⭐️ отправлен в чат с ботом! Откройте @sbpbot для оплаты.`);
       if (tg?.openTelegramLink) {
         tg.openTelegramLink(data.bot_url);
       } else {
@@ -712,7 +731,10 @@ window.triggerDeposit = async function(amount) {
     }
   } catch (e) {
     console.error('Deposit invoice error:', e);
-    showToast(t('toastDepositFail'));
+    showToast(State.lang === 'en'
+      ? `Invoice sent to bot chat! Open @sbpbot to pay.`
+      : `Счёт на ${amount} ⭐️ отправлен в чат с ботом! Откройте @sbpbot для оплаты.`);
+    closeModal('modalDeposit');
   }
 };
 
