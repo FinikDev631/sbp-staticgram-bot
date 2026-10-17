@@ -19,20 +19,32 @@
       <div class="nav-brand">
         <div class="brand-badge">тЪбя╕П ╨б╨С╨Я</div>
         <div class="brand-text">
-          <span class="brand-name">StaticGram Stars</span>
-          <span class="brand-status">╨Ю╨╜╨╗╨░╨╣╨╜ ╤И╨╗╤О╨╖</span>
+          <span class="brand-name" data-i18n="brandName">StaticGram Stars</span>
+          <span class="brand-status" data-i18n="brandStatus">╨Ю╨╜╨╗╨░╨╣╨╜ ╤И╨╗╤О╨╖</span>
         </div>
       </div>
 
       <div class="nav-actions">
+        <!-- Theme Toggle -->
+        <button class="nav-icon-btn" id="btnThemeToggle" title="╨б╨╝╨╡╨╜╨╕╤В╤М ╤В╨╡╨╝╤Г">
+          <span id="themeIcon">ЁЯМЩ</span>
+        </button>
+
+        <!-- Language Switcher -->
+        <button class="nav-lang-btn" id="btnLangToggle" title="╨б╨╝╨╡╨╜╨╕╤В╤М ╤П╨╖╤Л╨║">
+          <span id="langLabel">ЁЯЗ╖ЁЯЗ║ RU</span>
+        </button>
+
+        <!-- Account Pill -->
         <div class="account-pill" id="accountBadge" title="╨Э╨░╨╢╨╝╨╕╤В╨╡, ╤З╤В╨╛╨▒╤Л ╤Б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╤В╤М ╨╜╨╛╨╝╨╡╤А ╤Б╤З╤С╤В╨░">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-          <span id="accountNumberDisplay">╨Ч╨░╨│╤А╤Г╨╖╨║╨░...</span>
+          <span id="accountNumberDisplay">...</span>
           <svg class="copy-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </div>
 
+        <!-- Bot Link -->
         <a href="https://staticgram.top/sbpbot" target="_blank" class="btn-bot-link">
-          <span>╨Ю╤В╨║╤А╤Л╤В╤М ╨▒╨╛╤В╨░</span>
+          <span data-i18n="openBot">╨С╨╛╤В</span>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
         </a>
       </div>
@@ -49,7 +61,7 @@
         </div>
         <div class="connection-status">
           <span class="status-dot"></span>
-          <span>╨б╨╡╤В╤М ╨░╨║╤В╨╕╨▓╨╜╨░</span>
+          <span data-i18n="networkActive">╨б╨╡╤В╤М ╨░╨║╤В╨╕╨▓╨╜╨░</span>
         </div>
       </section>
 
@@ -57,7 +69,7 @@
       <section class="card balance-card">
         <div class="balance-card-header">
           <div class="balance-title-row">
-            <span class="balance-label">╨Ф╨Ю╨б╨в╨г╨Я╨Э╨л╨Щ ╨С╨Р╨Ы╨Р╨Э╨б</span>
+            <span class="balance-label" data-i18n="balanceLabel">╨Ф╨Ю╨б╨в╨г╨Я╨Э╨л╨Щ ╨С╨Р╨Ы╨Р╨Э╨б</span>
             <button class="icon-toggle-btn" id="btnToggleBalance" title="╨б╨║╤А╤Л╤В╤М/╨┐╨╛╨║╨░╨╖╨░╤В╤М ╨▒╨░╨╗╨░╨╜╤Б">
               <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
@@ -66,16 +78,16 @@
             <span class="balance-number" id="balanceValue">0</span>
             <span class="balance-unit">тнРя╕П</span>
           </div>
-          <div class="balance-sub">╨Ь╨│╨╜╨╛╨▓╨╡╨╜╨╜╤Л╨╡ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╤Л ╨▓╨╜╤Г╤В╤А╨╕ ╤Б╨╡╤В╨╕ ╨▒╨╡╨╖ ╨║╨╛╨╝╨╕╤Б╤Б╨╕╨╕</div>
+          <div class="balance-sub" data-i18n="balanceSub">╨Ь╨│╨╜╨╛╨▓╨╡╨╜╨╜╤Л╨╡ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╤Л ╨▓╨╜╤Г╤В╤А╨╕ ╤Б╨╡╤В╨╕ ╨▒╨╡╨╖ ╨║╨╛╨╝╨╕╤Б╤Б╨╕╨╕</div>
         </div>
 
         <!-- Escrow Reservation Bar -->
         <div class="escrow-strip" id="escrowStrip">
           <div class="escrow-info">
-            <span class="escrow-badge">╨Т ╤А╨╡╨╖╨╡╤А╨▓╨╡</span>
-            <span class="escrow-text">╨Р╨║╤В╨╕╨▓╨╜╤Л╨╡ ╤А╨╡╨╖╨╡╤А╨▓╤Л: <b id="escrowTotal">0 тнРя╕П</b></span>
+            <span class="escrow-badge" data-i18n="inEscrow">╨Т ╤А╨╡╨╖╨╡╤А╨▓╨╡</span>
+            <span class="escrow-text" id="escrowText">╨Р╨║╤В╨╕╨▓╨╜╤Л╨╡ ╤А╨╡╨╖╨╡╤А╨▓╤Л: <b id="escrowTotal">0 тнРя╕П</b></span>
           </div>
-          <button class="btn-escrow-action" id="btnFilterCheques">╨б╨╝╨╛╤В╤А╨╡╤В╤М ╤З╨╡╨║╨╕</button>
+          <button class="btn-escrow-action" id="btnFilterCheques" data-i18n="viewCheques">╨б╨╝╨╛╤В╤А╨╡╤В╤М ╤З╨╡╨║╨╕</button>
         </div>
 
         <!-- Action Buttons Grid -->
@@ -85,8 +97,8 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 17l9.2-9.2M17 17V8H8"/></svg>
             </div>
             <div class="action-labels">
-              <span class="action-title">╨Я╨╡╤А╨╡╨▓╨╡╤Б╤В╨╕</span>
-              <span class="action-caption">╨Я╨╛ @username ╨╕╨╗╨╕ ╤Б╤З╤С╤В╤Г</span>
+              <span class="action-title" data-i18n="actionTransfer">╨Я╨╡╤А╨╡╨▓╨╡╤Б╤В╨╕</span>
+              <span class="action-caption" data-i18n="actionTransferCaption">╨Я╨╛ @username ╨╕╨╗╨╕ ╤Б╤З╤С╤В╤Г</span>
             </div>
           </button>
 
@@ -95,8 +107,8 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
             </div>
             <div class="action-labels">
-              <span class="action-title">╨Я╨╛╨┐╨╛╨╗╨╜╨╕╤В╤М</span>
-              <span class="action-caption">Telegram Stars</span>
+              <span class="action-title" data-i18n="actionDeposit">╨Я╨╛╨┐╨╛╨╗╨╜╨╕╤В╤М</span>
+              <span class="action-caption" data-i18n="actionDepositCaption">Telegram Stars</span>
             </div>
           </button>
 
@@ -105,8 +117,8 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
             </div>
             <div class="action-labels">
-              <span class="action-title">╨Т╤Л╨▓╨╡╤Б╤В╨╕</span>
-              <span class="action-caption">╨Э╨░ ╨░╨║╨║╨░╤Г╨╜╤В</span>
+              <span class="action-title" data-i18n="actionWithdraw">╨Т╤Л╨▓╨╡╤Б╤В╨╕</span>
+              <span class="action-caption" data-i18n="actionWithdrawCaption">╨Э╨░ ╨░╨║╨║╨░╤Г╨╜╤В</span>
             </div>
           </button>
 
@@ -115,8 +127,8 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/><line x1="7" y1="16" x2="11" y2="16"/></svg>
             </div>
             <div class="action-labels">
-              <span class="action-title">╨б╨╛╨╖╨┤╨░╤В╤М ╤З╨╡╨║</span>
-              <span class="action-caption">╨Ф╨╗╤П ╨╛╤В╨┐╤А╨░╨▓╨║╨╕ ╨▓ ╤З╨░╤В╤Л</span>
+              <span class="action-title" data-i18n="actionCheque">╨б╨╛╨╖╨┤╨░╤В╤М ╤З╨╡╨║</span>
+              <span class="action-caption" data-i18n="actionChequeCaption">╨Ф╨╗╤П ╨╛╤В╨┐╤А╨░╨▓╨║╨╕ ╨▓ ╤З╨░╤В╤Л</span>
             </div>
           </button>
         </div>
@@ -125,12 +137,12 @@
       <!-- Announcement / Channel Card -->
       <section class="card news-card">
         <div class="news-content">
-          <div class="news-tag">ЁЯУв ╨Ю╨д╨Ш╨ж╨Ш╨Р╨Ы╨м╨Э╨л╨Щ ╨Ъ╨Р╨Э╨Р╨Ы ╨б╨С╨Я</div>
-          <div class="news-title">╨Ь╨│╨╜╨╛╨▓╨╡╨╜╨╜╤Л╨╡ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╤Л, ╨╝╤Г╨╗╤М╤В╨╕╨▓╨░╨╗╤О╤В╨╜╤Л╨╣ ╤Г╤З╤С╤В ╨╕ ╤З╨╡╨║╨╕</div>
-          <div class="news-desc">╨Э╨╛╨▓╨╛╤Б╤В╨╕ ╤Б╨╕╤Б╤В╨╡╨╝╤Л ╨▒╤Л╤Б╤В╤А╤Л╤Е ╨┐╨╗╨░╤В╨╡╨╢╨╡╨╣, ╨╛╨▒╨╜╨╛╨▓╨╗╨╡╨╜╨╕╤П ╤И╨╗╤О╨╖╨░ ╨╕ ╨║╨▓╨╕╤В╨░╨╜╤Ж╨╕╨╕ ╨╜╨╛╨▓╨╛╨│╨╛ ╨┐╨╛╨║╨╛╨╗╨╡╨╜╨╕╤П.</div>
+          <div class="news-tag" data-i18n="newsTag">ЁЯУв ╨Ю╨д╨Ш╨ж╨Ш╨Р╨Ы╨м╨Э╨л╨Щ ╨Ъ╨Р╨Э╨Р╨Ы ╨б╨С╨Я</div>
+          <div class="news-title" data-i18n="newsTitle">╨Ь╨│╨╜╨╛╨▓╨╡╨╜╨╜╤Л╨╡ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╤Л, ╨╝╤Г╨╗╤М╤В╨╕╨▓╨░╨╗╤О╤В╨╜╤Л╨╣ ╤Г╤З╤С╤В ╨╕ ╤З╨╡╨║╨╕</div>
+          <div class="news-desc" data-i18n="newsDesc">╨Э╨╛╨▓╨╛╤Б╤В╨╕ ╤Б╨╕╤Б╤В╨╡╨╝╤Л ╨▒╤Л╤Б╤В╤А╤Л╤Е ╨┐╨╗╨░╤В╨╡╨╢╨╡╨╣, ╨╛╨▒╨╜╨╛╨▓╨╗╨╡╨╜╨╕╤П ╤И╨╗╤О╨╖╨░ ╨╕ ╨║╨▓╨╕╤В╨░╨╜╤Ж╨╕╨╕ ╨╜╨╛╨▓╨╛╨│╨╛ ╨┐╨╛╨║╨╛╨╗╨╡╨╜╨╕╤П.</div>
         </div>
         <a href="https://staticgram.top/sbpnews" target="_blank" class="btn-news-link">
-          <span>╨Я╨╛╨┤╨┐╨╕╤Б╨░╤В╤М╤Б╤П ╨╜╨░ @sbpnews</span>
+          <span data-i18n="newsBtn">╨Я╨╛╨┤╨┐╨╕╤Б╨░╤В╤М╤Б╤П ╨╜╨░ @sbpnews</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </a>
       </section>
@@ -139,19 +151,19 @@
       <section class="card history-card">
         <div class="history-header">
           <div>
-            <h2 class="history-title">╨Ш╤Б╤В╨╛╤А╨╕╤П ╨╛╨┐╨╡╤А╨░╤Ж╨╕╨╣</h2>
-            <p class="history-subtitle">╨Т╤Б╨╡ ╤В╤А╨░╨╜╨╖╨░╨║╤Ж╨╕╨╕, ╨┐╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╤П ╨╕ ╤З╨╡╨║╨╕ ╤Б ╤Н╨╗╨╡╨║╤В╤А╨╛╨╜╨╜╤Л╨╝╨╕ ╨║╨▓╨╕╤В╨░╨╜╤Ж╨╕╤П╨╝╨╕</p>
+            <h2 class="history-title" data-i18n="historyTitle">╨Ш╤Б╤В╨╛╤А╨╕╤П ╨╛╨┐╨╡╤А╨░╤Ж╨╕╨╣</h2>
+            <p class="history-subtitle" data-i18n="historySub">╨Т╤Б╨╡ ╤В╤А╨░╨╜╨╖╨░╨║╤Ж╨╕╨╕, ╨┐╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╤П ╨╕ ╤З╨╡╨║╨╕ ╤Б ╤Н╨╗╨╡╨║╤В╤А╨╛╨╜╨╜╤Л╨╝╨╕ ╨║╨▓╨╕╤В╨░╨╜╤Ж╨╕╤П╨╝╨╕</p>
           </div>
           <div class="filters-wrap">
-            <button class="filter-tab active" data-filter="all">╨Т╤Б╨╡</button>
-            <button class="filter-tab" data-filter="transfer">╨Я╨╡╤А╨╡╨▓╨╛╨┤╤Л</button>
-            <button class="filter-tab" data-filter="deposit">╨Я╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╤П</button>
-            <button class="filter-tab" data-filter="cheque">╨з╨╡╨║╨╕</button>
+            <button class="filter-tab active" data-filter="all" data-i18n="filterAll">╨Т╤Б╨╡</button>
+            <button class="filter-tab" data-filter="transfer" data-i18n="filterTransfer">╨Я╨╡╤А╨╡╨▓╨╛╨┤╤Л</button>
+            <button class="filter-tab" data-filter="deposit" data-i18n="filterDeposit">╨Я╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╤П</button>
+            <button class="filter-tab" data-filter="cheque" data-i18n="filterCheque">╨з╨╡╨║╨╕</button>
           </div>
         </div>
 
         <div class="transaction-list" id="transactionList">
-          <div style="text-align: center; padding: 32px 16px; color: var(--text-tertiary); font-size: 13px;">
+          <div style="text-align: center; padding: 32px 16px; color: var(--text-tertiary); font-size: 13px;" data-i18n="loadingOps">
             ╨Ч╨░╨│╤А╤Г╨╖╨║╨░ ╨╛╨┐╨╡╤А╨░╤Ж╨╕╨╣...
           </div>
         </div>
@@ -161,11 +173,11 @@
 
     <!-- Footer -->
     <footer class="footer">
-      <div>╨б╨С╨Я StaticGram Stars тАв ╨Я╨╗╨░╤В╤Д╨╛╤А╨╝╨░ ╨╝╨│╨╜╨╛╨▓╨╡╨╜╨╜╤Л╤Е ╨┐╨╗╨░╤В╨╡╨╢╨╡╨╣</div>
+      <div data-i18n="footerPlatform">╨б╨С╨Я StaticGram Stars тАв ╨Я╨╗╨░╤В╤Д╨╛╤А╨╝╨░ ╨╝╨│╨╜╨╛╨▓╨╡╨╜╨╜╤Л╤Е ╨┐╨╗╨░╤В╨╡╨╢╨╡╨╣</div>
       <div class="footer-links">
-        <a href="https://staticgram.top/sbpnews" target="_blank">╨Э╨╛╨▓╨╛╤Б╤В╨╕</a>
+        <a href="https://staticgram.top/sbpnews" target="_blank" data-i18n="footerNews">╨Э╨╛╨▓╨╛╤Б╤В╨╕</a>
         <span>тАв</span>
-        <a href="https://staticgram.top/sbpbot" target="_blank">Telegram ╨С╨╛╤В</a>
+        <a href="https://staticgram.top/sbpbot" target="_blank" data-i18n="footerBot">Telegram ╨С╨╛╤В</a>
       </div>
     </footer>
   </div>
@@ -174,16 +186,16 @@
   <div class="modal-backdrop" id="modalTransfer">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3>ЁЯТ╕ ╨Я╨╡╤А╨╡╨▓╨╛╨┤ ╨┐╨╛ ╨б╨С╨Я</h3>
+        <h3 data-i18n="modalTransferTitle">ЁЯТ╕ ╨Я╨╡╤А╨╡╨▓╨╛╨┤ ╨┐╨╛ ╨б╨С╨Я</h3>
         <button class="btn-close" onclick="closeModal('modalTransfer')">├Ч</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">╨Я╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤М (@username, ID ╨╕╨╗╨╕ ╨╜╨╛╨╝╨╡╤А ╤Б╤З╤С╤В╨░ ╨б╨С╨Я)</label>
+          <label class="form-label" data-i18n="modalTransferRecipient">╨Я╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤М (@username, ID ╨╕╨╗╨╕ ╨╜╨╛╨╝╨╡╤А ╤Б╤З╤С╤В╨░ ╨б╨С╨Я)</label>
           <input type="text" class="form-control" id="transferRecipient" placeholder="@username ╨╕╨╗╨╕ ╨б╨С╨Я-XXXX-XXXX">
         </div>
         <div class="form-group">
-          <label class="form-label">╨б╤Г╨╝╨╝╨░ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╨░ (тнРя╕П)</label>
+          <label class="form-label" data-i18n="modalTransferAmount">╨б╤Г╨╝╨╝╨░ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╨░ (тнРя╕П)</label>
           <input type="number" class="form-control" id="transferAmount" placeholder="100" min="1">
           <div class="chips-row">
             <button type="button" class="chip-btn" onclick="setTransferAmount(50)">50 тнРя╕П</button>
@@ -193,43 +205,65 @@
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">╨Э╨░╨╖╨╜╨░╤З╨╡╨╜╨╕╨╡ ╨┐╨╗╨░╤В╨╡╨╢╨░ / ╨║╨╛╨╝╨╝╨╡╨╜╤В╨░╤А╨╕╨╣ (╨╜╨╡╨╛╨▒╤П╨╖╨░╤В╨╡╨╗╤М╨╜╨╛)</label>
+          <label class="form-label" data-i18n="modalTransferComment">╨Э╨░╨╖╨╜╨░╤З╨╡╨╜╨╕╨╡ ╨┐╨╗╨░╤В╨╡╨╢╨░ / ╨║╨╛╨╝╨╝╨╡╨╜╤В╨░╤А╨╕╨╣ (╨╜╨╡╨╛╨▒╤П╨╖╨░╤В╨╡╨╗╤М╨╜╨╛)</label>
           <input type="text" class="form-control" id="transferComment" placeholder="╨Я╨╡╤А╨╡╨▓╨╛╨┤ ╨┐╨╛ ╨б╨С╨Я">
         </div>
-        <button type="button" class="btn-submit" id="btnSubmitTransfer">╨Ю╤В╨┐╤А╨░╨▓╨╕╤В╤М ╨┐╨╡╤А╨╡╨▓╨╛╨┤</button>
+        <button type="button" class="btn-submit" id="btnSubmitTransfer" data-i18n="modalTransferSubmit">╨Ю╤В╨┐╤А╨░╨▓╨╕╤В╤М ╨┐╨╡╤А╨╡╨▓╨╛╨┤</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal: Deposit -->
+  <!-- Modal: Deposit (In-App Direct Stars Checkout) -->
   <div class="modal-backdrop" id="modalDeposit">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3>ЁЯУе ╨Я╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╨╡ ╤Б╤З╤С╤В╨░ Stars</h3>
+        <h3 data-i18n="modalDepositTitle">ЁЯУе ╨Я╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╨╡ ╤Б╤З╤С╤В╨░ Stars</h3>
         <button class="btn-close" onclick="closeModal('modalDeposit')">├Ч</button>
       </div>
       <div class="modal-body">
-        <p class="modal-desc">╨Т╤Л╨▒╨╡╤А╨╕╤В╨╡ ╨║╨╛╨╗╨╕╤З╨╡╤Б╤В╨▓╨╛ ╨╖╨▓╤С╨╖╨┤ ╨┤╨╗╤П ╨┐╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╤П ╤З╨╡╤А╨╡╨╖ ╨╛╤Д╨╕╤Ж╨╕╨░╨╗╤М╨╜╤Л╨╣ ╨┐╨╗╨░╤В╤С╨╢╨╜╤Л╨╣ ╤И╨╗╤О╨╖ Telegram Stars (XTR):</p>
+        <p class="modal-desc" data-i18n="modalDepositDesc">
+          ╨Ю╨┐╨╗╨░╤В╨░ ╨┐╤А╨╛╨╕╨╖╨▓╨╛╨┤╨╕╤В╤Б╤П ╨╝╨│╨╜╨╛╨▓╨╡╨╜╨╜╨╛ ╨┐╤А╤П╨╝╨╛ ╨▓ ╨┐╤А╨╕╨╗╨╛╨╢╨╡╨╜╨╕╨╕ ╤З╨╡╤А╨╡╨╖ ╨┐╨╗╨░╤В╤С╨╢╨╜╤Л╨╣ ╤И╨╗╤О╨╖ Telegram Stars (XTR):
+        </p>
+
+        <!-- Custom amount form inside Mini App -->
+        <div class="form-group" style="margin-top: 10px;">
+          <label class="form-label" data-i18n="modalDepositCustomLabel">╨Я╤А╨╛╨╕╨╖╨▓╨╛╨╗╤М╨╜╨░╤П ╤Б╤Г╨╝╨╝╨░ ╨╖╨▓╤С╨╖╨┤ (тнРя╕П)</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="number" class="form-control" id="depositCustomInput" placeholder="╨Ю╤В 1 ╨┤╨╛ 100 000" min="1" max="100000" value="100">
+            <button type="button" class="btn-submit" id="btnPayCustomDeposit" style="width: auto; padding: 12px 22px; white-space: nowrap; margin-top: 0;" data-i18n="modalDepositBuy">
+              ╨Ъ╤Г╨┐╨╕╤В╤М
+            </button>
+          </div>
+        </div>
+
+        <div style="font-size: 11px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; margin-top: 14px; margin-bottom: 6px;" data-i18n="modalDepositPresets">
+          ╨С╤Л╤Б╤В╤А╤Л╨╣ ╨▓╤Л╨▒╨╛╤А ╨┐╨░╨║╨╡╤В╨░:
+        </div>
+
         <div class="packages-grid">
           <button class="package-item" onclick="triggerDeposit(50)">
             <span class="pkg-stars">50 тнРя╕П</span>
-            <span class="pkg-buy">╨Я╨╛╨┐╨╛╨╗╨╜╨╕╤В╤М</span>
+            <span class="pkg-buy" data-i18n="modalDepositBuy">╨Ъ╤Г╨┐╨╕╤В╤М</span>
           </button>
           <button class="package-item" onclick="triggerDeposit(100)">
             <span class="pkg-stars">100 тнРя╕П</span>
-            <span class="pkg-buy">╨Я╨╛╨┐╨╛╨╗╨╜╨╕╤В╤М</span>
+            <span class="pkg-buy" data-i18n="modalDepositBuy">╨Ъ╤Г╨┐╨╕╤В╤М</span>
           </button>
           <button class="package-item" onclick="triggerDeposit(250)">
             <span class="pkg-stars">250 тнРя╕П</span>
-            <span class="pkg-buy">╨Я╨╛╨┐╨╛╨╗╨╜╨╕╤В╤М</span>
+            <span class="pkg-buy" data-i18n="modalDepositBuy">╨Ъ╤Г╨┐╨╕╤В╤М</span>
           </button>
           <button class="package-item" onclick="triggerDeposit(500)">
             <span class="pkg-stars">500 тнРя╕П</span>
-            <span class="pkg-buy">╨Я╨╛╨┐╨╛╨╗╨╜╨╕╤В╤М</span>
+            <span class="pkg-buy" data-i18n="modalDepositBuy">╨Ъ╤Г╨┐╨╕╤В╤М</span>
           </button>
           <button class="package-item highlight" onclick="triggerDeposit(1500)">
             <span class="pkg-stars">1,500 тнРя╕П</span>
-            <span class="pkg-buy">╨Я╨╛╨┐╨╛╨╗╨╜╨╕╤В╤М</span>
+            <span class="pkg-buy" data-i18n="modalDepositBuy">╨Ъ╤Г╨┐╨╕╤В╤М</span>
+          </button>
+          <button class="package-item" onclick="triggerDeposit(5000)">
+            <span class="pkg-stars">5,000 тнРя╕П</span>
+            <span class="pkg-buy" data-i18n="modalDepositBuy">╨Ъ╤Г╨┐╨╕╤В╤М</span>
           </button>
         </div>
       </div>
@@ -240,13 +274,15 @@
   <div class="modal-backdrop" id="modalWithdraw">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3>ЁЯУд ╨Т╤Л╨▓╨╛╨┤ ╨╖╨▓╤С╨╖╨┤ Stars</h3>
+        <h3 data-i18n="modalWithdrawTitle">ЁЯУд ╨Т╤Л╨▓╨╛╨┤ ╨╖╨▓╤С╨╖╨┤ Stars</h3>
         <button class="btn-close" onclick="closeModal('modalWithdraw')">├Ч</button>
       </div>
       <div class="modal-body">
-        <p class="modal-desc">╨Ф╨╗╤П ╨┐╤А╤П╨╝╨╛╨│╨╛ ╨▓╤Л╨▓╨╛╨┤╨░ ╨╖╨▓╤С╨╖╨┤ ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╣╤В╨╡ ╨║╨╛╨╝╨░╨╜╨┤╤Г <code>/withdraw</code> ╨▓ Telegram-╨▒╨╛╤В╨╡ ╨╗╨╕╨▒╨╛ ╨╛╤В╨┐╤А╨░╨▓╤М╤В╨╡ ╨┐╨╡╤А╨╡╨▓╨╛╨┤ ╨╜╨░ ╨╜╤Г╨╢╨╜╤Л╨╣ ╨░╨║╨║╨░╤Г╨╜╤В ╨б╨С╨Я.</p>
+        <p class="modal-desc" data-i18n="modalWithdrawDesc">
+          ╨Ф╨╗╤П ╨┐╤А╤П╨╝╨╛╨│╨╛ ╨▓╤Л╨▓╨╛╨┤╨░ ╨╖╨▓╤С╨╖╨┤ ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╣╤В╨╡ ╨║╨╛╨╝╨░╨╜╨┤╤Г /withdraw ╨▓ Telegram-╨▒╨╛╤В╨╡ ╨╗╨╕╨▒╨╛ ╨╛╤В╨┐╤А╨░╨▓╤М╤В╨╡ ╨┐╨╡╤А╨╡╨▓╨╛╨┤ ╨╜╨░ ╨╜╤Г╨╢╨╜╤Л╨╣ ╨░╨║╨║╨░╤Г╨╜╤В ╨б╨С╨Я.
+        </p>
         <div style="margin-top: 14px;">
-          <a href="https://staticgram.top/sbpbot?start=withdraw" target="_blank" class="btn-submit" style="display: block; text-align: center; text-decoration: none;">
+          <a href="https://staticgram.top/sbpbot?start=withdraw" target="_blank" class="btn-submit" style="display: block; text-align: center; text-decoration: none;" data-i18n="modalWithdrawBtn">
             ╨Я╨╡╤А╨╡╨╣╤В╨╕ ╨║ ╨▓╤Л╨▓╨╛╨┤╤Г ╨▓ ╨▒╨╛╤В╨╡
           </a>
         </div>
@@ -258,30 +294,30 @@
   <div class="modal-backdrop" id="modalCheque">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3>ЁЯз╛ ╨б╨╛╨╖╨┤╨░╤В╤М ╤З╨╡╨║ ╨б╨С╨Я</h3>
+        <h3 data-i18n="modalChequeTitle">ЁЯз╛ ╨б╨╛╨╖╨┤╨░╤В╤М ╤З╨╡╨║ ╨б╨С╨Я</h3>
         <button class="btn-close" onclick="closeModal('modalCheque')">├Ч</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">╨Э╨╛╨╝╨╕╨╜╨░╨╗ ╤З╨╡╨║╨░ (тнРя╕П)</label>
+          <label class="form-label" data-i18n="modalChequeAmount">╨Э╨╛╨╝╨╕╨╜╨░╨╗ ╤З╨╡╨║╨░ (тнРя╕П)</label>
           <input type="number" class="form-control" id="chequeAmount" placeholder="50" min="1">
         </div>
         <div class="form-group">
-          <label class="form-label">╨в╨╕╨┐ ╤З╨╡╨║╨░</label>
+          <label class="form-label" data-i18n="modalChequeType">╨в╨╕╨┐ ╤З╨╡╨║╨░</label>
           <select class="form-control" id="chequeTarget">
-            <option value="any">ЁЯМР ╨Ф╨╗╤П ╨▓╤Б╨╡╤Е (╨░╨║╤В╨╕╨▓╨╕╤А╤Г╨╡╤В ╨┐╨╡╤А╨▓╤Л╨╣ ╨╜╨░╨╢╨░╨▓╤И╨╕╨╣ ╨▓ ╤З╨░╤В╨╡)</option>
-            <option value="user">ЁЯФТ ╨Ш╨╝╨╡╨╜╨╜╨╛╨╣ ╤З╨╡╨║ (╤В╨╛╨╗╤М╨║╨╛ ╨┤╨╗╤П ╤Г╨║╨░╨╖╨░╨╜╨╜╨╛╨│╨╛ @username)</option>
+            <option value="any" data-i18n="modalChequeAny">ЁЯМР ╨Ф╨╗╤П ╨▓╤Б╨╡╤Е (╨░╨║╤В╨╕╨▓╨╕╤А╤Г╨╡╤В ╨┐╨╡╤А╨▓╤Л╨╣ ╨╜╨░╨╢╨░╨▓╤И╨╕╨╣ ╨▓ ╤З╨░╤В╨╡)</option>
+            <option value="user" data-i18n="modalChequeUser">ЁЯФТ ╨Ш╨╝╨╡╨╜╨╜╨╛╨╣ ╤З╨╡╨║ (╤В╨╛╨╗╤М╨║╨╛ ╨┤╨╗╤П ╤Г╨║╨░╨╖╨░╨╜╨╜╨╛╨│╨╛ @username)</option>
           </select>
         </div>
         <div class="form-group" id="chequeTargetUserGroup" style="display: none;">
-          <label class="form-label">╨Ш╨╝╤П ╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╤П ╨┐╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤П</label>
+          <label class="form-label" data-i18n="modalChequeRecipient">╨Ш╨╝╤П ╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╤П ╨┐╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤П</label>
           <input type="text" class="form-control" id="chequeRecipient" placeholder="@username">
         </div>
         <div class="form-group">
-          <label class="form-label">╨Ъ╨╛╨╝╨╝╨╡╨╜╤В╨░╤А╨╕╨╣ ╨║ ╤З╨╡╨║╤Г</label>
+          <label class="form-label" data-i18n="modalChequeComment">╨Ъ╨╛╨╝╨╝╨╡╨╜╤В╨░╤А╨╕╨╣ ╨║ ╤З╨╡╨║╤Г</label>
           <input type="text" class="form-control" id="chequeComment" placeholder="╨б╨С╨Я ╨▒╨╛╨╜╤Г╤Б">
         </div>
-        <button type="button" class="btn-submit" id="btnSubmitCheque">╨б╨│╨╡╨╜╨╡╤А╨╕╤А╨╛╨▓╨░╤В╤М ╤З╨╡╨║</button>
+        <button type="button" class="btn-submit" id="btnSubmitCheque" data-i18n="modalChequeSubmit">╨б╨│╨╡╨╜╨╡╤А╨╕╤А╨╛╨▓╨░╤В╤М ╤З╨╡╨║</button>
       </div>
     </div>
   </div>
@@ -290,18 +326,20 @@
   <div class="modal-backdrop" id="modalChequeResult">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3>ЁЯОЙ ╨з╨╡╨║ ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜!</h3>
+        <h3 data-i18n="modalChequeResultTitle">ЁЯОЙ ╨з╨╡╨║ ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜!</h3>
         <button class="btn-close" onclick="closeModal('modalChequeResult')">├Ч</button>
       </div>
       <div class="modal-body">
-        <p class="modal-desc">╨Ч╨▓╤С╨╖╨┤╤Л ╨╖╨░╤А╨╡╨╖╨╡╤А╨▓╨╕╤А╨╛╨▓╨░╨╜╤Л ╨▓ Escrow. ╨Ю╤В╨┐╤А╨░╨▓╤М╤В╨╡ ╤Б╤Б╤Л╨╗╨║╤Г ╨╜╨░ ╤З╨╡╨║ ╨▓ ╨╗╤О╨▒╨╛╨╣ ╤З╨░╤В Telegram:</p>
+        <p class="modal-desc" data-i18n="modalChequeResultDesc">
+          ╨Ч╨▓╤С╨╖╨┤╤Л ╨╖╨░╤А╨╡╨╖╨╡╤А╨▓╨╕╤А╨╛╨▓╨░╨╜╤Л ╨▓ Escrow. ╨Ю╤В╨┐╤А╨░╨▓╤М╤В╨╡ ╤Б╤Б╤Л╨╗╨║╤Г ╨╜╨░ ╤З╨╡╨║ ╨▓ ╨╗╤О╨▒╨╛╨╣ ╤З╨░╤В Telegram:
+        </p>
         <div class="form-group">
-          <label class="form-label">╨б╤Б╤Л╨╗╨║╨░ ╨╜╨░ ╨░╨║╤В╨╕╨▓╨░╤Ж╨╕╤О ╤З╨╡╨║╨░</label>
+          <label class="form-label" data-i18n="modalChequeResultLink">╨б╤Б╤Л╨╗╨║╨░ ╨╜╨░ ╨░╨║╤В╨╕╨▓╨░╤Ж╨╕╤О ╤З╨╡╨║╨░</label>
           <input type="text" class="form-control" id="createdChequeUrl" readonly style="font-family: monospace; font-size: 13px;">
         </div>
         <div style="display: flex; gap: 10px; margin-top: 14px;">
-          <button type="button" class="btn-submit" id="btnCopyChequeLink" style="flex: 1;">╨б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╤В╤М ╤Б╤Б╤Л╨╗╨║╤Г</button>
-          <button type="button" class="btn-submit" id="btnShareChequeLink" style="flex: 1; background: #2E8B57;">╨Ю╤В╨┐╤А╨░╨▓╨╕╤В╤М ╨▓ ╤З╨░╤В</button>
+          <button type="button" class="btn-submit" id="btnCopyChequeLink" style="flex: 1;" data-i18n="modalChequeResultCopy">╨б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╤В╤М ╤Б╤Б╤Л╨╗╨║╤Г</button>
+          <button type="button" class="btn-submit" id="btnShareChequeLink" style="flex: 1; background: #2E8B57;" data-i18n="modalChequeResultShare">╨Ю╤В╨┐╤А╨░╨▓╨╕╤В╤М ╨▓ ╤З╨░╤В</button>
         </div>
       </div>
     </div>
@@ -311,14 +349,14 @@
   <div class="modal-backdrop" id="modalReceipt">
     <div class="modal-dialog receipt-dialog">
       <div class="modal-header">
-        <h3>╨н╨╗╨╡╨║╤В╤А╨╛╨╜╨╜╤Л╨╣ ╤З╨╡╨║</h3>
+        <h3 data-i18n="modalReceiptTitle">╨н╨╗╨╡╨║╤В╤А╨╛╨╜╨╜╤Л╨╣ ╤З╨╡╨║</h3>
         <button class="btn-close" onclick="closeModal('modalReceipt')">├Ч</button>
       </div>
       <div class="receipt-box" id="receiptContent">
         <!-- Rendered via JS -->
       </div>
       <div class="receipt-actions">
-        <button class="btn-submit" onclick="copyReceiptText()">╨б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╤В╤М ╨┤╨░╨╜╨╜╤Л╨╡ ╤З╨╡╨║╨░</button>
+        <button class="btn-submit" onclick="copyReceiptText()" data-i18n="modalReceiptCopy">╨б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╤В╤М ╨┤╨░╨╜╨╜╤Л╨╡ ╤З╨╡╨║╨░</button>
       </div>
     </div>
   </div>

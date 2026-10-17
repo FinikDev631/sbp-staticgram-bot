@@ -1,6 +1,6 @@
 ﻿/**
  * SBP StaticGram Stars Bank тАв Material Design 3 Web App
- * Fully Connected Real API & Telegram WebApp bindings (NO fake data)
+ * Real PostgreSQL API, In-App Stars Checkout, Dark/Light Theme & Full i18n
  */
 
 // --- Dynamic API Base URL ---
@@ -8,7 +8,221 @@ const API_BASE = window.location.origin.includes('github.io')
   ? 'https://sbp-staticgram-bot.onrender.com'
   : '';
 
-// --- Global Application State (Zero fake info) ---
+// --- Internationalization (i18n) Dictionary ---
+const I18N = {
+  ru: {
+    brandName: 'StaticGram Stars',
+    brandStatus: '╨Ю╨╜╨╗╨░╨╣╨╜ ╤И╨╗╤О╨╖',
+    guestGreeting: '╨У╨╛╤Б╤В╨╡╨▓╨╛╨╣ ╤А╨╡╨╢╨╕╨╝',
+    guestSubtext: '╨Ю╤В╨║╤А╨╛╨╣╤В╨╡ ╨┐╤А╨╕╨╗╨╛╨╢╨╡╨╜╨╕╨╡ ╤З╨╡╤А╨╡╨╖ Telegram ╨▒╨╛╤В╨░ @sbpbot',
+    guestNotice: '╨Я╤А╨╕╨╗╨╛╨╢╨╡╨╜╨╕╨╡ ╨╛╤В╨║╤А╤Л╤В╨╛ ╨▓ ╤А╨╡╨╢╨╕╨╝╨╡ ╨┐╤А╨╛╤Б╨╝╨╛╤В╤А╨░. ╨Ф╨╗╤П ╤Г╨┐╤А╨░╨▓╨╗╨╡╨╜╨╕╤П ╨▒╨░╨╗╨░╨╜╤Б╨╛╨╝ ╨╛╤В╨║╤А╨╛╨╣╤В╨╡ ╨б╨С╨Я ╤З╨╡╤А╨╡╨╖ ╨╛╤Д╨╕╤Ж╨╕╨░╨╗╤М╨╜╨╛╨│╨╛ ╨▒╨╛╤В╨░.',
+    userGreeting: '╨Я╤А╨╕╨▓╨╡╤В, {name}!',
+    userSubtext: '{label} тАв ╨б╨╡╤В╤М ╨░╨║╤В╨╕╨▓╨╜╨░',
+    networkActive: '╨б╨╡╤В╤М ╨░╨║╤В╨╕╨▓╨╜╨░',
+    balanceLabel: '╨Ф╨Ю╨б╨в╨г╨Я╨Э╨л╨Щ ╨С╨Р╨Ы╨Р╨Э╨б',
+    balanceSub: '╨Ь╨│╨╜╨╛╨▓╨╡╨╜╨╜╤Л╨╡ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╤Л ╨▓╨╜╤Г╤В╤А╨╕ ╤Б╨╡╤В╨╕ ╨▒╨╡╨╖ ╨║╨╛╨╝╨╕╤Б╤Б╨╕╨╕',
+    inEscrow: '╨Т ╤А╨╡╨╖╨╡╤А╨▓╨╡',
+    activeReserve: '╨Р╨║╤В╨╕╨▓╨╜╤Л╨╡ ╤А╨╡╨╖╨╡╤А╨▓╤Л: {amount} тнРя╕П',
+    viewCheques: '╨б╨╝╨╛╤В╤А╨╡╤В╤М ╤З╨╡╨║╨╕',
+    actionTransfer: '╨Я╨╡╤А╨╡╨▓╨╡╤Б╤В╨╕',
+    actionTransferCaption: '╨Я╨╛ @username ╨╕╨╗╨╕ ╤Б╤З╤С╤В╤Г',
+    actionDeposit: '╨Я╨╛╨┐╨╛╨╗╨╜╨╕╤В╤М',
+    actionDepositCaption: 'Telegram Stars',
+    actionWithdraw: '╨Т╤Л╨▓╨╡╤Б╤В╨╕',
+    actionWithdrawCaption: '╨Э╨░ ╨░╨║╨║╨░╤Г╨╜╤В',
+    actionCheque: '╨б╨╛╨╖╨┤╨░╤В╤М ╤З╨╡╨║',
+    actionChequeCaption: '╨Ф╨╗╤П ╨╛╤В╨┐╤А╨░╨▓╨║╨╕ ╨▓ ╤З╨░╤В╤Л',
+    newsTag: 'ЁЯУв ╨Ю╨д╨Ш╨ж╨Ш╨Р╨Ы╨м╨Э╨л╨Щ ╨Ъ╨Р╨Э╨Р╨Ы ╨б╨С╨Я',
+    newsTitle: '╨Ь╨│╨╜╨╛╨▓╨╡╨╜╨╜╤Л╨╡ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╤Л, ╨╝╤Г╨╗╤М╤В╨╕╨▓╨░╨╗╤О╤В╨╜╤Л╨╣ ╤Г╤З╤С╤В ╨╕ ╤З╨╡╨║╨╕',
+    newsDesc: '╨Э╨╛╨▓╨╛╤Б╤В╨╕ ╤Б╨╕╤Б╤В╨╡╨╝╤Л ╨▒╤Л╤Б╤В╤А╤Л╤Е ╨┐╨╗╨░╤В╨╡╨╢╨╡╨╣, ╨╛╨▒╨╜╨╛╨▓╨╗╨╡╨╜╨╕╤П ╤И╨╗╤О╨╖╨░ ╨╕ ╨║╨▓╨╕╤В╨░╨╜╤Ж╨╕╨╕ ╨╜╨╛╨▓╨╛╨│╨╛ ╨┐╨╛╨║╨╛╨╗╨╡╨╜╨╕╤П.',
+    newsBtn: '╨Я╨╛╨┤╨┐╨╕╤Б╨░╤В╤М╤Б╤П ╨╜╨░ @sbpnews',
+    historyTitle: '╨Ш╤Б╤В╨╛╤А╨╕╤П ╨╛╨┐╨╡╤А╨░╤Ж╨╕╨╣',
+    historySub: '╨Т╤Б╨╡ ╤В╤А╨░╨╜╨╖╨░╨║╤Ж╨╕╨╕, ╨┐╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╤П ╨╕ ╤З╨╡╨║╨╕ ╤Б ╤Н╨╗╨╡╨║╤В╤А╨╛╨╜╨╜╤Л╨╝╨╕ ╨║╨▓╨╕╤В╨░╨╜╤Ж╨╕╤П╨╝╨╕',
+    filterAll: '╨Т╤Б╨╡',
+    filterTransfer: '╨Я╨╡╤А╨╡╨▓╨╛╨┤╤Л',
+    filterDeposit: '╨Я╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╤П',
+    filterCheque: '╨з╨╡╨║╨╕',
+    loadingOps: '╨Ч╨░╨│╤А╤Г╨╖╨║╨░ ╨╛╨┐╨╡╤А╨░╤Ж╨╕╨╣...',
+    noOpsCategory: '╨Т ╤Н╤В╨╛╨╣ ╨║╨░╤В╨╡╨│╨╛╤А╨╕╨╕ ╨┐╨╛╨║╨░ ╨╜╨╡╤В ╨╛╨┐╨╡╤А╨░╤Ж╨╕╨╣',
+    openBot: '╨Ю╤В╨║╤А╤Л╤В╤М ╨▒╨╛╤В╨░',
+    footerPlatform: '╨б╨С╨Я StaticGram Stars тАв ╨Я╨╗╨░╤В╤Д╨╛╤А╨╝╨░ ╨╝╨│╨╜╨╛╨▓╨╡╨╜╨╜╤Л╤Е ╨┐╨╗╨░╤В╨╡╨╢╨╡╨╣',
+    footerNews: '╨Э╨╛╨▓╨╛╤Б╤В╨╕',
+    footerBot: 'Telegram ╨С╨╛╤В',
+
+    // Modals
+    modalTransferTitle: 'ЁЯТ╕ ╨Я╨╡╤А╨╡╨▓╨╛╨┤ ╨┐╨╛ ╨б╨С╨Я',
+    modalTransferRecipient: '╨Я╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤М (@username, ID ╨╕╨╗╨╕ ╨╜╨╛╨╝╨╡╤А ╤Б╤З╤С╤В╨░ ╨б╨С╨Я)',
+    modalTransferAmount: '╨б╤Г╨╝╨╝╨░ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╨░ (тнРя╕П)',
+    modalTransferComment: '╨Э╨░╨╖╨╜╨░╤З╨╡╨╜╨╕╨╡ ╨┐╨╗╨░╤В╨╡╨╢╨░ / ╨║╨╛╨╝╨╝╨╡╨╜╤В╨░╤А╨╕╨╣ (╨╜╨╡╨╛╨▒╤П╨╖╨░╤В╨╡╨╗╤М╨╜╨╛)',
+    modalTransferSubmit: '╨Ю╤В╨┐╤А╨░╨▓╨╕╤В╤М ╨┐╨╡╤А╨╡╨▓╨╛╨┤',
+
+    modalDepositTitle: 'ЁЯУе ╨Я╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╨╡ ╤Б╤З╤С╤В╨░ Stars',
+    modalDepositDesc: '╨Ю╨┐╨╗╨░╤В╨░ ╨┐╤А╨╛╨╕╨╖╨▓╨╛╨┤╨╕╤В╤Б╤П ╨╝╨│╨╜╨╛╨▓╨╡╨╜╨╜╨╛ ╨┐╤А╤П╨╝╨╛ ╨▓ ╨┐╤А╨╕╨╗╨╛╨╢╨╡╨╜╨╕╨╕ ╤З╨╡╤А╨╡╨╖ ╨┐╨╗╨░╤В╤С╨╢╨╜╤Л╨╣ ╤И╨╗╤О╨╖ Telegram Stars (XTR):',
+    modalDepositCustomLabel: '╨Я╤А╨╛╨╕╨╖╨▓╨╛╨╗╤М╨╜╨░╤П ╤Б╤Г╨╝╨╝╨░ ╨╖╨▓╤С╨╖╨┤ (тнРя╕П)',
+    modalDepositBuy: '╨Ъ╤Г╨┐╨╕╤В╤М',
+    modalDepositPresets: '╨С╤Л╤Б╤В╤А╤Л╨╣ ╨▓╤Л╨▒╨╛╤А ╨┐╨░╨║╨╡╤В╨░:',
+
+    modalWithdrawTitle: 'ЁЯУд ╨Т╤Л╨▓╨╛╨┤ ╨╖╨▓╤С╨╖╨┤ Stars',
+    modalWithdrawDesc: '╨Ф╨╗╤П ╨┐╤А╤П╨╝╨╛╨│╨╛ ╨▓╤Л╨▓╨╛╨┤╨░ ╨╖╨▓╤С╨╖╨┤ ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╣╤В╨╡ ╨║╨╛╨╝╨░╨╜╨┤╤Г /withdraw ╨▓ Telegram-╨▒╨╛╤В╨╡ ╨╗╨╕╨▒╨╛ ╨╛╤В╨┐╤А╨░╨▓╤М╤В╨╡ ╨┐╨╡╤А╨╡╨▓╨╛╨┤ ╨╜╨░ ╨╜╤Г╨╢╨╜╤Л╨╣ ╨░╨║╨║╨░╤Г╨╜╤В ╨б╨С╨Я.',
+    modalWithdrawBtn: '╨Я╨╡╤А╨╡╨╣╤В╨╕ ╨║ ╨▓╤Л╨▓╨╛╨┤╤Г ╨▓ ╨▒╨╛╤В╨╡',
+
+    modalChequeTitle: 'ЁЯз╛ ╨б╨╛╨╖╨┤╨░╤В╤М ╤З╨╡╨║ ╨б╨С╨Я',
+    modalChequeAmount: '╨Э╨╛╨╝╨╕╨╜╨░╨╗ ╤З╨╡╨║╨░ (тнРя╕П)',
+    modalChequeType: '╨в╨╕╨┐ ╤З╨╡╨║╨░',
+    modalChequeAny: 'ЁЯМР ╨Ф╨╗╤П ╨▓╤Б╨╡╤Е (╨░╨║╤В╨╕╨▓╨╕╤А╤Г╨╡╤В ╨┐╨╡╤А╨▓╤Л╨╣ ╨╜╨░╨╢╨░╨▓╤И╨╕╨╣ ╨▓ ╤З╨░╤В╨╡)',
+    modalChequeUser: 'ЁЯФТ ╨Ш╨╝╨╡╨╜╨╜╨╛╨╣ ╤З╨╡╨║ (╤В╨╛╨╗╤М╨║╨╛ ╨┤╨╗╤П ╤Г╨║╨░╨╖╨░╨╜╨╜╨╛╨│╨╛ @username)',
+    modalChequeRecipient: '╨Ш╨╝╤П ╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╤П ╨┐╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤П',
+    modalChequeComment: '╨Ъ╨╛╨╝╨╝╨╡╨╜╤В╨░╤А╨╕╨╣ ╨║ ╤З╨╡╨║╤Г',
+    modalChequeSubmit: '╨б╨│╨╡╨╜╨╡╤А╨╕╤А╨╛╨▓╨░╤В╤М ╤З╨╡╨║',
+
+    modalChequeResultTitle: 'ЁЯОЙ ╨з╨╡╨║ ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜!',
+    modalChequeResultDesc: '╨Ч╨▓╤С╨╖╨┤╤Л ╨╖╨░╤А╨╡╨╖╨╡╤А╨▓╨╕╤А╨╛╨▓╨░╨╜╤Л ╨▓ Escrow. ╨Ю╤В╨┐╤А╨░╨▓╤М╤В╨╡ ╤Б╤Б╤Л╨╗╨║╤Г ╨╜╨░ ╤З╨╡╨║ ╨▓ ╨╗╤О╨▒╨╛╨╣ ╤З╨░╤В Telegram:',
+    modalChequeResultLink: '╨б╤Б╤Л╨╗╨║╨░ ╨╜╨░ ╨░╨║╤В╨╕╨▓╨░╤Ж╨╕╤О ╤З╨╡╨║╨░',
+    modalChequeResultCopy: '╨б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╤В╤М ╤Б╤Б╤Л╨╗╨║╤Г',
+    modalChequeResultShare: '╨Ю╤В╨┐╤А╨░╨▓╨╕╤В╤М ╨▓ ╤З╨░╤В',
+
+    modalReceiptTitle: '╨н╨╗╨╡╨║╤В╤А╨╛╨╜╨╜╤Л╨╣ ╤З╨╡╨║',
+    modalReceiptCopy: '╨б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╤В╤М ╨┤╨░╨╜╨╜╤Л╨╡ ╤З╨╡╨║╨░',
+    receiptTrx: '╨Э╨╛╨╝╨╡╤А ╨║╨▓╨╕╤В╨░╨╜╤Ж╨╕╨╕',
+    receiptFrom: '╨Ю╤В╨┐╤А╨░╨▓╨╕╤В╨╡╨╗╤М',
+    receiptTo: '╨Я╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤М',
+    receiptDate: '╨Ф╨░╤В╨░ ╨╕ ╨▓╤А╨╡╨╝╤П',
+    receiptComment: '╨Э╨░╨╖╨╜╨░╤З╨╡╨╜╨╕╨╡ ╨┐╨╗╨░╤В╨╡╨╢╨░',
+    receiptGateway: '╨Я╨╗╨░╤В╤С╨╢╨╜╤Л╨╣ ╤И╨╗╤О╨╖',
+    receiptExecuted: '╨Ш╤Б╨┐╨╛╨╗╨╜╨╡╨╜',
+
+    // Notifications & Toasts
+    toastCopiedAccount: '╨Э╨╛╨╝╨╡╤А ╤Б╤З╤С╤В╨░ ╤Б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╨╜: {acc}',
+    toastOpenBotForAcc: '╨Ю╤В╨║╤А╨╛╨╣╤В╨╡ ╨▒╨╛╤В╨░ ╨▓ Telegram ╨┤╨╗╤П ╨┐╨╛╨╗╤Г╤З╨╡╨╜╨╕╤П ╤Б╤З╤С╤В╨░',
+    toastOpenBotForTransfer: '╨Ф╨╗╤П ╨╛╤В╨┐╤А╨░╨▓╨║╨╕ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╨░ ╨╛╤В╨║╤А╨╛╨╣╤В╨╡ ╨▒╨╛╤В╨░ @sbpbot',
+    toastOpenBotForDeposit: '╨Ф╨╗╤П ╨┐╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╤П ╨▒╨░╨╗╨░╨╜╤Б╨░ ╨╛╤В╨║╤А╨╛╨╣╤В╨╡ ╨▒╨╛╤В╨░ @sbpbot',
+    toastOpenBotForCheque: '╨Ф╨╗╤П ╤Б╨╛╨╖╨┤╨░╨╜╨╕╤П ╤З╨╡╨║╨░ ╨╛╤В╨║╤А╨╛╨╣╤В╨╡ ╨▒╨╛╤В╨░ @sbpbot',
+    toastPreparingInvoice: '╨Я╨╛╨┤╨│╨╛╤В╨╛╨▓╨║╨░ ╤Б╤З╤С╤В╨░ ╨╜╨░ {amount} тнРя╕П...',
+    toastDepositSuccess: '╨С╨░╨╗╨░╨╜╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╨┐╨╛╨┐╨╛╨╗╨╜╨╡╨╜ ╨╜╨░ +{amount} тнРя╕П!',
+    toastDepositCancel: '╨Ю╨┐╨╗╨░╤В╨░ ╨╛╤В╨╝╨╡╨╜╨╡╨╜╨░',
+    toastDepositFail: '╨Ю╤И╨╕╨▒╨║╨░ ╨┐╤А╨╕ ╨┐╤А╨╛╨▓╨╡╨┤╨╡╨╜╨╕╨╕ ╨┐╨╗╨░╤В╨╡╨╢╨░',
+    toastSpecifyRecipient: '╨г╨║╨░╨╢╨╕╤В╨╡ ╨┐╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤П (@username, ID ╨╕╨╗╨╕ ╨╜╨╛╨╝╨╡╤А ╤Б╤З╤С╤В╨░)',
+    toastSpecifyAmount: '╨г╨║╨░╨╢╨╕╤В╨╡ ╨║╨╛╤А╤А╨╡╨║╤В╨╜╤Г╤О ╤Б╤Г╨╝╨╝╤Г',
+    toastInsufficientBalance: '╨Э╨╡╨┤╨╛╤Б╤В╨░╤В╨╛╤З╨╜╨╛ ╨╖╨▓╤С╨╖╨┤. ╨Т╨░╤И ╨▒╨░╨╗╨░╨╜╤Б: {bal} тнРя╕П',
+    toastTransferSending: '╨Ю╤В╨┐╤А╨░╨▓╨║╨░...',
+    toastTransferSubmit: '╨Ю╤В╨┐╤А╨░╨▓╨╕╤В╤М ╨┐╨╡╤А╨╡╨▓╨╛╨┤',
+    toastTransferSuccess: '╨Я╨╡╤А╨╡╨▓╨╛╨┤ {amount} тнРя╕П ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╨╛╤В╨┐╤А╨░╨▓╨╗╨╡╨╜!',
+    toastChequeSpecifyNominal: '╨г╨║╨░╨╢╨╕╤В╨╡ ╨╜╨╛╨╝╨╕╨╜╨░╨╗ ╤З╨╡╨║╨░',
+    toastChequeInsufficient: '╨Э╨╡╨┤╨╛╤Б╤В╨░╤В╨╛╤З╨╜╨╛ ╨╖╨▓╤С╨╖╨┤ ╨╜╨░ ╨▒╨░╨╗╨░╨╜╤Б╨╡ ╨┤╨╗╤П ╤А╨╡╨╖╨╡╤А╨▓╨╕╤А╨╛╨▓╨░╨╜╨╕╤П ╤З╨╡╨║╨░',
+    toastChequeSpecifyUser: '╨г╨║╨░╨╢╨╕╤В╨╡ @username ╨┐╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤П',
+    toastChequeCreating: '╨б╨╛╨╖╨┤╨░╨╜╨╕╨╡...',
+    toastChequeSubmit: '╨б╨│╨╡╨╜╨╡╤А╨╕╤А╨╛╨▓╨░╤В╤М ╤З╨╡╨║',
+    toastChequeCopied: '╨б╤Б╤Л╨╗╨║╨░ ╨╜╨░ ╤З╨╡╨║ ╤Б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╨╜╨░ ╨▓ ╨▒╤Г╤Д╨╡╤А ╨╛╨▒╨╝╨╡╨╜╨░!',
+    toastReceiptCopied: '╨Ф╨░╨╜╨╜╤Л╨╡ ╤З╨╡╨║╨░ ╤Б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╨╜╤Л ╨▓ ╨▒╤Г╤Д╨╡╤А!'
+  },
+  en: {
+    brandName: 'StaticGram Stars',
+    brandStatus: 'Online Gateway',
+    guestGreeting: 'Guest Mode',
+    guestSubtext: 'Open the app via Telegram bot @sbpbot',
+    guestNotice: 'The app is in read-only view. To manage balance and make transfers, open SBP via the official bot.',
+    userGreeting: 'Hello, {name}!',
+    userSubtext: '{label} тАв Network Active',
+    networkActive: 'Network Active',
+    balanceLabel: 'AVAILABLE BALANCE',
+    balanceSub: 'Instant network transfers with zero fees',
+    inEscrow: 'In Escrow',
+    activeReserve: 'Active reserves: {amount} тнРя╕П',
+    viewCheques: 'View Cheques',
+    actionTransfer: 'Transfer',
+    actionTransferCaption: 'By @username or account',
+    actionDeposit: 'Top Up',
+    actionDepositCaption: 'Telegram Stars',
+    actionWithdraw: 'Withdraw',
+    actionWithdrawCaption: 'To account',
+    actionCheque: 'Create Cheque',
+    actionChequeCaption: 'For sharing in chats',
+    newsTag: 'ЁЯУв OFFICIAL SBP CHANNEL',
+    newsTitle: 'Instant transfers, multi-currency accounting & cheques',
+    newsDesc: 'Fast payment system updates, gateway releases and next-gen electronic receipts.',
+    newsBtn: 'Subscribe to @sbpnews',
+    historyTitle: 'Transaction History',
+    historySub: 'All transfers, top-ups and cheques with digital receipts',
+    filterAll: 'All',
+    filterTransfer: 'Transfers',
+    filterDeposit: 'Deposits',
+    filterCheque: 'Cheques',
+    loadingOps: 'Loading transactions...',
+    noOpsCategory: 'No transactions in this category yet',
+    openBot: 'Open Bot',
+    footerPlatform: 'SBP StaticGram Stars тАв Instant Payment Platform',
+    footerNews: 'News',
+    footerBot: 'Telegram Bot',
+
+    // Modals
+    modalTransferTitle: 'ЁЯТ╕ Transfer via SBP',
+    modalTransferRecipient: 'Recipient (@username, ID or SBP account number)',
+    modalTransferAmount: 'Transfer amount (тнРя╕П)',
+    modalTransferComment: 'Payment purpose / comment (optional)',
+    modalTransferSubmit: 'Send Transfer',
+
+    modalDepositTitle: 'ЁЯУе Top Up Stars Balance',
+    modalDepositDesc: 'Pay instantly inside the Telegram Mini App using the official Telegram Stars (XTR) gateway:',
+    modalDepositCustomLabel: 'Custom star amount (тнРя╕П)',
+    modalDepositBuy: 'Buy',
+    modalDepositPresets: 'Quick package selection:',
+
+    modalWithdrawTitle: 'ЁЯУд Withdraw Stars',
+    modalWithdrawDesc: 'For direct withdrawal of stars, use the /withdraw command in the Telegram bot or send a transfer to your SBP account.',
+    modalWithdrawBtn: 'Go to Withdraw in Bot',
+
+    modalChequeTitle: 'ЁЯз╛ Create SBP Cheque',
+    modalChequeAmount: 'Cheque nominal (тнРя╕П)',
+    modalChequeType: 'Cheque type',
+    modalChequeAny: 'ЁЯМР For everyone (first user to click in chat claims it)',
+    modalChequeUser: 'ЁЯФТ Named cheque (only for specified @username)',
+    modalChequeRecipient: 'Recipient username',
+    modalChequeComment: 'Cheque comment',
+    modalChequeSubmit: 'Generate Cheque',
+
+    modalChequeResultTitle: 'ЁЯОЙ Cheque Created Successfully!',
+    modalChequeResultDesc: 'Stars reserved in Escrow. Send the activation link to any Telegram chat:',
+    modalChequeResultLink: 'Cheque activation link',
+    modalChequeResultCopy: 'Copy Link',
+    modalChequeResultShare: 'Share to Chat',
+
+    modalReceiptTitle: 'Electronic Receipt',
+    modalReceiptCopy: 'Copy Receipt Details',
+    receiptTrx: 'Receipt ID',
+    receiptFrom: 'Sender',
+    receiptTo: 'Recipient',
+    receiptDate: 'Date & Time',
+    receiptComment: 'Purpose',
+    receiptGateway: 'Payment Gateway',
+    receiptExecuted: 'Executed',
+
+    // Notifications & Toasts
+    toastCopiedAccount: 'Account number copied: {acc}',
+    toastOpenBotForAcc: 'Open bot in Telegram to get your account',
+    toastOpenBotForTransfer: 'To make transfers, open @sbpbot',
+    toastOpenBotForDeposit: 'To top up, open @sbpbot',
+    toastOpenBotForCheque: 'To create cheques, open @sbpbot',
+    toastPreparingInvoice: 'Preparing invoice for {amount} тнРя╕П...',
+    toastDepositSuccess: 'Balance topped up by +{amount} тнРя╕П!',
+    toastDepositCancel: 'Payment cancelled',
+    toastDepositFail: 'Payment error',
+    toastSpecifyRecipient: 'Please specify recipient (@username, ID or account)',
+    toastSpecifyAmount: 'Please specify valid amount',
+    toastInsufficientBalance: 'Insufficient stars. Your balance: {bal} тнРя╕П',
+    toastTransferSending: 'Sending...',
+    toastTransferSubmit: 'Send Transfer',
+    toastTransferSuccess: 'Transfer of {amount} тнРя╕П sent!',
+    toastChequeSpecifyNominal: 'Please enter cheque nominal',
+    toastChequeInsufficient: 'Insufficient stars on balance to reserve cheque',
+    toastChequeSpecifyUser: 'Please specify recipient @username',
+    toastChequeCreating: 'Creating...',
+    toastChequeSubmit: 'Generate Cheque',
+    toastChequeCopied: 'Cheque link copied to clipboard!',
+    toastReceiptCopied: 'Receipt details copied to clipboard!'
+  }
+};
+
+// --- Application State ---
 const State = {
   user: null,
   userId: null,
@@ -22,19 +236,130 @@ const State = {
   activeReceipt: null,
   transactions: [],
   isGuest: false,
-  isLoading: true
+  isLoading: true,
+  lang: 'ru',
+  theme: 'light'
 };
 
-// --- Telegram WebApp SDK Initialization ---
 const tg = window.Telegram?.WebApp;
 
+// --- i18n Translation Helper ---
+function t(key, params = {}) {
+  const dict = I18N[State.lang] || I18N.ru;
+  let text = dict[key] || I18N.ru[key] || key;
+  for (const [k, v] of Object.entries(params)) {
+    text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
+  }
+  return text;
+}
+
+function applyLanguage(newLang) {
+  State.lang = newLang;
+  localStorage.setItem('sbp_lang', newLang);
+
+  const langLabel = document.getElementById('langLabel');
+  if (langLabel) {
+    langLabel.textContent = newLang === 'ru' ? 'ЁЯЗ╖ЁЯЗ║ RU' : 'ЁЯЗмЁЯЗз EN';
+  }
+
+  // Update all data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (key && I18N[newLang]?.[key]) {
+      el.textContent = I18N[newLang][key];
+    }
+  });
+
+  // Update dynamic elements
+  updateBalanceUI();
+  renderTransactions();
+
+  const greetingEl = document.getElementById('userGreeting');
+  const subtextEl = document.getElementById('userSubtext');
+  if (State.isGuest) {
+    if (greetingEl) greetingEl.textContent = t('guestGreeting');
+    if (subtextEl) subtextEl.textContent = t('guestSubtext');
+  } else if (State.user) {
+    if (greetingEl) greetingEl.textContent = t('userGreeting', { name: State.user.first_name || 'Client' });
+    if (subtextEl) {
+      const label = State.user.username ? `@${State.user.username}` : `ID ${State.user.user_id}`;
+      subtextEl.textContent = t('userSubtext', { label });
+    }
+  }
+}
+
+// --- Dark / Light Theme Management ---
+function applyTheme(newTheme) {
+  State.theme = newTheme;
+  localStorage.setItem('sbp_theme', newTheme);
+  document.documentElement.setAttribute('data-theme', newTheme);
+
+  const themeIcon = document.getElementById('themeIcon');
+  if (themeIcon) {
+    themeIcon.textContent = newTheme === 'dark' ? 'тШАя╕П' : 'ЁЯМЩ';
+  }
+
+  try {
+    const bgColor = newTheme === 'dark' ? '#0C0A09' : '#F6F2ED';
+    if (tg?.setHeaderColor) tg.setHeaderColor(bgColor);
+    if (tg?.setBackgroundColor) tg.setBackgroundColor(bgColor);
+  } catch (e) {}
+}
+
+function initThemeAndLang() {
+  // Theme initialization
+  const savedTheme = localStorage.getItem('sbp_theme');
+  if (savedTheme) {
+    applyTheme(savedTheme);
+  } else if (tg?.colorScheme) {
+    applyTheme(tg.colorScheme === 'dark' ? 'dark' : 'light');
+  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    applyTheme('dark');
+  } else {
+    applyTheme('light');
+  }
+
+  // Language initialization
+  const savedLang = localStorage.getItem('sbp_lang');
+  if (savedLang) {
+    applyLanguage(savedLang);
+  } else if (tg?.initDataUnsafe?.user?.language_code) {
+    const userLang = tg.initDataUnsafe.user.language_code.toLowerCase();
+    applyLanguage(userLang.startsWith('ru') ? 'ru' : 'en');
+  } else {
+    applyLanguage('ru');
+  }
+
+  // Toggle listeners
+  document.getElementById('btnThemeToggle')?.addEventListener('click', () => {
+    haptic('light');
+    applyTheme(State.theme === 'dark' ? 'light' : 'dark');
+  });
+
+  document.getElementById('btnLangToggle')?.addEventListener('click', () => {
+    haptic('light');
+    applyLanguage(State.lang === 'ru' ? 'en' : 'ru');
+  });
+}
+
+function haptic(type = 'light') {
+  try {
+    if (tg?.HapticFeedback) {
+      if (type === 'success' || type === 'error') {
+        tg.HapticFeedback.notificationOccurred(type);
+      } else {
+        tg.HapticFeedback.impactOccurred(type);
+      }
+    }
+  } catch (e) {}
+}
+
+// --- Telegram WebApp SDK Initialization ---
 function initTelegram() {
   if (tg) {
     try {
       tg.ready();
       tg.expand();
-      if (tg.setHeaderColor) tg.setHeaderColor('#F6F2ED');
-      if (tg.setBackgroundColor) tg.setBackgroundColor('#F6F2ED');
     } catch (e) {
       console.debug('Telegram WebApp setup notice:', e);
     }
@@ -57,35 +382,22 @@ function initTelegram() {
   fetchUserData();
 }
 
-function haptic(type = 'light') {
-  try {
-    if (tg?.HapticFeedback) {
-      if (type === 'success' || type === 'error') {
-        tg.HapticFeedback.notificationOccurred(type);
-      } else {
-        tg.HapticFeedback.impactOccurred(type);
-      }
-    }
-  } catch (e) {}
-}
-
-// --- Fetch Real User Data & Transactions from Database ---
+// --- Fetch Real User Data from Database ---
 async function fetchUserData() {
   const greetingEl = document.getElementById('userGreeting');
   const subtextEl = document.getElementById('userSubtext');
   const accountEl = document.getElementById('accountNumberDisplay');
 
   if (!State.userId) {
-    // Visitor opened app directly in a web browser outside Telegram
     State.isGuest = true;
     State.isLoading = false;
     State.balance = 0;
     State.escrow = 0;
-    State.accountNumber = '╨Э╨╡ ╨░╨▓╤В╨╛╤А╨╕╨╖╨╛╨▓╨░╨╜';
+    State.accountNumber = 'тАФ';
 
-    if (greetingEl) greetingEl.textContent = '╨У╨╛╤Б╤В╨╡╨▓╨╛╨╣ ╤А╨╡╨╢╨╕╨╝';
-    if (subtextEl) subtextEl.textContent = '╨Ю╤В╨║╤А╨╛╨╣╤В╨╡ ╨┐╤А╨╕╨╗╨╛╨╢╨╡╨╜╨╕╨╡ ╤З╨╡╤А╨╡╨╖ Telegram ╨▒╨╛╤В╨░ @sbpbot';
-    if (accountEl) accountEl.textContent = '╨Э╨╡ ╨┐╨╛╨┤╨║╨╗╤О╤З╤С╨╜';
+    if (greetingEl) greetingEl.textContent = t('guestGreeting');
+    if (subtextEl) subtextEl.textContent = t('guestSubtext');
+    if (accountEl) accountEl.textContent = 'тАФ';
 
     updateBalanceUI();
     renderTransactions();
@@ -113,10 +425,11 @@ async function fetchUserData() {
       State.isLoading = false;
 
       if (greetingEl) {
-        greetingEl.textContent = data.user.first_name ? `╨Я╤А╨╕╨▓╨╡╤В, ${data.user.first_name}!` : '╨Ы╨╕╤З╨╜╤Л╨╣ ╨║╨░╨▒╨╕╨╜╨╡╤В';
+        greetingEl.textContent = t('userGreeting', { name: data.user.first_name || 'Client' });
       }
       if (subtextEl) {
-        subtextEl.textContent = data.user.username ? `@${data.user.username} тАв ╨б╨╡╤В╤М ╨░╨║╤В╨╕╨▓╨╜╨░` : `ID ${data.user.user_id} тАв ╨б╨╡╤В╤М ╨░╨║╤В╨╕╨▓╨╜╨░`;
+        const label = data.user.username ? `@${data.user.username}` : `ID ${data.user.user_id}`;
+        subtextEl.textContent = t('userSubtext', { label });
       }
       if (accountEl) {
         accountEl.textContent = State.accountNumber;
@@ -128,7 +441,6 @@ async function fetchUserData() {
   } catch (err) {
     console.error('Failed to fetch real user data:', err);
     State.isLoading = false;
-    if (subtextEl) subtextEl.textContent = '╨б╨▓╤П╨╖╤М ╤Б ╨┐╨╗╨░╤В╤С╨╢╨╜╤Л╨╝ ╤И╨╗╤О╨╖╨╛╨╝ ╤Г╤Б╤В╨░╨╜╨░╨▓╨╗╨╕╨▓╨░╨╡╤В╤Б╤П...';
     renderTransactions();
   }
 }
@@ -152,13 +464,13 @@ function showToast(message, duration = 3500) {
 function updateBalanceUI() {
   const valEl = document.getElementById('balanceValue');
   if (valEl) {
-    valEl.textContent = State.isBalanceHidden ? 'тАвтАвтАвтАвтАвтАв' : State.balance.toLocaleString('ru-RU');
+    valEl.textContent = State.isBalanceHidden ? 'тАвтАвтАвтАвтАвтАв' : State.balance.toLocaleString(State.lang === 'ru' ? 'ru-RU' : 'en-US');
   }
 
   const escrowStrip = document.getElementById('escrowStrip');
-  const escrowEl = document.getElementById('escrowTotal');
-  if (escrowEl) {
-    escrowEl.textContent = `${State.escrow.toLocaleString('ru-RU')} тнРя╕П`;
+  const escrowTotal = document.getElementById('escrowTotal');
+  if (escrowTotal) {
+    escrowTotal.textContent = `${State.escrow.toLocaleString(State.lang === 'ru' ? 'ru-RU' : 'en-US')} тнРя╕П`;
   }
   if (escrowStrip) {
     escrowStrip.style.display = State.escrow > 0 ? 'flex' : 'none';
@@ -188,14 +500,14 @@ function initAccountCopy() {
   badge.addEventListener('click', async () => {
     haptic('medium');
     if (State.isGuest || State.accountNumber === 'тАФ') {
-      showToast('╨Ю╤В╨║╤А╨╛╨╣╤В╨╡ ╨▒╨╛╤В╨░ ╨▓ Telegram ╨┤╨╗╤П ╨┐╨╛╨╗╤Г╤З╨╡╨╜╨╕╤П ╤Б╤З╤С╤В╨░');
+      showToast(t('toastOpenBotForAcc'));
       return;
     }
     try {
       await navigator.clipboard.writeText(State.accountNumber);
-      showToast(`╨Э╨╛╨╝╨╡╤А ╤Б╤З╤С╤В╨░ ╤Б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╨╜: ${State.accountNumber}`);
+      showToast(t('toastCopiedAccount', { acc: State.accountNumber }));
     } catch (e) {
-      showToast(`╨Т╨░╤И ╤Б╤З╤С╤В: ${State.accountNumber}`);
+      showToast(State.accountNumber);
     }
   });
 }
@@ -229,7 +541,7 @@ function initModals() {
   // Action Buttons
   document.getElementById('btnActionTransfer')?.addEventListener('click', () => {
     if (State.isGuest) {
-      showToast('╨Ф╨╗╤П ╨╛╤В╨┐╤А╨░╨▓╨║╨╕ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╨░ ╨╛╤В╨║╤А╨╛╨╣╤В╨╡ ╨▒╨╛╤В╨░ @sbpbot');
+      showToast(t('toastOpenBotForTransfer'));
       return;
     }
     openModal('modalTransfer');
@@ -237,7 +549,7 @@ function initModals() {
 
   document.getElementById('btnActionDeposit')?.addEventListener('click', () => {
     if (State.isGuest) {
-      showToast('╨Ф╨╗╤П ╨┐╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╤П ╨▒╨░╨╗╨░╨╜╤Б╨░ ╨╛╤В╨║╤А╨╛╨╣╤В╨╡ ╨▒╨╛╤В╨░ @sbpbot');
+      showToast(t('toastOpenBotForDeposit'));
       return;
     }
     openModal('modalDeposit');
@@ -249,7 +561,7 @@ function initModals() {
 
   document.getElementById('btnActionCheque')?.addEventListener('click', () => {
     if (State.isGuest) {
-      showToast('╨Ф╨╗╤П ╤Б╨╛╨╖╨┤╨░╨╜╨╕╤П ╤З╨╡╨║╨░ ╨╛╤В╨║╤А╨╛╨╣╤В╨╡ ╨▒╨╛╤В╨░ @sbpbot');
+      showToast(t('toastOpenBotForCheque'));
       return;
     }
     openModal('modalCheque');
@@ -268,9 +580,9 @@ function initModals() {
     if (url) {
       try {
         await navigator.clipboard.writeText(url);
-        showToast('╨б╤Б╤Л╨╗╨║╨░ ╨╜╨░ ╤З╨╡╨║ ╤Б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╨╜╨░ ╨▓ ╨▒╤Г╤Д╨╡╤А ╨╛╨▒╨╝╨╡╨╜╨░!');
+        showToast(t('toastChequeCopied'));
       } catch (e) {
-        showToast('╨б╨║╨╛╨┐╨╕╤А╤Г╨╣╤В╨╡ ╤Б╤Б╤Л╨╗╨║╤Г ╨▓╤А╤Г╤З╨╜╤Г╤О');
+        showToast(url);
       }
     }
   });
@@ -279,13 +591,26 @@ function initModals() {
     haptic('light');
     const url = document.getElementById('createdChequeUrl')?.value;
     if (url) {
-      const shareUrl = `https://staticgram.top/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent('тЪбя╕П ╨Р╨║╤В╨╕╨▓╨╕╤А╤Г╨╣╤В╨╡ ╤З╨╡╨║ ╨б╨С╨Я!')}`;
+      const shareText = State.lang === 'ru' ? 'тЪбя╕П ╨Р╨║╤В╨╕╨▓╨╕╤А╤Г╨╣╤В╨╡ ╤З╨╡╨║ ╨б╨С╨Я!' : 'тЪбя╕П Claim SBP Cheque!';
+      const shareUrl = `https://staticgram.top/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`;
       if (tg?.openTelegramLink) {
         tg.openTelegramLink(shareUrl);
       } else {
         window.open(shareUrl, '_blank');
       }
     }
+  });
+
+  // Custom Deposit Form Submit Button
+  document.getElementById('btnPayCustomDeposit')?.addEventListener('click', () => {
+    const input = document.getElementById('depositCustomInput');
+    const amount = parseInt(input?.value, 10);
+    if (!amount || amount < 1 || amount > 100000) {
+      showToast(t('toastSpecifyAmount'));
+      haptic('error');
+      return;
+    }
+    triggerDeposit(amount);
   });
 }
 
@@ -296,15 +621,15 @@ window.setTransferAmount = function(val) {
   if (input) input.value = val;
 };
 
-// --- Deposit Trigger (Real Telegram Stars Invoice) ---
+// --- In-App Deposit Trigger (Telegram Stars Direct Checkout) ---
 window.triggerDeposit = async function(amount) {
   haptic('medium');
   if (State.isGuest) {
-    showToast('╨Ю╤В╨║╤А╨╛╨╣╤В╨╡ ╨▒╨╛╤В╨░ @sbpbot ╨┤╨╗╤П ╨┐╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╤П');
+    showToast(t('toastOpenBotForDeposit'));
     return;
   }
 
-  showToast(`╨Ч╨░╨┐╤А╨╛╤Б ╤Б╤З╤С╤В╨░ ╨╜╨░ ${amount} тнРя╕П...`);
+  showToast(t('toastPreparingInvoice', { amount }));
 
   try {
     const res = await fetch(`${API_BASE}/api/create_invoice`, {
@@ -317,19 +642,28 @@ window.triggerDeposit = async function(amount) {
     });
 
     const data = await res.json();
-    closeModal('modalDeposit');
 
     if (data.invoice_link) {
+      // In-app Telegram WebApp Stars Checkout
       if (tg?.openInvoice) {
         tg.openInvoice(data.invoice_link, (status) => {
           if (status === 'paid') {
             haptic('success');
-            showToast(`╨С╨░╨╗╨░╨╜╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╨┐╨╛╨┐╨╛╨╗╨╜╨╡╨╜ ╨╜╨░ +${amount} тнРя╕П!`);
-            fetchUserData();
+            showToast(t('toastDepositSuccess', { amount }));
+            closeModal('modalDeposit');
+            // Allow server to process webhook and update balance
+            setTimeout(fetchUserData, 800);
+            setTimeout(fetchUserData, 2500);
+          } else if (status === 'cancelled') {
+            showToast(t('toastDepositCancel'));
+          } else {
+            showToast(t('toastDepositFail'));
           }
         });
       } else {
+        // Desktop browser fallback
         window.open(data.invoice_link, '_blank');
+        closeModal('modalDeposit');
       }
     } else if (data.bot_url) {
       if (tg?.openTelegramLink) {
@@ -337,11 +671,11 @@ window.triggerDeposit = async function(amount) {
       } else {
         window.open(data.bot_url, '_blank');
       }
-      showToast('╨б╤З╤С╤В ╨▓╤Л╤Б╤В╨░╨▓╨╗╨╡╨╜! ╨Я╨╡╤А╨╡╨╣╨┤╨╕╤В╨╡ ╨▓ ╨┤╨╕╨░╨╗╨╛╨│ ╤Б ╨▒╨╛╤В╨╛╨╝ ╨┤╨╗╤П ╨╛╨┐╨╗╨░╤В╤Л.');
+      closeModal('modalDeposit');
     }
   } catch (e) {
     console.error('Deposit invoice error:', e);
-    showToast('╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╤Б╤Д╨╛╤А╨╝╨╕╤А╨╛╨▓╨░╤В╤М ╤Б╤З╤С╤В. ╨Ю╤В╨║╤А╨╛╨╣╤В╨╡ /deposit ╨▓ ╨▒╨╛╤В╨╡.');
+    showToast(t('toastDepositFail'));
   }
 };
 
@@ -356,25 +690,25 @@ function initTransferSubmission() {
     const comment = document.getElementById('transferComment')?.value.trim() || '╨Я╨╡╤А╨╡╨▓╨╛╨┤ ╨┐╨╛ ╨б╨С╨Я';
 
     if (!recipient) {
-      showToast('╨г╨║╨░╨╢╨╕╤В╨╡ ╨┐╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤П (@username, ID ╨╕╨╗╨╕ ╨╜╨╛╨╝╨╡╤А ╤Б╤З╤С╤В╨░)');
+      showToast(t('toastSpecifyRecipient'));
       haptic('error');
       return;
     }
 
     if (!amount || amount <= 0) {
-      showToast('╨г╨║╨░╨╢╨╕╤В╨╡ ╨║╨╛╤А╤А╨╡╨║╤В╨╜╤Г╤О ╤Б╤Г╨╝╨╝╤Г');
+      showToast(t('toastSpecifyAmount'));
       haptic('error');
       return;
     }
 
     if (amount > State.balance) {
-      showToast(`╨Э╨╡╨┤╨╛╤Б╤В╨░╤В╨╛╤З╨╜╨╛ ╨╖╨▓╤С╨╖╨┤. ╨Т╨░╤И ╨▒╨░╨╗╨░╨╜╤Б: ${State.balance} тнРя╕П`);
+      showToast(t('toastInsufficientBalance', { bal: State.balance }));
       haptic('error');
       return;
     }
 
     btn.disabled = true;
-    btn.textContent = '╨Ю╤В╨┐╤А╨░╨▓╨║╨░...';
+    btn.textContent = t('toastTransferSending');
 
     try {
       const res = await fetch(`${API_BASE}/api/transfer`, {
@@ -394,7 +728,7 @@ function initTransferSubmission() {
         haptic('error');
         showToast(data.error || '╨Ю╤И╨╕╨▒╨║╨░ ╨┐╤А╨╕ ╨▓╤Л╨┐╨╛╨╗╨╜╨╡╨╜╨╕╨╕ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╨░');
         btn.disabled = false;
-        btn.textContent = '╨Ю╤В╨┐╤А╨░╨▓╨╕╤В╤М ╨┐╨╡╤А╨╡╨▓╨╛╨┤';
+        btn.textContent = t('modalTransferSubmit');
         return;
       }
 
@@ -404,7 +738,7 @@ function initTransferSubmission() {
       document.getElementById('transferAmount').value = '';
       document.getElementById('transferComment').value = '';
 
-      showToast(data.message || `╨Я╨╡╤А╨╡╨▓╨╛╨┤ ${amount} тнРя╕П ╨╛╤В╨┐╤А╨░╨▓╨╗╨╡╨╜!`);
+      showToast(data.message || t('toastTransferSuccess', { amount }));
       await fetchUserData();
 
     } catch (e) {
@@ -412,7 +746,7 @@ function initTransferSubmission() {
       showToast('╨Ю╤И╨╕╨▒╨║╨░ ╤Б╨╡╤В╨╕ ╨┐╤А╨╕ ╨╛╤В╨┐╤А╨░╨▓╨║╨╡ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╨░');
     } finally {
       btn.disabled = false;
-      btn.textContent = '╨Ю╤В╨┐╤А╨░╨▓╨╕╤В╤М ╨┐╨╡╤А╨╡╨▓╨╛╨┤';
+      btn.textContent = t('modalTransferSubmit');
     }
   });
 }
@@ -438,25 +772,25 @@ function initChequeSubmission() {
     const comment = document.getElementById('chequeComment')?.value.trim() || '╨б╨С╨Я ╨▒╨╛╨╜╤Г╤Б';
 
     if (!amount || amount <= 0) {
-      showToast('╨г╨║╨░╨╢╨╕╤В╨╡ ╨╜╨╛╨╝╨╕╨╜╨░╨╗ ╤З╨╡╨║╨░');
+      showToast(t('toastChequeSpecifyNominal'));
       haptic('error');
       return;
     }
 
     if (amount > State.balance) {
-      showToast('╨Э╨╡╨┤╨╛╤Б╤В╨░╤В╨╛╤З╨╜╨╛ ╨╖╨▓╤С╨╖╨┤ ╨╜╨░ ╨▒╨░╨╗╨░╨╜╤Б╨╡ ╨┤╨╗╤П ╤А╨╡╨╖╨╡╤А╨▓╨╕╤А╨╛╨▓╨░╨╜╨╕╤П ╤З╨╡╨║╨░');
+      showToast(t('toastChequeInsufficient'));
       haptic('error');
       return;
     }
 
     if (targetType === 'user' && !recipient) {
-      showToast('╨г╨║╨░╨╢╨╕╤В╨╡ @username ╨┐╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤П');
+      showToast(t('toastChequeSpecifyUser'));
       haptic('error');
       return;
     }
 
     btn.disabled = true;
-    btn.textContent = '╨б╨╛╨╖╨┤╨░╨╜╨╕╨╡...';
+    btn.textContent = t('toastChequeCreating');
 
     try {
       const res = await fetch(`${API_BASE}/api/create_cheque`, {
@@ -476,7 +810,7 @@ function initChequeSubmission() {
         haptic('error');
         showToast(data.error || '╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╤Б╨╛╨╖╨┤╨░╤В╤М ╤З╨╡╨║');
         btn.disabled = false;
-        btn.textContent = '╨б╨│╨╡╨╜╨╡╤А╨╕╤А╨╛╨▓╨░╤В╤М ╤З╨╡╨║';
+        btn.textContent = t('modalChequeSubmit');
         return;
       }
 
@@ -496,7 +830,7 @@ function initChequeSubmission() {
       showToast('╨Ю╤И╨╕╨▒╨║╨░ ╤Б╨╡╤В╨╕ ╨┐╤А╨╕ ╤Б╨╛╨╖╨┤╨░╨╜╨╕╨╕ ╤З╨╡╨║╨░');
     } finally {
       btn.disabled = false;
-      btn.textContent = '╨б╨│╨╡╨╜╨╡╤А╨╕╤А╨╛╨▓╨░╤В╤М ╤З╨╡╨║';
+      btn.textContent = t('modalChequeSubmit');
     }
   });
 }
@@ -512,7 +846,7 @@ window.openReceiptModal = function(txId) {
   if (!content) return;
 
   const isPos = tx.amount > 0;
-  const formatted = `${isPos ? '+' : ''}${tx.amount.toLocaleString('ru-RU')} тнРя╕П`;
+  const formatted = `${isPos ? '+' : ''}${tx.amount.toLocaleString(State.lang === 'ru' ? 'ru-RU' : 'en-US')} тнРя╕П`;
 
   content.innerHTML = `
     <div style="text-align: center; margin-bottom: 6px;">
@@ -520,31 +854,31 @@ window.openReceiptModal = function(txId) {
         ${formatted}
       </div>
       <div style="font-size: 11px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase;">
-        ${tx.status}
+        ${tx.status || t('receiptExecuted')}
       </div>
     </div>
     <div class="receipt-field">
-      <span class="label">╨Э╨╛╨╝╨╡╤А ╨║╨▓╨╕╤В╨░╨╜╤Ж╨╕╨╕</span>
+      <span class="label">${t('receiptTrx')}</span>
       <span class="value" style="font-family: monospace;">#${tx.id}</span>
     </div>
     <div class="receipt-field">
-      <span class="label">╨Ю╤В╨┐╤А╨░╨▓╨╕╤В╨╡╨╗╤М</span>
+      <span class="label">${t('receiptFrom')}</span>
       <span class="value">${tx.from}</span>
     </div>
     <div class="receipt-field">
-      <span class="label">╨Я╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤М</span>
+      <span class="label">${t('receiptTo')}</span>
       <span class="value">${tx.to}</span>
     </div>
     <div class="receipt-field">
-      <span class="label">╨Ф╨░╤В╨░ ╨╕ ╨▓╤А╨╡╨╝╤П</span>
+      <span class="label">${t('receiptDate')}</span>
       <span class="value">${tx.date}</span>
     </div>
     <div class="receipt-field">
-      <span class="label">╨Э╨░╨╖╨╜╨░╤З╨╡╨╜╨╕╨╡ ╨┐╨╗╨░╤В╨╡╨╢╨░</span>
+      <span class="label">${t('receiptComment')}</span>
       <span class="value">${tx.comment}</span>
     </div>
     <div class="receipt-field">
-      <span class="label">╨Я╨╗╨░╤В╤С╨╢╨╜╤Л╨╣ ╤И╨╗╤О╨╖</span>
+      <span class="label">${t('receiptGateway')}</span>
       <span class="value">StaticGram ╨б╨С╨Я тАв Stars Gateway</span>
     </div>
   `;
@@ -557,11 +891,11 @@ window.copyReceiptText = async function() {
   if (!State.activeReceipt) return;
 
   const tx = State.activeReceipt;
-  const text = `ЁЯз╛ ╨н╨╗╨╡╨║╤В╤А╨╛╨╜╨╜╤Л╨╣ ╤З╨╡╨║ ╨б╨С╨Я\n╨б╤Г╨╝╨╝╨░: ${tx.amount > 0 ? '+' : ''}${tx.amount} тнРя╕П\n╨б╤В╨░╤В╤Г╤Б: ${tx.status}\n╨Э╨╛╨╝╨╡╤А: #${tx.id}\n╨Ф╨░╤В╨░: ${tx.date}\n╨Э╨░╨╖╨╜╨░╤З╨╡╨╜╨╕╨╡: ${tx.comment}`;
+  const text = `ЁЯз╛ ${t('modalReceiptTitle')}\nAmount: ${tx.amount > 0 ? '+' : ''}${tx.amount} тнРя╕П\nStatus: ${tx.status}\nID: #${tx.id}\nDate: ${tx.date}\nPurpose: ${tx.comment}`;
 
   try {
     await navigator.clipboard.writeText(text);
-    showToast('╨Ф╨░╨╜╨╜╤Л╨╡ ╤З╨╡╨║╨░ ╤Б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╨╜╤Л ╨▓ ╨▒╤Г╤Д╨╡╤А!');
+    showToast(t('toastReceiptCopied'));
   } catch (e) {
     showToast(`╨з╨╡╨║ #${tx.id}`);
   }
@@ -583,7 +917,7 @@ function renderTransactions() {
   if (State.isLoading) {
     container.innerHTML = `
       <div style="text-align: center; padding: 32px 16px; color: var(--text-tertiary); font-size: 13px;">
-        ╨Ч╨░╨│╤А╤Г╨╖╨║╨░ ╨╛╨┐╨╡╤А╨░╤Ж╨╕╨╣...
+        ${t('loadingOps')}
       </div>
     `;
     return;
@@ -593,10 +927,9 @@ function renderTransactions() {
     container.innerHTML = `
       <div style="text-align: center; padding: 32px 16px; color: var(--text-secondary); font-size: 13px;">
         <div style="font-size: 32px; margin-bottom: 8px;">ЁЯФР</div>
-        <b>╨Я╤А╨╕╨╗╨╛╨╢╨╡╨╜╨╕╨╡ ╨╛╤В╨║╤А╤Л╤В╨╛ ╨▓ ╤А╨╡╨╢╨╕╨╝╨╡ ╨┐╤А╨╛╤Б╨╝╨╛╤В╤А╨░</b><br>
-        ╨Ф╨╗╤П ╤Г╨┐╤А╨░╨▓╨╗╨╡╨╜╨╕╤П ╨▒╨░╨╗╨░╨╜╤Б╨╛╨╝ ╨╕ ╨╛╤В╨┐╤А╨░╨▓╨║╨╕ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╨╛╨▓ ╨╛╤В╨║╤А╨╛╨╣╤В╨╡ ╨б╨С╨Я ╤З╨╡╤А╨╡╨╖ ╨╛╤Д╨╕╤Ж╨╕╨░╨╗╤М╨╜╨╛╨│╨╛ ╨▒╨╛╤В╨░ ╨▓ Telegram.<br><br>
+        <b>${t('guestNotice')}</b><br><br>
         <a href="https://staticgram.top/sbpbot" target="_blank" class="btn-submit" style="display: inline-block; padding: 10px 20px; text-decoration: none; max-width: 240px;">
-          ╨Ю╤В╨║╤А╤Л╤В╤М ╨▓ Telegram
+          ${t('openBot')}
         </a>
       </div>
     `;
@@ -610,7 +943,7 @@ function renderTransactions() {
   if (filtered.length === 0) {
     container.innerHTML = `
       <div style="text-align: center; padding: 32px 16px; color: var(--text-tertiary); font-size: 13px;">
-        ╨Т ╤Н╤В╨╛╨╣ ╨║╨░╤В╨╡╨│╨╛╤А╨╕╨╕ ╨┐╨╛╨║╨░ ╨╜╨╡╤В ╨╛╨┐╨╡╤А╨░╤Ж╨╕╨╣
+        ${t('noOpsCategory')}
       </div>
     `;
     return;
@@ -641,7 +974,7 @@ function renderTransactions() {
       amountClass = 'negative';
     }
 
-    const formatted = `${tx.amount > 0 ? '+' : ''}${tx.amount.toLocaleString('ru-RU')} тнРя╕П`;
+    const formatted = `${tx.amount > 0 ? '+' : ''}${tx.amount.toLocaleString(State.lang === 'ru' ? 'ru-RU' : 'en-US')} тнРя╕П`;
 
     return `
       <div class="tx-row" onclick="openReceiptModal('${tx.id}')">
@@ -672,6 +1005,7 @@ function initFilters() {
 
 // --- App Bootstrap ---
 document.addEventListener('DOMContentLoaded', () => {
+  initThemeAndLang();
   initBalanceToggle();
   initAccountCopy();
   initModals();
