@@ -10,12 +10,9 @@ from custom_methods import WithdrawStarBalance
 from utils.states import WithdrawState
 from utils.formatters import format_electronic_receipt, mask_name
 from keyboards.withdraw_kb import (
-    get_withdraw_method_kb,
     get_withdraw_target_kb,
     get_withdraw_amount_kb,
-    get_confirm_withdraw_kb,
-    get_gifts_selection_kb,
-    get_confirm_gift_kb
+    get_confirm_withdraw_kb
 )
 from keyboards.main_kb import get_cancel_kb, get_back_button
 
@@ -24,6 +21,10 @@ router = Router()
 @router.callback_query(F.data == "menu_withdraw")
 @router.message(Command("withdraw"))
 async def start_withdraw(event: Message | CallbackQuery, state: FSMContext):
+    """
+    Direct star withdrawal via StaticGram API withdrawStarBalance:
+    https://docs.staticgram.top/methods/withdrawStarBalance
+    """
     await state.clear()
     user_id = event.from_user.id
     user = await db.get_user(user_id)
@@ -33,7 +34,7 @@ async def start_withdraw(event: Message | CallbackQuery, state: FSMContext):
             "⚠️ <b>НЕДОСТАТОЧНО ЗВЁЗД</b>\n"
             "────────────────────────\n"
             "На вашем счёте СБП <b>0 ⭐️</b>.\n"
-            "Выводить пока нечего. Пополните счёт или получите перевод по СБП!"
+            "Выводить пока нечего. Пополните счёт через /deposit или получите перевод по СБП!"
         )
         if isinstance(event, CallbackQuery):
             await event.message.edit_text(text, reply_markup=get_back_button())
@@ -43,43 +44,22 @@ async def start_withdraw(event: Message | CallbackQuery, state: FSMContext):
         return
 
     text = (
-        "📤 <b>ВЫВОД ЗВЁЗД ИЗ СБП</b>\n"
+        "📤 <b>ВЫВОД ЗВЁЗД ПО СБП (withdrawStarBalance)</b>\n"
         "────────────────────────\n"
         f"Ваш доступный баланс: <b>{user['balance']:,} ⭐️</b>\n\n"
-        "Выберите удобный способ вывода:\n\n"
-        "1️⃣ <b>Прямой вывод звёзд на аккаунт:</b>\n"
-        "• Звёзды начисляются на баланс от официального сервиса 777000.\n"
-        "• 0% комиссия сервиса.\n"
-        "• Можно вывести себе или любому пользователю по @username.\n\n"
-        "2️⃣ <b>Вывод подарком в профиль (конвертация):</b>\n"
-        "• Бот отправляет официальный Telegram подарок в ваш профиль.\n"
-        "• Подарок можно оставить в профиле или <b>конвертировать в звёзды</b>.\n"
-        "• Комиссию за конвертацию берёт платформа/пользователь."
-    )
-
-    if isinstance(event, CallbackQuery):
-        await event.message.edit_text(text, reply_markup=get_withdraw_method_kb())
-        await event.answer()
-    else:
-        await event.answer(text, reply_markup=get_withdraw_method_kb())
-
-
-# --- Method 1: Direct Stars Withdrawal (withdrawStarBalance) ---
-
-@router.callback_query(F.data == "wd_method:direct")
-async def choose_direct_target(callback: CallbackQuery, state: FSMContext):
-    user_id = callback.from_user.id
-    user = await db.get_user(user_id)
-
-    text = (
-        "⚡️ <b>ПРЯМОЙ ВЫВОД ЗВЁЗД НА АККАУНТ</b>\n"
-        "────────────────────────\n"
-        f"Доступно к выводу: <b>{user['balance']:,} ⭐️</b>\n\n"
+        "Звёзды выводятся напрямую на баланс аккаунта в StaticGram через метод "
+        "<code>withdrawStarBalance</code>.\n\n"
+        "Получатель мгновенно получает официальное системное уведомление от <b>777000</b>:\n"
+        "<i>«Вывод от бота @sbpbot в размере X ⭐️ зачислен на ваш баланс.»</i>\n\n"
         "Куда отправить звёзды?"
     )
+
     await state.set_state(WithdrawState.waiting_for_target)
-    await callback.message.edit_text(text, reply_markup=get_withdraw_target_kb())
-    await callback.answer()
+    if isinstance(event, CallbackQuery):
+        await event.message.edit_text(text, reply_markup=get_withdraw_target_kb())
+        await event.answer()
+    else:
+        await event.answer(text, reply_markup=get_withdraw_target_kb())
 
 
 @router.callback_query(F.data == "wd_target:self", WithdrawState.waiting_for_target)
@@ -189,9 +169,10 @@ async def handle_withdraw_amount(message: Message, state: FSMContext, amount: in
         f"👤 <b>Получатель:</b> <b>{target_label}</b>\n"
         f"💰 <b>Сумма вывода:</b> <b>{amount:,} ⭐️</b>\n"
         "🏷 <b>Комиссия СБП:</b> <b>0 ⭐️ (0%)</b>\n"
+        "🌐 <b>Метод API:</b> <code>withdrawStarBalance</code>\n"
         "📦 <b>Способ доставки:</b> Официальное зачисление от 777000\n"
         "────────────────────────\n"
-        "<i>Звёзды спишутся с вашего счёта СБП и поступят на баланс аккаунта StaticGram.</i>"
+        "<i>Звёзды спишутся с баланса СБП и будут начислены напрямую на аккаунт StaticGram.</i>"
     )
 
     await state.set_state(WithdrawState.confirm_withdraw)
@@ -217,20 +198,23 @@ async def execute_withdraw(callback: CallbackQuery, state: FSMContext):
         await state.clear()
         return
 
-    req_id = f"sbp-wd-{user_id}-{uuid.uuid4().hex[:12]}"
+    # Generate ASCII idempotency key up to 40 chars
+    req_id = f"wd{user_id}_{uuid.uuid4().hex[:12]}"
 
     try:
+        # Call StaticGram withdrawStarBalance method directly
         res = await callback.bot(WithdrawStarBalance(
             user_id=target_id,
             star_count=amount,
             request_id=req_id
         ))
 
+        # Successfully executed on StaticGram: deduct from internal SBP balance
         trx_id = await db.debit_balance(
             user_id=user_id,
             amount=amount,
             trx_type="withdrawal",
-            comment="Вывод звёзд на аккаунт StaticGram",
+            comment="Вывод звёзд через withdrawStarBalance",
             counterparty=str(target_label)
         )
 
@@ -239,7 +223,7 @@ async def execute_withdraw(callback: CallbackQuery, state: FSMContext):
 
         receipt = format_electronic_receipt(
             trx_id=trx_id or req_id,
-            op_type="Вывод звёзд из СБП",
+            op_type="Вывод звёзд (withdrawStarBalance)",
             amount=amount,
             sender_label=sender_label,
             recipient_label=target_label,
@@ -259,11 +243,15 @@ async def execute_withdraw(callback: CallbackQuery, state: FSMContext):
         err_msg = e.message
         if "BALANCE_TOO_LOW" in err_msg:
             await callback.message.edit_text(
-                "⚠️ <b>РЕЗЕРВ БОТА ВРЕМЕННО ПУСТ</b>\n"
+                "⚠️ <b>НЕДОСТАТОЧНО ЗВЁЗД НА БАЛАНСЕ БОТА</b>\n"
                 "────────────────────────\n"
-                f"На балансе бота сейчас нет {amount:,} ⭐️ для прямого вывода.\n"
-                "💡 <i>Вы можете воспользоваться выводом через подарки (🎁) или дождаться пополнения резерва.</i>\n\n"
-                "Ваши средства на счёте СБП в полной сохранности!",
+                f"На балансе бота сейчас нет {amount:,} ⭐️ для вывода через <code>withdrawStarBalance</code>.\n\n"
+                "ℹ️ <i>Как это работает:</i> бот переводит звёзды со своего баланса StaticGram. "
+                "Баланс бота увеличивается, когда пользователи совершают пополнения (депозиты) "
+                "через команду <b>/deposit</b> или когда владелец бота вносит звёзды.\n\n"
+                "💡 <b>Ваши средства на счёте СБП в полной сохранности!</b>\n"
+                "Вы можете делать мгновенные переводы другим пользователям внутри СБП "
+                "или повторить вывод позже.",
                 reply_markup=get_back_button()
             )
         elif "user not found" in err_msg.lower():
@@ -272,9 +260,19 @@ async def execute_withdraw(callback: CallbackQuery, state: FSMContext):
                 "Проверьте правильность @username или ID.",
                 reply_markup=get_back_button()
             )
+        elif "STAR_COUNT_TOO_SMALL" in err_msg:
+            await callback.message.edit_text(
+                "⚠️ Минимальная сумма вывода задана сервером (от 1 ⭐️).",
+                reply_markup=get_back_button()
+            )
+        elif "Too Many Requests" in err_msg:
+            await callback.message.edit_text(
+                "⏳ Превышен лимит частоты вывода (не более 10 выводов в минуту). Подождите немного.",
+                reply_markup=get_back_button()
+            )
         else:
             await callback.message.edit_text(
-                f"⚠️ <b>Ошибка при выводе:</b> {err_msg}",
+                f"⚠️ <b>Ошибка withdrawStarBalance:</b> {err_msg}",
                 reply_markup=get_back_button()
             )
     except Exception as e:
@@ -284,142 +282,4 @@ async def execute_withdraw(callback: CallbackQuery, state: FSMContext):
         )
 
     await state.clear()
-    await callback.answer()
-
-
-# --- Method 2: Gift Withdrawal (sendGift) ---
-
-@router.callback_query(F.data == "wd_method:gift")
-async def choose_gift_withdrawal(callback: CallbackQuery, state: FSMContext):
-    user_id = callback.from_user.id
-    user = await db.get_user(user_id)
-    balance = user["balance"] if user else 0
-
-    try:
-        gifts_obj = await callback.bot.get_available_gifts()
-        raw_gifts = [
-            {"id": g.id, "star_count": g.star_count}
-            for g in gifts_obj.gifts
-        ]
-    except Exception:
-        raw_gifts = [
-            {"id": "9000000000000001", "star_count": 15},
-            {"id": "9000000000000003", "star_count": 25},
-            {"id": "9000000000000005", "star_count": 50},
-            {"id": "9000000000000008", "star_count": 100}
-        ]
-
-    text = (
-        "🎁 <b>ВЫВОД ПОДАРКОМ TELEGRAM / STATICGRAM</b>\n"
-        "────────────────────────\n"
-        f"Ваш доступный баланс СБП: <b>{balance:,} ⭐️</b>\n\n"
-        "<b>Как это работает:</b>\n"
-        "1. Вы выбираете подарок нужной стоимости.\n"
-        "2. Бот мгновенно отправляет подарок в ваш профиль StaticGram.\n"
-        "3. Вы можете оставить подарок на память или нажать кнопку "
-        "<b>«Конвертировать в звёзды»</b> прямо в профиле!\n"
-        "<i>(При конвертации подарка платформа берёт стандартную комиссию 15%).</i>\n\n"
-        "Выберите подарок для отправки:"
-    )
-
-    await callback.message.edit_text(text, reply_markup=get_gifts_selection_kb(raw_gifts, balance))
-    await callback.answer()
-
-
-@router.callback_query(F.data.startswith("select_gift:"))
-async def confirm_gift_selection(callback: CallbackQuery):
-    parts = callback.data.split(":")
-    gift_id = parts[1]
-    cost = int(parts[2])
-    user_id = callback.from_user.id
-    user = await db.get_user(user_id)
-
-    if not user or user["balance"] < cost:
-        await callback.answer(f"⚠️ Недостаточно звёзд. Требуется {cost} ⭐️, у вас {user['balance']} ⭐️.", show_alert=True)
-        return
-
-    text = (
-        "🎁 <b>ПОДТВЕРЖДЕНИЕ ВЫВОДА ПОДАРКОМ</b>\n"
-        "────────────────────────\n"
-        f"Стоимость подарка: <b>{cost:,} ⭐️</b>\n"
-        f"Получатель: <b>{mask_name(callback.from_user.first_name, callback.from_user.last_name)}</b>\n"
-        "────────────────────────\n"
-        "Подарок отобразится в вашем профиле StaticGram. "
-        "Вы сможете конвертировать его в звёзды в любой момент!"
-    )
-
-    await callback.message.edit_text(text, reply_markup=get_confirm_gift_kb(gift_id, cost))
-    await callback.answer()
-
-
-@router.callback_query(F.data.startswith("send_gift_btn:"))
-async def execute_send_gift(callback: CallbackQuery):
-    parts = callback.data.split(":")
-    gift_id = parts[1]
-    cost = int(parts[2])
-    user_id = callback.from_user.id
-    user = await db.get_user(user_id)
-
-    if not user or user["balance"] < cost:
-        await callback.answer("⚠️ Недостаточно звёзд на счёте.", show_alert=True)
-        return
-
-    try:
-        # Send gift directly to the user
-        await callback.bot.send_gift(
-            user_id=user_id,
-            gift_id=gift_id,
-            text="Вывод звёзд из сервиса СБП ⚡️"
-        )
-
-        # Debit from SBP balance
-        trx_id = await db.debit_balance(
-            user_id=user_id,
-            amount=cost,
-            trx_type="withdrawal",
-            comment=f"Вывод подарком за {cost} ⭐️ (ID {gift_id})",
-            counterparty="Подарок Telegram"
-        )
-
-        user_updated = await db.get_user(user_id)
-        u_label = f"@{user_updated['username']}" if user_updated.get("username") else f"{user_updated['first_name']}"
-
-        receipt = format_electronic_receipt(
-            trx_id=trx_id or "SBP-GIFT",
-            op_type="Вывод подарком СБП",
-            amount=cost,
-            sender_label="СБП Банк",
-            recipient_label=u_label,
-            comment=f"Отправлен подарок за {cost} ⭐️ в профиль"
-        )
-
-        await callback.message.edit_text(
-            f"🎉 <b>ПОДАРОК УСПЕШНО ОТПРАВЛЕН!</b>\n\n"
-            f"Подарок за <b>{cost:,} ⭐️</b> зачислен в ваш профиль StaticGram.\n"
-            f"Вы можете оставить его или обменять на звёзды в своём профиле.\n"
-            f"Остаток на счёте СБП: <b>{user_updated['balance']:,} ⭐️</b>\n\n"
-            f"{receipt}",
-            reply_markup=get_back_button()
-        )
-
-    except TelegramBadRequest as e:
-        if "BALANCE_TOO_LOW" in e.message:
-            await callback.message.edit_text(
-                "⚠️ <b>РЕЗЕРВ БОТА ВРЕМЕННО ПУСТ</b>\n"
-                "────────────────────────\n"
-                f"На балансе бота сейчас нет {cost:,} ⭐️ для покупки этого подарка.\n"
-                "Попробуйте позже или используйте прямой перевод внутри СБП!",
-                reply_markup=get_back_button()
-            )
-        else:
-            await callback.message.edit_text(
-                f"⚠️ <b>Ошибка при отправке подарка:</b> {e.message}",
-                reply_markup=get_back_button()
-            )
-    except Exception as e:
-        await callback.message.edit_text(
-            f"⚠️ <b>Непредвиденная ошибка:</b> {e}",
-            reply_markup=get_back_button()
-        )
-
     await callback.answer()
