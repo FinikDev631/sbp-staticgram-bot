@@ -1,11 +1,10 @@
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 
 import database as db
 from utils.states import ChequeState
-from utils.formatters import format_cheque_message
 from keyboards.cheque_kb import (
     get_cheque_menu_kb,
     get_cheque_recipient_choice_kb,
@@ -24,12 +23,10 @@ async def start_cheque_menu(event: Message | CallbackQuery, state: FSMContext):
     user = await db.get_user(user_id)
 
     text = (
-        "🧾 <b>ЧЕКИ И ИНЛАЙН-ПЕРЕВОДЫ СБП</b>\n"
-        "────────────────────────\n"
-        "Чек СБП позволяет отправить звёзды в любой чат или группу.\n"
-        "Первый нажавший (или указанный получатель) заберёт звёзды себе на баланс!\n\n"
-        f"💰 Ваш баланс: <b>{user['balance']:,} ⭐️</b>\n"
-        "<i>Вы можете создать новый чек или управлять активными:</i>"
+        f"<b>Чеки СБП</b>\n\n"
+        f"Доступно: <b>{user['balance']:,} ⭐️</b>\n\n"
+        f"Чек можно отправить в любой чат или личные сообщения. "
+        f"Получатель активирует его кнопкой в чате."
     )
 
     if isinstance(event, CallbackQuery):
@@ -45,14 +42,13 @@ async def create_cheque_prompt(callback: CallbackQuery, state: FSMContext):
     user = await db.get_user(user_id)
 
     if not user or user["balance"] < 1:
-        await callback.answer("⚠️ Недостаточно звёзд для создания чека.", show_alert=True)
+        await callback.answer("Недостаточно звёзд на счёте.", show_alert=True)
         return
 
     await state.set_state(ChequeState.waiting_for_amount)
     await callback.message.edit_text(
-        f"💰 <b>СОЗДАНИЕ ЧЕКА СБП</b>\n"
-        f"Ваш доступный баланс: <b>{user['balance']:,} ⭐️</b>\n\n"
-        "Выберите или введите сумму чека в ⭐️:",
+        f"Доступно: <b>{user['balance']:,} ⭐️</b>\n\n"
+        "Укажите сумму чека:",
         reply_markup=get_quick_amount_kb(user['balance'])
     )
     await callback.answer()
@@ -68,7 +64,7 @@ async def process_cheque_quick_amount(callback: CallbackQuery, state: FSMContext
 async def process_cheque_custom_amount(message: Message, state: FSMContext):
     text = message.text.strip().replace("⭐️", "").replace(" ", "")
     if not text.isdigit():
-        await message.answer("⚠️ Введите корректную сумму целым числом:", reply_markup=get_cancel_kb())
+        await message.answer("Введите целое число звёзд:", reply_markup=get_cancel_kb())
         return
 
     amount = int(text)
@@ -80,7 +76,7 @@ async def handle_cheque_amount(message: Message, state: FSMContext, amount: int,
     user = await db.get_user(user_id)
 
     if amount < 1:
-        err = "⚠️ Минимальная сумма чека — 1 ⭐️."
+        err = "Минимальная сумма — 1 ⭐️."
         if callback:
             await callback.answer(err, show_alert=True)
         else:
@@ -88,7 +84,7 @@ async def handle_cheque_amount(message: Message, state: FSMContext, amount: int,
         return
 
     if amount > user["balance"]:
-        err = f"⚠️ Недостаточно звёзд. Ваш баланс: {user['balance']:,} ⭐️."
+        err = f"Недостаточно звёзд. Баланс: {user['balance']:,} ⭐️."
         if callback:
             await callback.answer(err, show_alert=True)
         else:
@@ -99,8 +95,8 @@ async def handle_cheque_amount(message: Message, state: FSMContext, amount: int,
     await state.set_state(ChequeState.waiting_for_recipient)
 
     prompt = (
-        f"💰 Сумма чека: <b>{amount:,} ⭐️</b>\n\n"
-        "Кому предназначен этот чек СБП?"
+        f"Сумма чека: <b>{amount:,} ⭐️</b>\n\n"
+        "Кто сможет забрать этот чек?"
     )
 
     if callback:
@@ -115,7 +111,7 @@ async def process_cheque_target_any(callback: CallbackQuery, state: FSMContext):
     await state.update_data(recipient_username=None)
     await state.set_state(ChequeState.waiting_for_comment)
     await callback.message.edit_text(
-        "💬 Введите комментарий к чеку (или нажмите пропустить):",
+        "Напишите комментарий к чеку (или нажмите «Пропустить»):",
         reply_markup=get_skip_comment_kb()
     )
     await callback.answer()
@@ -124,7 +120,7 @@ async def process_cheque_target_any(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "ch_target:user", ChequeState.waiting_for_recipient)
 async def process_cheque_target_user(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
-        "👤 Введите <b>@username</b> пользователя, который сможет активировать этот чек:",
+        "Введите <b>@username</b> получателя чека:",
         reply_markup=get_cancel_kb()
     )
     await callback.answer()
@@ -134,14 +130,14 @@ async def process_cheque_target_user(callback: CallbackQuery, state: FSMContext)
 async def process_cheque_username(message: Message, state: FSMContext):
     target = message.text.strip().lstrip("@").lower()
     if not target:
-        await message.answer("⚠️ Введите корректный @username:", reply_markup=get_cancel_kb())
+        await message.answer("Введите корректный @username:", reply_markup=get_cancel_kb())
         return
 
     await state.update_data(recipient_username=target)
     await state.set_state(ChequeState.waiting_for_comment)
     await message.answer(
-        f"🎯 Получатель: <b>@{target}</b>\n\n"
-        "💬 Введите комментарий к чеку (или нажмите пропустить):",
+        f"Получатель: <b>@{target}</b>\n\n"
+        "Напишите комментарий к чеку (или нажмите «Пропустить»):",
         reply_markup=get_skip_comment_kb()
     )
 
@@ -173,7 +169,7 @@ async def finalize_cheque(message: Message, state: FSMContext, comment: str = No
     )
 
     if not cheque_id:
-        err = "⚠️ Не удалось создать чек. Проверьте баланс."
+        err = "Не удалось создать чек."
         if callback:
             await callback.answer(err, show_alert=True)
         else:
@@ -185,18 +181,14 @@ async def finalize_cheque(message: Message, state: FSMContext, comment: str = No
     bot_u = me.username or "sbpbot"
     link = f"https://t.me/{bot_u}?start={cheque_id}"
 
-    creator_label = f"@{user['username']}" if user.get("username") else f"{user['first_name']}"
-    rec_label = f"@{rec_u}" if rec_u else "Любой пользователь"
+    rec_label = f"@{rec_u}" if rec_u else "для всех"
+    comm_str = f"\n• Комментарий: <i>{comment}</i>" if comment else ""
 
     text = (
-        "🎉 <b>ЧЕК СБП УСПЕШНО СОЗДАН!</b>\n"
-        "────────────────────────\n"
-        f"💰 <b>Сумма:</b> <b>{amount:,} ⭐️</b>\n"
-        f"🎯 <b>Получатель:</b> {rec_label}\n"
-        f"🆔 <b>Код чека:</b> <code>{cheque_id}</code>\n"
-        f"🔗 <b>Прямая ссылка:</b> <code>{link}</code>\n"
-        "────────────────────────\n"
-        "Отправьте чек прямо в чат с помощью кнопки ниже или скопируйте ссылку!"
+        f"✅ <b>Чек на {amount:,} ⭐️ создан</b>\n\n"
+        f"• Получатель: {rec_label}{comm_str}\n"
+        f"• Ссылка: <code>{link}</code>\n\n"
+        f"Нажмите кнопку ниже, чтобы отправить чек в чат:"
     )
 
     kb = get_cheque_created_kb(cheque_id, bot_u)
@@ -216,25 +208,23 @@ async def show_active_cheques(callback: CallbackQuery):
 
     if not cheques:
         await callback.message.edit_text(
-            "📋 <b>У вас нет активных чеков СБП.</b>\n"
-            "Вы можете создать чек и отправить его друзьям или в группу!",
+            "У вас нет активных чеков.",
             reply_markup=get_back_button("menu_cheque")
         )
         await callback.answer()
         return
 
-    text = "📋 <b>ВАШИ АКТИВНЫЕ ЧЕКИ СБП:</b>\n────────────────────────\n"
-    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    text = "<b>Ваши активные чеки:</b>\n\n"
     buttons = []
 
     for ch in cheques:
-        rec = f"для @{ch['recipient_username']}" if ch.get('recipient_username') else "для всех"
+        rec = f"@{ch['recipient_username']}" if ch.get('recipient_username') else "все"
         text += f"• <code>{ch['cheque_id']}</code>: <b>{ch['amount']:,} ⭐️</b> ({rec})\n"
         buttons.append([
-            InlineKeyboardButton(text=f"❌ Аннулировать {ch['amount']} ⭐️", callback_data=f"cancel_ch:{ch['cheque_id']}")
+            InlineKeyboardButton(text=f"Аннулировать {ch['amount']} ⭐️", callback_data=f"cancel_ch:{ch['cheque_id']}")
         ])
 
-    buttons.append([InlineKeyboardButton(text="◀️ Назад", callback_data="menu_cheque")])
+    buttons.append([InlineKeyboardButton(text="← Назад", callback_data="menu_cheque")])
     await callback.message.edit_text(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
     await callback.answer()
 
@@ -246,9 +236,9 @@ async def process_cancel_cheque(callback: CallbackQuery):
 
     ok = await db.cancel_cheque(cheque_id, user_id)
     if ok:
-        await callback.answer("✅ Чек аннулирован. Звёзды возвращены на ваш счёт!", show_alert=True)
+        await callback.answer("Чек аннулирован, звёзды возвращены.", show_alert=True)
         user = await db.get_user(user_id)
         from utils.formatters import format_sbp_card
         await callback.message.edit_text(format_sbp_card(user), reply_markup=get_back_button())
     else:
-        await callback.answer("⚠️ Чек уже был активирован или не существует.", show_alert=True)
+        await callback.answer("Чек уже активирован или не существует.", show_alert=True)

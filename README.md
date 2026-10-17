@@ -87,11 +87,39 @@ API_BASE_URL=https://api.staticgram.top
 ADMIN_ID=0
 ```
 
-### 2. Запуск бота
+### 2. Запуск на сервере (Хостинге)
 ```bash
+# Установка зависимостей
+pip install -r requirements.txt
+
+# Прямой запуск
 python main.py
 ```
-Или запустите файл `run.bat` двойным кликом.
+
+#### Запуск в фоне через systemd (Linux VPS):
+Создайте `/etc/systemd/system/sbpbot.service`:
+```ini
+[Unit]
+Description=SBP StaticGram Stars Bot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/path/to/sbp-staticgram-bot
+ExecStart=/usr/bin/python3 main.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+Затем активируйте службу:
+```bash
+systemctl daemon-reload
+systemctl enable sbpbot
+systemctl start sbpbot
+```
 
 ---
 

@@ -8,8 +8,7 @@ from utils.states import TransferState
 from utils.formatters import (
     mask_name,
     format_transfer_confirmation,
-    format_electronic_receipt,
-    format_sbp_card
+    format_electronic_receipt
 )
 from keyboards.main_kb import get_cancel_kb, get_back_button
 from keyboards.transfer_kb import (
@@ -28,12 +27,7 @@ async def start_transfer_flow(event: Message | CallbackQuery, state: FSMContext)
     user = await db.get_user(user_id)
 
     if not user or user["balance"] < 1:
-        text = (
-            "⚠️ <b>НЕДОСТАТОЧНО СРЕДСТВ</b>\n"
-            "────────────────────────\n"
-            "На вашем счёте СБП <b>0 ⭐️</b>.\n"
-            "Пополните счёт звёздами, чтобы совершать мгновенные переводы другим пользователям!"
-        )
+        text = "Недостаточно средств. Пополните счёт через /deposit."
         if isinstance(event, CallbackQuery):
             await event.message.edit_text(text, reply_markup=get_back_button())
             await event.answer()
@@ -42,13 +36,9 @@ async def start_transfer_flow(event: Message | CallbackQuery, state: FSMContext)
         return
 
     text = (
-        "💸 <b>ПЕРЕВОД ПО СБП</b>\n"
-        "────────────────────────\n"
-        f"Ваш доступный баланс: <b>{user['balance']:,} ⭐️</b>\n\n"
-        "Введите реквизиты получателя:\n"
-        "• <b>@username</b> (например, <code>@durov</code>)\n"
-        "• <b>Telegram ID</b> (например, <code>123456789</code>)\n"
-        "• <b>Номер счёта СБП</b> (например, <code>СБП-1234-5678</code>)"
+        f"<b>Отправка звёзд по СБП</b>\n\n"
+        f"Доступно: <b>{user['balance']:,} ⭐️</b>\n\n"
+        f"Введите <b>@username</b>, <b>Telegram ID</b> или <b>номер счёта</b> получателя:"
     )
 
     await state.set_state(TransferState.waiting_for_recipient)
@@ -69,40 +59,34 @@ async def process_transfer_recipient(message: Message, state: FSMContext):
     recipient_type = None
     recipient_label = None
 
-    # Try by SBP account number
     if query.upper().startswith("СБП-") or query.upper().startswith("SBP-"):
         recipient = await db.get_user_by_account(query)
         if recipient:
             recipient_type = "direct"
             r_name = mask_name(recipient['first_name'], recipient['last_name'])
             recipient_label = f"{r_name} ({recipient['account_number']})"
-
-    # Try by Telegram ID
     elif query.isdigit():
         target_id = int(query)
         if target_id == sender_id:
-            await message.answer("⚠️ Вы не можете перевести звёзды самому себе. Введите другого получателя:", reply_markup=get_cancel_kb())
+            await message.answer("Нельзя перевести звёзды самому себе. Введите другого получателя:", reply_markup=get_cancel_kb())
             return
         recipient = await db.get_user(target_id)
         if recipient:
             recipient_type = "direct"
             r_name = mask_name(recipient['first_name'], recipient['last_name'])
-            recipient_label = f"{r_name} (ID {target_id})"
+            recipient_label = f"{r_name} (id{target_id})"
         else:
-            # Try to resolve via bot get_chat
             try:
                 chat = await message.bot.get_chat(target_id)
                 recipient_type = "id_unregistered"
-                recipient_label = f"{chat.first_name} (ID {target_id})"
+                recipient_label = f"{chat.first_name} (id{target_id})"
             except Exception:
                 recipient_type = "id_unregistered"
-                recipient_label = f"Пользователь ID {target_id}"
-
-    # Try by @username
+                recipient_label = f"id{target_id}"
     else:
         clean_u = query.lstrip("@").lower()
         if sender.get("username") and sender["username"].lower() == clean_u:
-            await message.answer("⚠️ Вы не можете перевести звёзды самому себе. Введите другого получателя:", reply_markup=get_cancel_kb())
+            await message.answer("Нельзя перевести звёзды самому себе. Введите другого получателя:", reply_markup=get_cancel_kb())
             return
 
         recipient = await db.get_user_by_username(clean_u)
@@ -111,15 +95,13 @@ async def process_transfer_recipient(message: Message, state: FSMContext):
             r_name = mask_name(recipient['first_name'], recipient['last_name'])
             recipient_label = f"{r_name} (@{clean_u})"
         else:
-            # Unregistered username
             recipient_type = "username_pending"
             recipient_label = f"@{clean_u}"
 
     if recipient and recipient["user_id"] == sender_id:
-        await message.answer("⚠️ Вы не можете перевести звёзды самому себе. Введите другого получателя:", reply_markup=get_cancel_kb())
+        await message.answer("Нельзя перевести звёзды самому себе. Введите другого получателя:", reply_markup=get_cancel_kb())
         return
 
-    # Store recipient in state
     await state.update_data(
         recipient=recipient,
         recipient_type=recipient_type,
@@ -129,9 +111,9 @@ async def process_transfer_recipient(message: Message, state: FSMContext):
 
     await state.set_state(TransferState.waiting_for_amount)
     await message.answer(
-        f"👤 <b>Получатель:</b> {recipient_label}\n"
-        f"💰 <b>Ваш баланс:</b> {sender['balance']:,} ⭐️\n\n"
-        "Выберите или введите сумму перевода в ⭐️ (от 1 ⭐️):",
+        f"Получатель: <b>{recipient_label}</b>\n"
+        f"Доступно: <b>{sender['balance']:,} ⭐️</b>\n\n"
+        "Укажите сумму перевода:",
         reply_markup=get_quick_amount_kb(sender['balance'])
     )
 
@@ -146,7 +128,7 @@ async def process_quick_amount(callback: CallbackQuery, state: FSMContext):
 async def process_transfer_amount(message: Message, state: FSMContext):
     text = message.text.strip().replace("⭐️", "").replace(" ", "")
     if not text.isdigit():
-        await message.answer("⚠️ Введите корректную сумму целым числом (например, <code>10</code>):", reply_markup=get_cancel_kb())
+        await message.answer("Введите сумму целым числом:", reply_markup=get_cancel_kb())
         return
 
     amount = int(text)
@@ -158,7 +140,7 @@ async def handle_amount_input(message: Message, state: FSMContext, amount: int, 
     sender = await db.get_user(sender_id)
 
     if amount < 1:
-        err = "⚠️ Минимальная сумма перевода по СБП — 1 ⭐️."
+        err = "Минимальная сумма перевода — 1 ⭐️."
         if callback:
             await callback.answer(err, show_alert=True)
         else:
@@ -166,7 +148,7 @@ async def handle_amount_input(message: Message, state: FSMContext, amount: int, 
         return
 
     if amount > sender["balance"]:
-        err = f"⚠️ Недостаточно звёзд. Ваш баланс: {sender['balance']:,} ⭐️."
+        err = f"Недостаточно звёзд. Баланс: {sender['balance']:,} ⭐️."
         if callback:
             await callback.answer(err, show_alert=True)
         else:
@@ -177,9 +159,8 @@ async def handle_amount_input(message: Message, state: FSMContext, amount: int, 
     await state.set_state(TransferState.waiting_for_comment)
 
     prompt = (
-        f"💰 Сумма перевода: <b>{amount:,} ⭐️</b>\n\n"
-        "💬 Введите сообщение или комментарий к переводу (например, <i>«За пиццу 🍕»</i> или <i>«Возврат долга»</i>)\n"
-        "или нажмите кнопку, чтобы перевести без сообщения:"
+        f"Сумма: <b>{amount:,} ⭐️</b>\n\n"
+        "Напишите комментарий к переводу или нажмите «Пропустить»:"
     )
 
     if callback:
@@ -234,23 +215,23 @@ async def execute_transfer(callback: CallbackQuery, state: FSMContext):
     recipient_label = data["recipient_label"]
 
     if sender["balance"] < amount:
-        await callback.answer("⚠️ Недостаточно средств для совершения перевода.", show_alert=True)
+        await callback.answer("Недостаточно средств.", show_alert=True)
         await state.clear()
         return
 
-    sender_label = f"@{sender['username']}" if sender.get("username") else f"{sender['first_name']} (ID {sender['user_id']})"
+    sender_label = f"@{sender['username']}" if sender.get("username") else f"{sender['first_name']} (id{sender['user_id']})"
 
     if recipient_type == "direct" and recipient:
         res = await db.direct_transfer(sender_id, recipient["user_id"], amount, comment)
         if not res:
-            await callback.answer("⚠️ Ошибка транзакции. Попробуйте снова.", show_alert=True)
+            await callback.answer("Ошибка при проведении перевода.", show_alert=True)
             await state.clear()
             return
 
         trx_id = res["trx_id"]
         receipt = format_electronic_receipt(
             trx_id=trx_id,
-            op_type="Перевод через СБП",
+            op_type="Перевод отправлен",
             amount=amount,
             sender_label=sender_label,
             recipient_label=recipient_label,
@@ -259,7 +240,7 @@ async def execute_transfer(callback: CallbackQuery, state: FSMContext):
         )
 
         await callback.message.edit_text(
-            f"✅ <b>ПЕРЕВОД УСПЕШНО ВЫПОЛНЕН!</b>\n\n{receipt}",
+            f"✅ <b>Перевод успешно отправлен</b>\n\n{receipt}",
             reply_markup=get_back_button()
         )
 
@@ -267,7 +248,7 @@ async def execute_transfer(callback: CallbackQuery, state: FSMContext):
         try:
             r_receipt = format_electronic_receipt(
                 trx_id=trx_id,
-                op_type="Входящий перевод СБП",
+                op_type="Входящий перевод",
                 amount=amount,
                 sender_label=sender_label,
                 recipient_label=recipient_label,
@@ -276,8 +257,7 @@ async def execute_transfer(callback: CallbackQuery, state: FSMContext):
             )
             await callback.bot.send_message(
                 recipient["user_id"],
-                f"⚡️ <b>ВХОДЯЩИЙ ПЕРЕВОД ПО СБП!</b>\n\n"
-                f"Вам зачислено <b>+{amount:,} ⭐️</b> на счёт СБП.\n\n{r_receipt}"
+                f"⚡️ <b>Входящий перевод СБП:</b>\n\n{r_receipt}"
             )
         except Exception:
             pass
@@ -287,14 +267,14 @@ async def execute_transfer(callback: CallbackQuery, state: FSMContext):
         clean_u = data["recipient_raw"].lstrip("@").lower()
         res = await db.pending_transfer(sender_id, clean_u, amount, comment)
         if not res:
-            await callback.answer("⚠️ Ошибка транзакции. Попробуйте снова.", show_alert=True)
+            await callback.answer("Ошибка при проведении перевода.", show_alert=True)
             await state.clear()
             return
 
         trx_id = res["trx_id"]
         receipt = format_electronic_receipt(
             trx_id=trx_id,
-            op_type="Перевод через СБП (в обработке)",
+            op_type="Перевод ожидает получателя",
             amount=amount,
             sender_label=sender_label,
             recipient_label=f"@{clean_u}",
@@ -303,9 +283,9 @@ async def execute_transfer(callback: CallbackQuery, state: FSMContext):
         )
 
         await callback.message.edit_text(
-            f"✅ <b>ПЕРЕВОД ОТПРАВЛЕН!</b>\n\n"
-            f"Звёзды зарезервированы в СБП. Как только <b>@{clean_u}</b> запустит бота @sbpbot, "
-            f"перевод в размере <b>+{amount:,} ⭐️</b> будет зачислен на его баланс мгновенно!\n\n"
+            f"✅ <b>Перевод зарезервирован</b>\n\n"
+            f"Звёзды зачислены в резерв. Как только <b>@{clean_u}</b> откроет бота, "
+            f"он моментально получит <b>{amount:,} ⭐️</b>.\n\n"
             f"{receipt}",
             reply_markup=get_back_button()
         )

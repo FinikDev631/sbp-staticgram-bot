@@ -17,10 +17,8 @@ router = Router()
 async def start_deposit(event: Message | CallbackQuery, state: FSMContext):
     await state.clear()
     text = (
-        "📥 <b>ПОПОЛНЕНИЕ СЧЁТА СБП ЗВЁЗДАМИ (XTR)</b>\n"
-        "────────────────────────\n"
-        "Вы можете мгновенно пополнить свой счёт СБП официальными звёздами Telegram Stars (XTR).\n\n"
-        "Выберите сумму пополнения или введите свою:"
+        "<b>Пополнение счёта СБП</b>\n\n"
+        "Выберите сумму для оплаты через официальный инвойс Telegram Stars:"
     )
 
     if isinstance(event, CallbackQuery):
@@ -41,7 +39,7 @@ async def process_preset_deposit(callback: CallbackQuery, state: FSMContext):
 async def process_custom_deposit_prompt(callback: CallbackQuery, state: FSMContext):
     await state.set_state(DepositState.waiting_for_amount)
     await callback.message.edit_text(
-        "✏️ Введите сумму пополнения в ⭐️ (целое число от 1 до 100 000):",
+        "Введите сумму пополнения в ⭐️ (от 1 до 100 000):",
         reply_markup=get_cancel_kb()
     )
     await callback.answer()
@@ -51,12 +49,12 @@ async def process_custom_deposit_prompt(callback: CallbackQuery, state: FSMConte
 async def process_custom_amount(message: Message, state: FSMContext):
     text = message.text.strip().replace("⭐️", "").replace(" ", "")
     if not text.isdigit():
-        await message.answer("⚠️ Введите корректное целое число (например, <code>50</code>):", reply_markup=get_cancel_kb())
+        await message.answer("Введите целое число звёзд:", reply_markup=get_cancel_kb())
         return
 
     amount = int(text)
     if amount < 1 or amount > 100000:
-        await message.answer("⚠️ Сумма должна быть от 1 до 100 000 ⭐️. Попробуйте снова:", reply_markup=get_cancel_kb())
+        await message.answer("Сумма должна быть от 1 до 100 000 ⭐️. Попробуйте снова:", reply_markup=get_cancel_kb())
         return
 
     await state.clear()
@@ -66,7 +64,7 @@ async def process_custom_amount(message: Message, state: FSMContext):
 async def send_deposit_invoice(message: Message, user_id: int, amount: int):
     payload = f"dep_{user_id}_{amount}_{uuid.uuid4().hex[:8]}"
     title = f"Пополнение СБП (+{amount:,} ⭐️)"
-    desc = f"Зачисление {amount:,} звёзд на ваш счёт в Системе Быстрых Платежей StaticGram"
+    desc = f"Зачисление {amount:,} звёзд на счёт СБП"
 
     try:
         await message.bot.send_invoice(
@@ -75,18 +73,17 @@ async def send_deposit_invoice(message: Message, user_id: int, amount: int):
             description=desc,
             payload=payload,
             currency="XTR",
-            prices=[LabeledPrice(label=f"Пополнение {amount:,} ⭐️", amount=amount)]
+            prices=[LabeledPrice(label=f"{amount:,} ⭐️", amount=amount)]
         )
     except Exception as e:
         await message.answer(
-            f"⚠️ Ошибка при создании счёта: {e}\nПопробуйте позже.",
+            f"Не удалось выставить счёт: {e}",
             reply_markup=get_back_button()
         )
 
 
 @router.pre_checkout_query()
 async def process_pre_checkout(query: PreCheckoutQuery):
-    # StaticGram requires pre_checkout_query response within 10s
     await query.answer(ok=True)
 
 
@@ -109,26 +106,26 @@ async def process_successful_payment(message: Message):
         user_id=user_id,
         amount=stars_amount,
         trx_type="deposit",
-        comment="Пополнение счёта Telegram Stars (XTR)",
+        comment="Пополнение Telegram Stars",
         counterparty="Telegram Stars"
     )
 
     user_updated = await db.get_user(user_id)
-    u_label = f"@{user_updated['username']}" if user_updated.get("username") else f"{user_updated['first_name']} ({user_updated['account_number']})"
+    u_label = f"@{user_updated['username']}" if user_updated.get("username") else f"id{user_id}"
 
     receipt = format_electronic_receipt(
         trx_id=trx_id,
-        op_type="Пополнение счёта СБП",
+        op_type="Пополнение счёта",
         amount=stars_amount,
-        sender_label="Telegram Stars (XTR)",
+        sender_label="Telegram Stars",
         recipient_label=u_label,
-        comment="Официальная оплата звёздами StaticGram"
+        comment="Оплата звёздами"
     )
 
     await message.answer(
-        f"🎉 <b>СЧЁТ СБП УСПЕШНО ПОПОЛНЕН!</b>\n\n"
-        f"Вам зачислено: <b>+{stars_amount:,} ⭐️</b>\n"
-        f"Текущий баланс: <b>{user_updated['balance']:,} ⭐️</b>\n\n"
+        f"✅ <b>Счёт успешно пополнен</b>\n\n"
+        f"Зачислено: <b>+{stars_amount:,} ⭐️</b>\n"
+        f"Баланс: <b>{user_updated['balance']:,} ⭐️</b>\n\n"
         f"{receipt}",
         reply_markup=get_back_button()
     )

@@ -21,21 +21,12 @@ router = Router()
 @router.callback_query(F.data == "menu_withdraw")
 @router.message(Command("withdraw"))
 async def start_withdraw(event: Message | CallbackQuery, state: FSMContext):
-    """
-    Direct star withdrawal via StaticGram API withdrawStarBalance:
-    https://docs.staticgram.top/methods/withdrawStarBalance
-    """
     await state.clear()
     user_id = event.from_user.id
     user = await db.get_user(user_id)
 
     if not user or user["balance"] < 1:
-        text = (
-            "⚠️ <b>НЕДОСТАТОЧНО ЗВЁЗД</b>\n"
-            "────────────────────────\n"
-            "На вашем счёте СБП <b>0 ⭐️</b>.\n"
-            "Выводить пока нечего. Пополните счёт через /deposit или получите перевод по СБП!"
-        )
+        text = "Недостаточно звёзд для вывода."
         if isinstance(event, CallbackQuery):
             await event.message.edit_text(text, reply_markup=get_back_button())
             await event.answer()
@@ -44,14 +35,10 @@ async def start_withdraw(event: Message | CallbackQuery, state: FSMContext):
         return
 
     text = (
-        "📤 <b>ВЫВОД ЗВЁЗД ПО СБП (withdrawStarBalance)</b>\n"
-        "────────────────────────\n"
-        f"Ваш доступный баланс: <b>{user['balance']:,} ⭐️</b>\n\n"
-        "Звёзды выводятся напрямую на баланс аккаунта в StaticGram через метод "
-        "<code>withdrawStarBalance</code>.\n\n"
-        "Получатель мгновенно получает официальное системное уведомление от <b>777000</b>:\n"
-        "<i>«Вывод от бота @sbpbot в размере X ⭐️ зачислен на ваш баланс.»</i>\n\n"
-        "Куда отправить звёзды?"
+        f"<b>Вывод звёзд на аккаунт</b>\n\n"
+        f"Доступно к выводу: <b>{user['balance']:,} ⭐️</b>\n\n"
+        f"Звёзды зачисляются напрямую на баланс аккаунта в StaticGram через официальный шлюз.\n\n"
+        f"Куда отправить звёзды?"
     )
 
     await state.set_state(WithdrawState.waiting_for_target)
@@ -66,15 +53,15 @@ async def start_withdraw(event: Message | CallbackQuery, state: FSMContext):
 async def process_target_self(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     user = await db.get_user(user_id)
-    u_label = f"@{user['username']}" if user.get("username") else f"{user['first_name']} (ID {user_id})"
+    u_label = f"@{user['username']}" if user.get("username") else f"id{user_id}"
 
-    await state.update_data(target_id=user_id, target_label=f"Ваш аккаунт ({u_label})")
+    await state.update_data(target_id=user_id, target_label=u_label)
     await state.set_state(WithdrawState.waiting_for_amount)
 
     await callback.message.edit_text(
-        f"👤 <b>Получатель вывода:</b> Ваш аккаунт ({u_label})\n"
-        f"💰 <b>Доступно к выводу:</b> {user['balance']:,} ⭐️\n\n"
-        "Выберите или введите сумму вывода в ⭐️:",
+        f"Получатель: <b>{u_label}</b>\n"
+        f"Доступно: <b>{user['balance']:,} ⭐️</b>\n\n"
+        "Укажите сумму вывода:",
         reply_markup=get_withdraw_amount_kb(user['balance'])
     )
     await callback.answer()
@@ -83,8 +70,7 @@ async def process_target_self(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "wd_target:other", WithdrawState.waiting_for_target)
 async def process_target_other(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
-        "👥 <b>ВЫВОД НА ДРУГОЙ АККАУНТ</b>\n\n"
-        "Введите <b>@username</b> или <b>Telegram ID</b> получателя звёзд:",
+        "Введите <b>@username</b> или <b>Telegram ID</b> получателя:",
         reply_markup=get_cancel_kb()
     )
     await callback.answer()
@@ -100,15 +86,15 @@ async def process_target_input(message: Message, state: FSMContext):
     if target_raw.isdigit():
         target_id = int(target_raw)
 
-    clean_label = target_raw if target_raw.startswith("@") else f"@{target_raw}" if not target_raw.isdigit() else f"ID {target_raw}"
+    clean_label = target_raw if target_raw.startswith("@") else f"@{target_raw}" if not target_raw.isdigit() else f"id{target_raw}"
 
     await state.update_data(target_id=target_id, target_label=clean_label)
     await state.set_state(WithdrawState.waiting_for_amount)
 
     await message.answer(
-        f"👤 <b>Получатель вывода:</b> {clean_label}\n"
-        f"💰 <b>Доступно к выводу:</b> {sender['balance']:,} ⭐️\n\n"
-        "Выберите или введите сумму вывода в ⭐️:",
+        f"Получатель: <b>{clean_label}</b>\n"
+        f"Доступно: <b>{sender['balance']:,} ⭐️</b>\n\n"
+        "Укажите сумму вывода:",
         reply_markup=get_withdraw_amount_kb(sender['balance'])
     )
 
@@ -122,7 +108,7 @@ async def process_preset_withdraw(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "wd_custom", WithdrawState.waiting_for_amount)
 async def process_custom_withdraw_prompt(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
-        "✏️ Введите сумму вывода в ⭐️ (целое число от 1 ⭐️):",
+        "Введите сумму вывода целым числом:",
         reply_markup=get_cancel_kb()
     )
     await callback.answer()
@@ -132,7 +118,7 @@ async def process_custom_withdraw_prompt(callback: CallbackQuery, state: FSMCont
 async def process_withdraw_amount(message: Message, state: FSMContext):
     text = message.text.strip().replace("⭐️", "").replace(" ", "")
     if not text.isdigit():
-        await message.answer("⚠️ Введите корректную сумму целым числом:", reply_markup=get_cancel_kb())
+        await message.answer("Введите целое число звёзд:", reply_markup=get_cancel_kb())
         return
 
     amount = int(text)
@@ -144,7 +130,7 @@ async def handle_withdraw_amount(message: Message, state: FSMContext, amount: in
     user = await db.get_user(user_id)
 
     if amount < 1:
-        err = "⚠️ Минимальная сумма вывода — 1 ⭐️."
+        err = "Минимальная сумма вывода — 1 ⭐️."
         if callback:
             await callback.answer(err, show_alert=True)
         else:
@@ -152,7 +138,7 @@ async def handle_withdraw_amount(message: Message, state: FSMContext, amount: in
         return
 
     if amount > user["balance"]:
-        err = f"⚠️ Недостаточно звёзд. Ваш баланс: {user['balance']:,} ⭐️."
+        err = f"Недостаточно звёзд. Баланс: {user['balance']:,} ⭐️."
         if callback:
             await callback.answer(err, show_alert=True)
         else:
@@ -164,15 +150,11 @@ async def handle_withdraw_amount(message: Message, state: FSMContext, amount: in
     target_label = data["target_label"]
 
     text = (
-        "⚡️ <b>ПОДТВЕРЖДЕНИЕ ВЫВОДА ЗВЁЗД</b>\n"
-        "────────────────────────\n"
-        f"👤 <b>Получатель:</b> <b>{target_label}</b>\n"
-        f"💰 <b>Сумма вывода:</b> <b>{amount:,} ⭐️</b>\n"
-        "🏷 <b>Комиссия СБП:</b> <b>0 ⭐️ (0%)</b>\n"
-        "🌐 <b>Метод API:</b> <code>withdrawStarBalance</code>\n"
-        "📦 <b>Способ доставки:</b> Официальное зачисление от 777000\n"
-        "────────────────────────\n"
-        "<i>Звёзды спишутся с баланса СБП и будут начислены напрямую на аккаунт StaticGram.</i>"
+        f"<b>Вывод {amount:,} ⭐️ на аккаунт</b>\n\n"
+        f"• Получатель: <b>{target_label}</b>\n"
+        f"• Сумма списания: <b>{amount:,} ⭐️</b>\n"
+        f"• Комиссия: <b>0 ⭐️</b>\n\n"
+        f"Звёзды поступят на аккаунт официальным уведомлением."
     )
 
     await state.set_state(WithdrawState.confirm_withdraw)
@@ -194,22 +176,19 @@ async def execute_withdraw(callback: CallbackQuery, state: FSMContext):
     target_label = data["target_label"]
 
     if user["balance"] < amount:
-        await callback.answer("⚠️ Недостаточно звёзд на счёте.", show_alert=True)
+        await callback.answer("Недостаточно звёзд на счёте.", show_alert=True)
         await state.clear()
         return
 
-    # Generate ASCII idempotency key up to 40 chars
     req_id = f"wd{user_id}_{uuid.uuid4().hex[:12]}"
 
     try:
-        # Call StaticGram withdrawStarBalance method directly
         res = await callback.bot(WithdrawStarBalance(
             user_id=target_id,
             star_count=amount,
             request_id=req_id
         ))
 
-        # Successfully executed on StaticGram: deduct from internal SBP balance
         trx_id = await db.debit_balance(
             user_id=user_id,
             amount=amount,
@@ -219,22 +198,21 @@ async def execute_withdraw(callback: CallbackQuery, state: FSMContext):
         )
 
         user_updated = await db.get_user(user_id)
-        sender_label = f"@{user_updated['username']}" if user_updated.get("username") else f"{user_updated['first_name']} (ID {user_id})"
+        sender_label = f"@{user_updated['username']}" if user_updated.get("username") else f"id{user_id}"
 
         receipt = format_electronic_receipt(
             trx_id=trx_id or req_id,
-            op_type="Вывод звёзд (withdrawStarBalance)",
+            op_type="Вывод звёзд на аккаунт",
             amount=amount,
             sender_label=sender_label,
             recipient_label=target_label,
-            comment="Официальная выплата StaticGram от 777000"
+            comment="Официальная выплата"
         )
 
         await callback.message.edit_text(
-            f"🎉 <b>ВЫВОД ЗВЁЗД УСПЕШНО ИСПОЛНЕН!</b>\n\n"
-            f"Получателю <b>{target_label}</b> зачислено <b>{amount:,} ⭐️</b>.\n"
-            f"Входящее системное уведомление отправлено от 777000.\n"
-            f"Ваш остаток в СБП: <b>{user_updated['balance']:,} ⭐️</b>\n\n"
+            f"✅ <b>Вывод успешно исполнен</b>\n\n"
+            f"На аккаунт <b>{target_label}</b> зачислено <b>{amount:,} ⭐️</b>.\n"
+            f"Остаток в СБП: <b>{user_updated['balance']:,} ⭐️</b>\n\n"
             f"{receipt}",
             reply_markup=get_back_button()
         )
@@ -243,41 +221,25 @@ async def execute_withdraw(callback: CallbackQuery, state: FSMContext):
         err_msg = e.message
         if "BALANCE_TOO_LOW" in err_msg:
             await callback.message.edit_text(
-                "⚠️ <b>НЕДОСТАТОЧНО ЗВЁЗД НА БАЛАНСЕ БОТА</b>\n"
-                "────────────────────────\n"
-                f"На балансе бота сейчас нет {amount:,} ⭐️ для вывода через <code>withdrawStarBalance</code>.\n\n"
-                "ℹ️ <i>Как это работает:</i> бот переводит звёзды со своего баланса StaticGram. "
-                "Баланс бота увеличивается, когда пользователи совершают пополнения (депозиты) "
-                "через команду <b>/deposit</b> или когда владелец бота вносит звёзды.\n\n"
-                "💡 <b>Ваши средства на счёте СБП в полной сохранности!</b>\n"
-                "Вы можете делать мгновенные переводы другим пользователям внутри СБП "
-                "или повторить вывод позже.",
+                "<b>В резерве бота временно недостаточно звёзд</b>\n\n"
+                f"На балансе бота сейчас нет {amount:,} ⭐️.\n"
+                "Резерв пополняется при депозитах пользователей (/deposit) или владельцем.\n\n"
+                "Ваши звёзды на балансе сохранены.",
                 reply_markup=get_back_button()
             )
         elif "user not found" in err_msg.lower():
             await callback.message.edit_text(
-                f"⚠️ <b>ОШИБКА:</b> Получатель <code>{target_label}</code> не найден в StaticGram.\n"
-                "Проверьте правильность @username или ID.",
-                reply_markup=get_back_button()
-            )
-        elif "STAR_COUNT_TOO_SMALL" in err_msg:
-            await callback.message.edit_text(
-                "⚠️ Минимальная сумма вывода задана сервером (от 1 ⭐️).",
-                reply_markup=get_back_button()
-            )
-        elif "Too Many Requests" in err_msg:
-            await callback.message.edit_text(
-                "⏳ Превышен лимит частоты вывода (не более 10 выводов в минуту). Подождите немного.",
+                f"Пользователь <code>{target_label}</code> не найден в StaticGram.\nПроверьте @username или ID.",
                 reply_markup=get_back_button()
             )
         else:
             await callback.message.edit_text(
-                f"⚠️ <b>Ошибка withdrawStarBalance:</b> {err_msg}",
+                f"Ошибка при выводе: {err_msg}",
                 reply_markup=get_back_button()
             )
     except Exception as e:
         await callback.message.edit_text(
-            f"⚠️ <b>Непредвиденная ошибка:</b> {e}",
+            f"Ошибка: {e}",
             reply_markup=get_back_button()
         )
 
