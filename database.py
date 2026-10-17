@@ -580,9 +580,10 @@ async def claim_cheque(cheque_id: str, claimer_id: int, claimer_username: Option
         if cheque["creator_id"] == claimer_id:
             return {"status": "self_claim"}
 
-        if cheque.get("recipient_username"):
-            if not clean_u or clean_u != cheque["recipient_username"].lower():
-                return {"status": "restricted", "expected": cheque["recipient_username"]}
+        rec_u = cheque.get("recipient_username")
+        if rec_u and str(rec_u).strip().lower() not in ("none", "null", ""):
+            if not clean_u or clean_u != rec_u.lower():
+                return {"status": "restricted", "expected": rec_u}
 
         amount = cheque["amount"]
         await db.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (amount, claimer_id))

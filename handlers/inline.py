@@ -61,7 +61,8 @@ async def process_inline_query(query: InlineQuery):
         cheque = await db.get_cheque(raw_text)
         if cheque and cheque["status"] == "active":
             creator_label = f"@{cheque['creator_username']}" if cheque.get("creator_username") else f"id{cheque['creator_id']}"
-            rec_label = f"@{cheque['recipient_username']}" if cheque.get("recipient_username") else None
+            rec_u = cheque.get("recipient_username")
+            rec_label = f"@{rec_u}" if rec_u and str(rec_u).strip().lower() not in ("none", "null", "") else None
             msg_text = format_cheque_message(
                 amount=cheque["amount"],
                 creator_label=creator_label,
@@ -82,7 +83,8 @@ async def process_inline_query(query: InlineQuery):
     if user:
         active_cheques = await db.get_active_cheques_by_user(user_id)
         for ch in active_cheques[:5]:
-            rec_label = f"@{ch['recipient_username']}" if ch.get("recipient_username") else None
+            rec_u = ch.get("recipient_username")
+            rec_label = f"@{rec_u}" if rec_u and str(rec_u).strip().lower() not in ("none", "null", "") else None
             creator_label = f"@{user['username']}" if user.get("username") else f"{user['first_name']}"
             msg_text = format_cheque_message(
                 amount=ch["amount"],

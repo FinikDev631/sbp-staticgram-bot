@@ -79,7 +79,10 @@ def format_cheque_message(
     comment: Optional[str] = None
 ) -> str:
     """Clean inline cheque card for chat."""
-    for_whom = f"для {recipient_label}" if recipient_label else "для всех"
+    if recipient_label and str(recipient_label).strip().lower().lstrip("@") not in ("none", "null", ""):
+        for_whom = f"для {recipient_label}"
+    else:
+        for_whom = "для всех"
     comm_block = f"\n<i>«{comment}»</i>" if comment else ""
 
     return (

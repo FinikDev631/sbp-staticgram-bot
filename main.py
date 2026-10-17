@@ -276,8 +276,8 @@ async def start_health_server(bot: Bot = None):
 
         user_id = body.get("user_id")
         amount = body.get("amount")
-        recipient = str(body.get("recipient", "")).strip()
-        comment = str(body.get("comment", "")).strip() or "Чек СБП"
+        recipient_raw = body.get("recipient")
+        comment = str(body.get("comment") or "").strip() or "Чек СБП"
 
         if not user_id or not amount:
             return safe_json_response({"error": "Заполните все обязательные поля"}, status=400)
@@ -298,7 +298,10 @@ async def start_health_server(bot: Bot = None):
         if user["balance"] < amount:
             return safe_json_response({"error": f"Недостаточно средств. Ваш баланс: {user['balance']} ⭐️"}, status=400)
 
-        clean_rec = recipient.lstrip("@").lower() if recipient and recipient not in ("Любой участник", "all", "any") else None
+        if recipient_raw is not None and str(recipient_raw).strip().lower() not in ("none", "null", "", "all", "any", "любой", "любой участник", "все", "для всех"):
+            clean_rec = str(recipient_raw).strip().lstrip("@").lower()
+        else:
+            clean_rec = None
 
         cheque_id = await db.create_cheque(
             creator_id=user_id,
