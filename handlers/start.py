@@ -46,7 +46,12 @@ async def cmd_start(message: Message, state: FSMContext):
                 pass
             return
         elif status == "self_claim":
-            await message.answer("Вы не можете активировать собственный чек.", reply_markup=get_back_button())
+            await message.answer(
+                "⚠️ <b>Это ваш собственный чек</b>\n\n"
+                "Вы создатель этого чека и не можете забрать его сами — он предназначен для других пользователей!\n\n"
+                "💡 Чтобы вернуть звёзды на баланс, аннулируйте чек в разделе «Чеки» бота или в Mini App.",
+                reply_markup=get_back_button()
+            )
             return
         elif status == "already_claimed":
             await message.answer("Этот чек уже активирован.", reply_markup=get_back_button())

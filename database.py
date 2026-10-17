@@ -587,11 +587,10 @@ async def claim_cheque(cheque_id: str, claimer_id: int, claimer_username: Option
 
         amount = cheque["amount"]
         await db.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (amount, claimer_id))
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         await db.execute(
-            """UPDATE cheques SET status = 'claimed', claimed_by_id = ?, claimed_by_username = ?, claimed_at = ?
+            """UPDATE cheques SET status = 'claimed', claimed_by_id = ?, claimed_by_username = ?, claimed_at = CURRENT_TIMESTAMP
                WHERE cheque_id = ?""",
-            (claimer_id, clean_u or claimer_name, now, cheque_id)
+            (claimer_id, clean_u or claimer_name, cheque_id)
         )
 
         trx_id = generate_trx_id(prefix="CHK")
