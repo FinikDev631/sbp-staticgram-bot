@@ -419,6 +419,65 @@ async def cancel_cheque(cheque_id: str, user_id: int) -> bool:
         return True
 
 
+async def admin_cancel_cheque(cheque_id: str) -> Optional[Dict[str, Any]]:
+    """Admin cancels any active cheque and refunds creator."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute("SELECT * FROM cheques WHERE cheque_id = ? AND status = 'active'", (cheque_id,))
+        cheque = await cursor.fetchone()
+        if not cheque:
+            return None
+
+        amount = cheque["amount"]
+        creator_id = cheque["creator_id"]
+        await db.execute("UPDATE cheques SET status = 'cancelled' WHERE cheque_id = ?", (cheque_id,))
+        await db.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (amount, creator_id))
+
+        trx_id = generate_trx_id(prefix="REF")
+        await db.execute(
+            """INSERT INTO transactions (trx_id, user_id, counterparty, counterparty_id, amount, type, status, comment)
+               VALUES (?, ?, ?, NULL, ?, 'cheque_refund', 'success', 'Аннулирование чека администратором')""",
+            (trx_id, creator_id, f"Чек {cheque_id}", amount)
+        )
+        await db.commit()
+        return dict(cheque)
+
+
+async def admin_find_cheque(query_str: str) -> Optional[Dict[str, Any]]:
+    """Finds a cheque by ID, part of ID, or deep-link."""
+    q = query_str.strip()
+    if "start=" in q:
+        q = q.split("start=")[-1].split("&")[0].split()[0]
+    q = q.strip()
+
+    variants = [q]
+    if not q.startswith("ch_"):
+        variants.append(f"ch_{q}")
+    else:
+        variants.append(q[3:])
+
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        for var in variants:
+            cursor = await db.execute("SELECT * FROM cheques WHERE cheque_id = ?", (var,))
+            row = await cursor.fetchone()
+            if row:
+                return dict(row)
+
+        cursor = await db.execute("SELECT * FROM cheques WHERE cheque_id LIKE ? LIMIT 1", (f"%{q}%",))
+        row = await cursor.fetchone()
+        return dict(row) if row else None
+
+
+async def admin_get_recent_cheques(limit: int = 5) -> List[Dict[str, Any]]:
+    """Returns the most recent cheques for admin overview."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute("SELECT * FROM cheques ORDER BY created_at DESC LIMIT ?", (limit,))
+        rows = await cursor.fetchall()
+        return [dict(r) for r in rows]
+
+
 async def get_active_cheques_by_user(user_id: int) -> List[Dict[str, Any]]:
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
