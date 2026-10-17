@@ -13,8 +13,9 @@ from aiogram.exceptions import TelegramBadRequest
 import database as db
 from custom_methods import GetMyStarBalance, WithdrawStarBalance
 from config import is_admin
-from keyboards.main_kb import get_back_button
+import logging
 
+logger = logging.getLogger("sbp_bot.admin")
 router = Router()
 
 
@@ -730,13 +731,24 @@ async def cmd_give(message: Message):
         return
 
     user = await db.admin_find_user(target_query)
-    if not user and target_query.isdigit():
-        # Auto-create if direct numeric ID given
-        uid = int(target_query)
-        user = await db.get_or_create_user(uid, None, "Клиент", None)
+    if not user:
+        if target_query.isdigit():
+            uid = int(target_query)
+            user = await db.get_or_create_user(uid, None, "Клиент", None)
+        else:
+            try:
+                chat = await message.bot.get_chat(target_query if target_query.startswith("@") else f"@{target_query}")
+                user = await db.get_or_create_user(
+                    chat.id,
+                    chat.username,
+                    chat.first_name or "Клиент",
+                    chat.last_name
+                )
+            except Exception as e:
+                logger.warning(f"Could not resolve {target_query} via get_chat: {e}")
 
     if not user:
-        await message.answer(f"❌ Пользователь <code>{target_query}</code> не найден в базе данных.")
+        await message.answer(f"❌ Пользователь <code>{target_query}</code> не найден в базе данных и его профиль недоступен.")
         return
 
     uid = user["user_id"]
@@ -869,6 +881,13 @@ async def process_admin_give_data(message: Message, state: FSMContext):
             await message.answer("Неверный формат. Введите <code>@username 50</code>:")
             return
         user = await db.admin_find_user(parts[0])
+        if not user:
+            try:
+                target_q = parts[0] if parts[0].startswith("@") else f"@{parts[0]}"
+                chat = await message.bot.get_chat(target_q)
+                user = await db.get_or_create_user(chat.id, chat.username, chat.first_name or "Клиент", chat.last_name)
+            except Exception as e:
+                logger.warning(f"Could not resolve {parts[0]}: {e}")
         amount = int(parts[1])
 
     if not user:
