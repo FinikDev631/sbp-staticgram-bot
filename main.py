@@ -128,10 +128,10 @@ async def main():
 
     await setup_bot_profile(bot)
 
-    # 5. Clear stale webhooks and drop pending conflicts
+    # 5. Clear stale webhooks without dropping pending payments/updates
     try:
-        await bot.delete_webhook(drop_pending_updates=True)
-        logger.info("Stale webhooks cleared.")
+        await bot.delete_webhook(drop_pending_updates=False)
+        logger.info("Webhook cleared (pending payments preserved).")
     except Exception as e:
         logger.warning(f"Could not clear webhook: {e}")
 

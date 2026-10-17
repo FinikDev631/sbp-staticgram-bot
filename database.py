@@ -168,9 +168,26 @@ async def get_user_by_account(account_number: str) -> Optional[Dict[str, Any]]:
         return dict(row) if row else None
 
 
-async def credit_balance(user_id: int, amount: int, trx_type: str, comment: str, counterparty: str = "СБП Банк") -> str:
+async def admin_find_user(query: str) -> Optional[Dict[str, Any]]:
+    """Flexible user search for admin by @username, ID, or SBP account."""
+    q = query.strip()
+    if q.startswith("@"):
+        return await get_user_by_username(q[1:])
+    if q.lower().startswith("id") and q[2:].isdigit():
+        return await get_user(int(q[2:]))
+    if q.isdigit():
+        u = await get_user(int(q))
+        if u:
+            return u
+    u = await get_user_by_username(q)
+    if u:
+        return u
+    return await get_user_by_account(q)
+
+
+async def credit_balance(user_id: int, amount: int, trx_type: str, comment: str, counterparty: str = "СБП Банк", custom_trx_id: Optional[str] = None) -> str:
     """Credits stars to user balance and records transaction."""
-    trx_id = generate_trx_id(prefix="DEP" if trx_type == "deposit" else "TRX")
+    trx_id = custom_trx_id or generate_trx_id(prefix="DEP" if trx_type == "deposit" else "TRX")
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (amount, user_id))
         await db.execute(

@@ -92,6 +92,14 @@ async def process_successful_payment(message: Message):
     sp = message.successful_payment
     user_id = message.from_user.id
     stars_amount = sp.total_amount
+    charge_id = sp.telegram_payment_charge_id
+
+    # Check if this charge was already processed
+    if charge_id:
+        existing = await db.get_transaction(charge_id)
+        if existing:
+            await message.answer("Этот платёж уже был успешно зачислен на ваш баланс.")
+            return
 
     user = await db.get_user(user_id)
     if not user:
@@ -107,7 +115,8 @@ async def process_successful_payment(message: Message):
         amount=stars_amount,
         trx_type="deposit",
         comment="Пополнение Telegram Stars",
-        counterparty="Telegram Stars"
+        counterparty="Telegram Stars",
+        custom_trx_id=charge_id
     )
 
     user_updated = await db.get_user(user_id)

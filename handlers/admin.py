@@ -25,19 +25,33 @@ class AdminChequeState(StatesGroup):
     waiting_for_cheque_query = State()
 
 
+class AdminUserState(StatesGroup):
+    waiting_for_user_query = State()
+
+
+class AdminGiveState(StatesGroup):
+    waiting_for_give_data = State()
+
+
+class AdminTakeState(StatesGroup):
+    waiting_for_take_data = State()
+
+
 def get_admin_dashboard_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="🔍 Проверить чек", callback_data="admin_check_cheque"),
+            InlineKeyboardButton(text="👤 Пользователь", callback_data="admin_find_user")
+        ],
+        [
+            InlineKeyboardButton(text="➕ Начислить звёзды", callback_data="admin_give_stars"),
             InlineKeyboardButton(text="📢 Рассылка", callback_data="admin_broadcast")
         ],
         [
             InlineKeyboardButton(text="📤 Вывести резерв владельцу", callback_data="admin_withdraw_all")
         ],
         [
-            InlineKeyboardButton(text="🔄 Обновить", callback_data="admin_refresh")
-        ],
-        [
+            InlineKeyboardButton(text="🔄 Обновить", callback_data="admin_refresh"),
             InlineKeyboardButton(text="← В главное меню", callback_data="back_to_menu")
         ]
     ])
@@ -54,13 +68,11 @@ def format_admin_cheque_card(ch: Dict[str, Any]) -> str:
     creator_u = f"@{ch['creator_username']}" if ch.get("creator_username") else "без username"
     creator_str = f"{creator_u} (ID: <code>{ch['creator_id']}</code>)"
 
-    # Recipient restriction
     if ch.get("recipient_username"):
         rec_cond = f"🔒 Только для <b>@{ch['recipient_username']}</b>"
     else:
         rec_cond = "🌐 <b>Для всех</b> (любой участник чата)"
 
-    # Claimer details
     if ch["status"] == "claimed":
         claimer_u = f"@{ch['claimed_by_username']}" if ch.get("claimed_by_username") else "без username"
         claimer_str = f"{claimer_u} (ID: <code>{ch.get('claimed_by_id')}</code>)"
@@ -100,6 +112,49 @@ def get_admin_cheque_kb(ch: Dict[str, Any]) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
+def format_admin_user_card(user: Dict[str, Any], transactions: list) -> str:
+    name = f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or "Клиент"
+    u_str = f"@{user['username']}" if user.get("username") else "без username"
+    bal = user.get("balance", 0)
+    acc = user.get("account_number", "—")
+    reg_date = user.get("created_at", "—")
+
+    trx_lines = []
+    if transactions:
+        for t in transactions[:5]:
+            sign = "+" if "in" in t["type"] or "deposit" in t["type"] or "refund" in t["type"] else "-"
+            dt = t["created_at"][:16] if t.get("created_at") else "—"
+            comm = f" ({t['comment']})" if t.get("comment") else ""
+            trx_lines.append(f"• <code>{dt}</code> | <b>{sign}{t['amount']:,} ⭐️</b>{comm}")
+        trx_block = "\n".join(trx_lines)
+    else:
+        trx_block = "<i>Операций пока нет</i>"
+
+    return (
+        f"👤 <b>Пользователь:</b> {name} ({u_str})\n"
+        f"────────────────────────\n"
+        f"• <b>Telegram ID:</b> <code>{user['user_id']}</code>\n"
+        f"• <b>Счёт СБП:</b> <code>{acc}</code>\n"
+        f"• <b>Текущий баланс:</b> <b>{bal:,} ⭐️</b>\n"
+        f"• <b>Регистрация:</b> <code>{reg_date}</code>\n\n"
+        f"📊 <b>Последние 5 операций:</b>\n"
+        f"{trx_block}"
+    )
+
+
+def get_admin_user_kb(user_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="➕ Начислить звёзды", callback_data=f"adm_give_to:{user_id}"),
+            InlineKeyboardButton(text="➖ Списать звёзды", callback_data=f"adm_take_from:{user_id}")
+        ],
+        [
+            InlineKeyboardButton(text="🔍 Другой пользователь", callback_data="admin_find_user"),
+            InlineKeyboardButton(text="← В админку", callback_data="admin_menu")
+        ]
+    ])
+
+
 @router.message(Command("admin"))
 @router.message(Command("bank"))
 async def cmd_admin(message: Message, state: FSMContext):
@@ -111,7 +166,6 @@ async def cmd_admin(message: Message, state: FSMContext):
 
     args = message.text.split(maxsplit=1)
     if len(args) > 1 and (args[1].startswith("ch_") or len(args[1]) >= 4):
-        # Quick check: /admin ch_12345
         cheque = await db.admin_find_cheque(args[1])
         if cheque:
             await message.answer(format_admin_cheque_card(cheque), reply_markup=get_admin_cheque_kb(cheque))
@@ -347,7 +401,6 @@ async def cb_adm_cancel_cheque(callback: CallbackQuery):
 
     await callback.answer(f"Чек аннулирован. {amount:,} ⭐️ возвращены создателю!", show_alert=True)
 
-    # Notify creator if possible
     try:
         await callback.bot.send_message(
             creator_id,
@@ -357,13 +410,291 @@ async def cb_adm_cancel_cheque(callback: CallbackQuery):
     except Exception:
         pass
 
-    # Refresh card view
     updated_cheque = await db.get_cheque(cheque_id)
     if updated_cheque:
         await callback.message.edit_text(
             format_admin_cheque_card(updated_cheque),
             reply_markup=get_admin_cheque_kb(updated_cheque)
         )
+
+
+# --- USER INSPECTOR & BALANCE MANAGEMENT (FOR ADMIN) ---
+
+@router.message(Command("user"))
+@router.message(Command("u"))
+async def cmd_user(message: Message, state: FSMContext):
+    if not is_admin(message.from_user.id):
+        return
+
+    args = message.text.split(maxsplit=1)
+    if len(args) > 1:
+        query = args[1].strip()
+        user = await db.admin_find_user(query)
+        if user:
+            trxs = await db.get_user_transactions(user["user_id"], limit=5)
+            await message.answer(format_admin_user_card(user, trxs), reply_markup=get_admin_user_kb(user["user_id"]))
+            return
+        else:
+            await message.answer(f"❌ Пользователь <code>{query}</code> не найден в базе данных.")
+            return
+
+    await state.set_state(AdminUserState.waiting_for_user_query)
+    await message.answer(
+        "👤 <b>Поиск пользователя</b>\n\n"
+        "Отправьте @username, Telegram ID или номер счёта СБП:",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="❌ Отмена", callback_data="admin_menu")]
+        ])
+    )
+
+
+@router.callback_query(F.data == "admin_find_user")
+async def cb_admin_find_user(callback: CallbackQuery, state: FSMContext):
+    if not is_admin(callback.from_user.id):
+        await callback.answer("Доступ запрещен", show_alert=True)
+        return
+
+    await state.set_state(AdminUserState.waiting_for_user_query)
+    await callback.message.edit_text(
+        "👤 <b>Поиск пользователя</b>\n\n"
+        "Отправьте @username, Telegram ID или номер счёта СБП:",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="❌ Отмена", callback_data="admin_menu")]
+        ])
+    )
+    await callback.answer()
+
+
+@router.message(AdminUserState.waiting_for_user_query)
+async def process_admin_user_query(message: Message, state: FSMContext):
+    if not is_admin(message.from_user.id):
+        return
+
+    query = message.text.strip()
+    user = await db.admin_find_user(query)
+
+    if not user:
+        await message.answer(
+            f"❌ Пользователь <code>{query}</code> не найден в базе данных.\n"
+            f"Попробуйте снова или нажмите отмену:",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="❌ Отмена", callback_data="admin_menu")]
+            ])
+        )
+        return
+
+    await state.clear()
+    trxs = await db.get_user_transactions(user["user_id"], limit=5)
+    await message.answer(format_admin_user_card(user, trxs), reply_markup=get_admin_user_kb(user["user_id"]))
+
+
+# --- GIVE STARS / CREDIT MANUAL BALANCE ---
+
+@router.message(Command("give"))
+@router.message(Command("credit"))
+async def cmd_give(message: Message):
+    if not is_admin(message.from_user.id):
+        return
+
+    # /give @username 50 [комментарий]
+    parts = message.text.split(maxsplit=3)
+    if len(parts) < 3 or not parts[2].isdigit():
+        await message.answer(
+            "Формат команды:\n"
+            "<code>/give &lt;@username или ID&gt; &lt;кол-во звёзд&gt; [комментарий]</code>\n\n"
+            "Пример: <code>/give @durov 50 Возврат за платеж</code>"
+        )
+        return
+
+    target_query = parts[1]
+    amount = int(parts[2])
+    comment = parts[3] if len(parts) > 3 else "Ручное начисление администратором"
+
+    if amount <= 0:
+        await message.answer("Сумма должна быть больше 0.")
+        return
+
+    user = await db.admin_find_user(target_query)
+    if not user and target_query.isdigit():
+        # Auto-create if direct numeric ID given
+        uid = int(target_query)
+        user = await db.get_or_create_user(uid, None, "Клиент", None)
+
+    if not user:
+        await message.answer(f"❌ Пользователь <code>{target_query}</code> не найден в базе данных.")
+        return
+
+    uid = user["user_id"]
+    trx_id = await db.credit_balance(
+        user_id=uid,
+        amount=amount,
+        trx_type="admin_deposit",
+        comment=comment,
+        counterparty="Администратор"
+    )
+
+    user_updated = await db.get_user(uid)
+    new_bal = user_updated["balance"]
+    u_label = f"@{user_updated['username']}" if user_updated.get("username") else f"ID {uid}"
+
+    # Notify user in bot
+    try:
+        await message.bot.send_message(
+            uid,
+            f"💳 <b>Пополнение счёта администратором</b>\n\n"
+            f"Вам зачислено: <b>+{amount:,} ⭐️</b>\n"
+            f"Текущий баланс: <b>{new_bal:,} ⭐️</b>\n"
+            f"Причина: <i>{comment}</i>"
+        )
+    except Exception:
+        pass
+
+    await message.answer(
+        f"✅ <b>Звёзды успешно начислены!</b>\n\n"
+        f"• Пользователь: {u_label} (<code>{uid}</code>)\n"
+        f"• Начислено: <b>+{amount:,} ⭐️</b>\n"
+        f"• Новый баланс: <b>{new_bal:,} ⭐️</b>\n"
+        f"• Транзакция: <code>{trx_id}</code>"
+    )
+
+
+@router.message(Command("take"))
+@router.message(Command("debit"))
+async def cmd_take(message: Message):
+    if not is_admin(message.from_user.id):
+        return
+
+    parts = message.text.split(maxsplit=3)
+    if len(parts) < 3 or not parts[2].isdigit():
+        await message.answer(
+            "Формат команды:\n"
+            "<code>/take &lt;@username или ID&gt; &lt;кол-во звёзд&gt; [комментарий]</code>\n\n"
+            "Пример: <code>/take @durov 10 Корректировка</code>"
+        )
+        return
+
+    target_query = parts[1]
+    amount = int(parts[2])
+    comment = parts[3] if len(parts) > 3 else "Списание администратором"
+
+    user = await db.admin_find_user(target_query)
+    if not user:
+        await message.answer(f"❌ Пользователь <code>{target_query}</code> не найден.")
+        return
+
+    uid = user["user_id"]
+    trx_id = await db.debit_balance(uid, amount, trx_type="admin_debit", comment=comment, counterparty="Администратор")
+    if not trx_id:
+        await message.answer(f"❌ Недостаточно средств на балансе пользователя (Баланс: {user['balance']} ⭐️).")
+        return
+
+    user_updated = await db.get_user(uid)
+    await message.answer(
+        f"✅ Списано <b>-{amount:,} ⭐️</b> у пользователя {target_query}.\n"
+        f"Новый баланс: <b>{user_updated['balance']:,} ⭐️</b>"
+    )
+
+
+@router.callback_query(F.data == "admin_give_stars")
+async def cb_admin_give_stars(callback: CallbackQuery, state: FSMContext):
+    if not is_admin(callback.from_user.id):
+        await callback.answer("Доступ запрещен", show_alert=True)
+        return
+
+    await state.set_state(AdminGiveState.waiting_for_give_data)
+    await callback.message.edit_text(
+        "➕ <b>Начисление звёзд пользователю</b>\n\n"
+        "Отправьте @username или ID пользователя и сумму через пробел:\n"
+        "<i>Например: <code>@durov 50</code> или <code>123456789 25</code></i>",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="❌ Отмена", callback_data="admin_menu")]
+        ])
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("adm_give_to:"))
+async def cb_adm_give_to_user(callback: CallbackQuery, state: FSMContext):
+    if not is_admin(callback.from_user.id):
+        await callback.answer("Доступ запрещен", show_alert=True)
+        return
+
+    uid = int(callback.data.split(":")[1])
+    await state.update_data(target_uid=uid)
+    await state.set_state(AdminGiveState.waiting_for_give_data)
+
+    await callback.message.edit_text(
+        f"➕ <b>Начисление звёзд пользователю ID <code>{uid}</code></b>\n\n"
+        f"Введите количество звёзд для начисления:",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="❌ Отмена", callback_data="admin_menu")]
+        ])
+    )
+    await callback.answer()
+
+
+@router.message(AdminGiveState.waiting_for_give_data)
+async def process_admin_give_data(message: Message, state: FSMContext):
+    if not is_admin(message.from_user.id):
+        return
+
+    data = await state.get_data()
+    target_uid = data.get("target_uid")
+
+    text = message.text.strip()
+    if target_uid:
+        if not text.isdigit() or int(text) <= 0:
+            await message.answer("Введите корректное число звёзд:")
+            return
+        amount = int(text)
+        user = await db.get_user(target_uid)
+    else:
+        parts = text.split()
+        if len(parts) < 2 or not parts[1].isdigit():
+            await message.answer("Неверный формат. Введите <code>@username 50</code>:")
+            return
+        user = await db.admin_find_user(parts[0])
+        amount = int(parts[1])
+
+    if not user:
+        await message.answer("Пользователь не найден. Попробуйте снова или нажмите отмену.",
+                             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                 [InlineKeyboardButton(text="❌ Отмена", callback_data="admin_menu")]
+                             ]))
+        return
+
+    await state.clear()
+    uid = user["user_id"]
+    trx_id = await db.credit_balance(
+        user_id=uid,
+        amount=amount,
+        trx_type="admin_deposit",
+        comment="Ручное начисление администратором",
+        counterparty="Администратор"
+    )
+
+    user_updated = await db.get_user(uid)
+    u_label = f"@{user_updated['username']}" if user_updated.get("username") else f"ID {uid}"
+
+    try:
+        await message.bot.send_message(
+            uid,
+            f"💳 <b>Пополнение счёта администратором</b>\n\n"
+            f"Вам зачислено: <b>+{amount:,} ⭐️</b>\n"
+            f"Текущий баланс: <b>{user_updated['balance']:,} ⭐️</b>"
+        )
+    except Exception:
+        pass
+
+    await message.answer(
+        f"✅ <b>Успешно зачислено +{amount:,} ⭐️</b>\n\n"
+        f"• Пользователь: {u_label}\n"
+        f"• Новый баланс: <b>{user_updated['balance']:,} ⭐️</b>\n"
+        f"• Транзакция: <code>{trx_id}</code>",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="← В админку", callback_data="admin_menu")]
+        ])
+    )
 
 
 # --- BROADCAST HANDLERS ---
