@@ -42,7 +42,12 @@ async def create_cheque_prompt(callback: CallbackQuery, state: FSMContext):
     user = await db.get_user(user_id)
 
     if not user or user["balance"] < 1:
-        await callback.answer("Недостаточно звёзд на счёте.", show_alert=True)
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📥 Пополнить счёт", callback_data="menu_deposit")],
+            [InlineKeyboardButton(text="← В меню чеков", callback_data="menu_cheque")]
+        ])
+        await callback.message.edit_text("Недостаточно звёзд для создания чека.", reply_markup=kb)
+        await callback.answer()
         return
 
     await state.set_state(ChequeState.waiting_for_amount)

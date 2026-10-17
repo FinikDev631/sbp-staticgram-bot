@@ -1,9 +1,11 @@
+import os
 import uuid
 import asyncio
+from datetime import datetime
 from typing import Optional, Dict, Any
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.exceptions import TelegramBadRequest
@@ -49,6 +51,9 @@ def get_admin_dashboard_kb() -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton(text="📤 Вывести резерв владельцу", callback_data="admin_withdraw_all")
+        ],
+        [
+            InlineKeyboardButton(text="💾 Скачать бэкап БД (/backup)", callback_data="admin_backup_db")
         ],
         [
             InlineKeyboardButton(text="🔄 Обновить", callback_data="admin_refresh"),
@@ -273,6 +278,32 @@ async def cb_admin_withdraw_all(callback: CallbackQuery):
             await callback.answer(f"⚠️ Ошибка: {e.message}", show_alert=True)
     except Exception as e:
         await callback.answer(f"⚠️ Ошибка: {e}", show_alert=True)
+
+
+@router.message(Command("backup"))
+async def cmd_backup(message: Message):
+    if not is_admin(message.from_user.id):
+        return
+    if os.path.exists(db.DB_PATH):
+        dt = datetime.now().strftime("%Y%m%d_%H%M%S")
+        doc = FSInputFile(str(db.DB_PATH), filename=f"sbp_bank_{dt}.db")
+        await message.answer_document(doc, caption=f"💾 <b>Резервная копия базы данных СБП</b>\nДата: <code>{dt}</code>")
+    else:
+        await message.answer("Файл базы данных не найден.")
+
+
+@router.callback_query(F.data == "admin_backup_db")
+async def cb_admin_backup_db(callback: CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        await callback.answer("Доступ запрещен", show_alert=True)
+        return
+    if os.path.exists(db.DB_PATH):
+        dt = datetime.now().strftime("%Y%m%d_%H%M%S")
+        doc = FSInputFile(str(db.DB_PATH), filename=f"sbp_bank_{dt}.db")
+        await callback.message.answer_document(doc, caption=f"💾 <b>Резервная копия базы данных СБП</b>\nДата: <code>{dt}</code>")
+        await callback.answer()
+    else:
+        await callback.answer("Файл базы данных не найден", show_alert=True)
 
 
 # --- CHEQUE INSPECTOR (FOR ADMIN) ---

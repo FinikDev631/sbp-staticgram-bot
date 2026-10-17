@@ -32,6 +32,14 @@ async def start_deposit(event: Message | CallbackQuery, state: FSMContext):
 async def process_preset_deposit(callback: CallbackQuery, state: FSMContext):
     amount = int(callback.data.split(":")[1])
     await send_deposit_invoice(callback.message, callback.from_user.id, amount)
+    try:
+        await callback.message.edit_text(
+            f"Счёт на <b>{amount:,} ⭐️</b> выставлен ниже 👇\n\n"
+            f"Нажмите кнопку <b>«Заплатить {amount:,} ⭐️»</b> в сообщении со счётом для оплаты.",
+            reply_markup=get_back_button()
+        )
+    except Exception:
+        pass
     await callback.answer()
 
 
@@ -59,6 +67,10 @@ async def process_custom_amount(message: Message, state: FSMContext):
 
     await state.clear()
     await send_deposit_invoice(message, message.from_user.id, amount)
+    await message.answer(
+        f"Счёт на <b>{amount:,} ⭐️</b> выставлен выше 👆\nОплатите его через кнопку под счётом.",
+        reply_markup=get_back_button()
+    )
 
 
 async def send_deposit_invoice(message: Message, user_id: int, amount: int):

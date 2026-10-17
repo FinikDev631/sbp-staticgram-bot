@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 
 import database as db
@@ -27,12 +27,16 @@ async def start_transfer_flow(event: Message | CallbackQuery, state: FSMContext)
     user = await db.get_user(user_id)
 
     if not user or user["balance"] < 1:
-        text = "Недостаточно средств. Пополните счёт через /deposit."
+        text = "Недостаточно звёзд на счёте СБП."
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📥 Пополнить счёт", callback_data="menu_deposit")],
+            [InlineKeyboardButton(text="← В главное меню", callback_data="back_to_menu")]
+        ])
         if isinstance(event, CallbackQuery):
-            await event.message.edit_text(text, reply_markup=get_back_button())
+            await event.message.edit_text(text, reply_markup=kb)
             await event.answer()
         else:
-            await event.answer(text, reply_markup=get_back_button())
+            await event.answer(text, reply_markup=kb)
         return
 
     text = (
