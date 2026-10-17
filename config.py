@@ -12,6 +12,7 @@ PRIMARY_ADMIN_ID = 1780243463
 ADMIN_ID = int(os.getenv("ADMIN_ID", "1780243463"))
 ADMIN_IDS = {PRIMARY_ADMIN_ID, ADMIN_ID}
 DB_PATH = BASE_DIR / "sbp_bank.db"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 def is_admin(user_id: int) -> bool:
     return user_id in ADMIN_IDS

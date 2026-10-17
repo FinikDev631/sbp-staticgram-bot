@@ -86,17 +86,50 @@ async def process_target_input(message: Message, state: FSMContext):
     sender_id = message.from_user.id
     sender = await db.get_user(sender_id)
 
-    target_id = target_raw
+    target_id = None
+    clean_label = None
+
     if target_raw.isdigit():
         target_id = int(target_raw)
+        clean_label = f"id{target_id}"
+    elif target_raw.upper().startswith("СБП-") or target_raw.upper().startswith("SBP-"):
+        u = await db.get_user_by_account(target_raw)
+        if u:
+            target_id = u["user_id"]
+            clean_label = f"@{u['username']}" if u.get("username") else f"{u['first_name']} (id{target_id})"
+        else:
+            await message.answer(f"❌ Счёт <code>{target_raw}</code> не найден в СБП. Попробуйте снова:", reply_markup=get_cancel_kb())
+            return
+    else:
+        clean_u = target_raw.lstrip("@").lower()
+        # 1. Search in database
+        u = await db.get_user_by_username(clean_u)
+        if u:
+            target_id = u["user_id"]
+            clean_label = f"@{clean_u}"
+        else:
+            # 2. Try get_chat via API
+            try:
+                chat = await message.bot.get_chat(f"@{clean_u}")
+                target_id = chat.id
+                clean_label = f"@{clean_u}"
+            except Exception:
+                pass
 
-    clean_label = target_raw if target_raw.startswith("@") else f"@{target_raw}" if not target_raw.isdigit() else f"id{target_raw}"
+        if not target_id:
+            await message.answer(
+                f"❌ Пользователь <b>@{clean_u}</b> не найден.\n\n"
+                f"Чтобы вывести звёзды на чужой аккаунт, получатель должен хотя бы раз запустить бота или укажите его числовой <b>Telegram ID</b>:\n\n"
+                f"<i>(Узнать свой ID можно в @userinfobot)</i>",
+                reply_markup=get_cancel_kb()
+            )
+            return
 
-    await state.update_data(target_id=target_id, target_label=clean_label)
+    await state.update_data(target_id=int(target_id), target_label=clean_label)
     await state.set_state(WithdrawState.waiting_for_amount)
 
     await message.answer(
-        f"Получатель: <b>{clean_label}</b>\n"
+        f"Получатель: <b>{clean_label}</b> (ID: <code>{target_id}</code>)\n"
         f"Доступно: <b>{sender['balance']:,} ⭐️</b>\n\n"
         "Укажите сумму вывода:",
         reply_markup=get_withdraw_amount_kb(sender['balance'])
@@ -188,7 +221,7 @@ async def execute_withdraw(callback: CallbackQuery, state: FSMContext):
 
     try:
         res = await callback.bot(WithdrawStarBalance(
-            user_id=target_id,
+            user_id=int(target_id),
             star_count=amount,
             request_id=req_id
         ))
