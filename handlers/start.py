@@ -64,6 +64,26 @@ async def cmd_start(message: Message, state: FSMContext):
     text = format_sbp_card(user)
     await message.answer(text, reply_markup=get_main_menu_inline(user_id))
 
+    if user.get("claimed_pending"):
+        for cp in user["claimed_pending"]:
+            s_label = f"@{cp['sender_username']}" if cp.get("sender_username") else f"ID {cp['sender_id']}"
+            await message.answer(
+                f"🎉 <b>Вам начислен отложенный перевод СБП!</b>\n\n"
+                f"• Сумма: <b>+{cp['amount']:,} ⭐️</b>\n"
+                f"• Отправитель: {s_label}\n"
+                f"• Баланс счёта СБП: <b>{user['balance']:,} ⭐️</b>\n\n"
+                f"<i>Вы можете перевести их, создать чек или вывести на баланс своего аккаунта StaticGram через кнопку «📤 Вывести».</i>"
+            )
+            try:
+                rec_label = f"@{username}" if username else f"{first_name}"
+                await message.bot.send_message(
+                    cp["sender_id"],
+                    f"✅ <b>Перевод доставлен!</b>\n\n"
+                    f"Пользователь {rec_label} открыл бота, и ваш перевод на <b>{cp['amount']:,} ⭐️</b> успешно зачислен на его баланс СБП!"
+                )
+            except Exception:
+                pass
+
 
 @router.callback_query(F.data == "back_to_menu")
 async def cb_back_to_menu(callback: CallbackQuery, state: FSMContext):

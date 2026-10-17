@@ -42,7 +42,7 @@ class AdminTakeState(StatesGroup):
 def get_admin_dashboard_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="🔍 Проверить чек", callback_data="admin_check_cheque"),
+            InlineKeyboardButton(text="🔍 Проверить чек / перевод", callback_data="admin_check_cheque"),
             InlineKeyboardButton(text="👤 Пользователь", callback_data="admin_find_user")
         ],
         [
@@ -111,10 +111,120 @@ def get_admin_cheque_kb(ch: Dict[str, Any]) -> InlineKeyboardMarkup:
             )
         ])
     rows.append([
-        InlineKeyboardButton(text="🔍 Найти другой чек", callback_data="admin_check_cheque"),
+        InlineKeyboardButton(text="🔍 Найти другую операцию", callback_data="admin_check_cheque"),
         InlineKeyboardButton(text="← В админку", callback_data="admin_menu")
     ])
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def format_admin_pending_transfer_card(pt: Dict[str, Any]) -> str:
+    status_map = {
+        "pending": "⏳ <b>Ожидает активации (получатель ещё не запустил бота)</b>",
+        "claimed": "✅ <b>Получен (зачислен на баланс)</b>",
+        "cancelled": "❌ <b>Аннулирован (возвращён отправителю)</b>"
+    }
+    status_str = status_map.get(pt["status"], pt["status"])
+
+    sender_u = f"@{pt['sender_username']}" if pt.get("sender_username") else f"ID {pt['sender_id']}"
+    rec_u = f"@{pt['recipient_username']}"
+    comm_str = f"\n• <b>Комментарий:</b> <i>{pt['comment']}</i>" if pt.get("comment") else ""
+
+    text = (
+        f"⏳ <b>Отложенный перевод:</b> <code>{pt['trx_id']}</code>\n"
+        f"────────────────────────\n"
+        f"• <b>Статус:</b> {status_str}\n"
+        f"• <b>Сумма:</b> <b>{pt['amount']:,} ⭐️</b>\n"
+        f"• <b>Отправитель:</b> {sender_u} (<code>{pt['sender_id']}</code>)\n"
+        f"• <b>Получатель:</b> <b>{rec_u}</b>\n"
+        f"• <b>Дата создания:</b> <code>{pt['created_at']}</code>{comm_str}\n\n"
+        f"💡 <i>Перевод зарезервирован. Чтобы забрать его, {rec_u} должен открыть бота @sbpbot и нажать /start.</i>"
+    )
+    return text
+
+
+def get_admin_pending_transfer_kb(pt: Dict[str, Any]) -> InlineKeyboardMarkup:
+    rows = []
+    if pt["status"] == "pending":
+        rows.append([
+            InlineKeyboardButton(
+                text="↩️ Аннулировать и вернуть отправителю",
+                callback_data=f"adm_cancel_pt:{pt['trx_id']}"
+            )
+        ])
+    rows.append([
+        InlineKeyboardButton(text="🔍 Найти другую операцию", callback_data="admin_check_cheque"),
+        InlineKeyboardButton(text="← В админку", callback_data="admin_menu")
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def format_admin_trx_card(trx: Dict[str, Any]) -> str:
+    type_map = {
+        "deposit": "📥 Пополнение (звёзды)",
+        "withdrawal": "📤 Вывод звёзд",
+        "transfer_out": "↗️ Исходящий перевод",
+        "transfer_in": "↙️ Входящий перевод",
+        "transfer_refund": "↩️ Возврат перевода",
+        "cheque_created": "🧾 Создание чека",
+        "cheque_claimed": "✅ Активация чека",
+        "cheque_refund": "↩️ Возврат чека",
+        "admin_give": "➕ Начисление администратором",
+        "admin_take": "➖ Списание администратором",
+    }
+    t_name = type_map.get(trx.get("type", ""), trx.get("type", "Операция"))
+    comm = f"\n• <b>Комментарий:</b> <i>{trx['comment']}</i>" if trx.get("comment") else ""
+    return (
+        f"🧾 <b>Транзакция:</b> <code>{trx['trx_id']}</code>\n"
+        f"────────────────────────\n"
+        f"• <b>Тип:</b> {t_name}\n"
+        f"• <b>Сумма:</b> <b>{trx['amount']:,} ⭐️</b>\n"
+        f"• <b>Пользователь (ID):</b> <code>{trx['user_id']}</code>\n"
+        f"• <b>Контрагент:</b> <b>{trx.get('counterparty', '—')}</b>\n"
+        f"• <b>Статус:</b> <code>{trx.get('status', 'success')}</code>\n"
+        f"• <b>Дата:</b> <code>{trx.get('created_at', '—')}</code>{comm}"
+    )
+
+
+async def render_operation_search_result(target_event: Message | CallbackQuery, query: str) -> bool:
+    res = await db.admin_find_any_operation(query)
+    if not res:
+        text = f"❌ Операция по запросу <code>{query}</code> не найдена в базе данных."
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="🔍 Попробовать снова", callback_data="admin_check_cheque")],
+            [InlineKeyboardButton(text="← В админку", callback_data="admin_menu")]
+        ])
+        if isinstance(target_event, CallbackQuery):
+            try:
+                await target_event.message.edit_text(text, reply_markup=kb)
+            except Exception:
+                await target_event.message.answer(text, reply_markup=kb)
+        else:
+            await target_event.answer(text, reply_markup=kb)
+        return False
+
+    op_type = res["type"]
+    data = res["data"]
+    if op_type == "cheque":
+        text = format_admin_cheque_card(data)
+        kb = get_admin_cheque_kb(data)
+    elif op_type == "pending_transfer":
+        text = format_admin_pending_transfer_card(data)
+        kb = get_admin_pending_transfer_kb(data)
+    else:
+        text = format_admin_trx_card(data)
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="🔍 Найти другую операцию", callback_data="admin_check_cheque")],
+            [InlineKeyboardButton(text="← В админку", callback_data="admin_menu")]
+        ])
+
+    if isinstance(target_event, CallbackQuery):
+        try:
+            await target_event.message.edit_text(text, reply_markup=kb)
+        except Exception:
+            await target_event.message.answer(text, reply_markup=kb)
+    else:
+        await target_event.answer(text, reply_markup=kb)
+    return True
 
 
 def format_admin_user_card(user: Dict[str, Any], transactions: list) -> str:
@@ -170,10 +280,9 @@ async def cmd_admin(message: Message, state: FSMContext):
     await state.clear()
 
     args = message.text.split(maxsplit=1)
-    if len(args) > 1 and (args[1].startswith("ch_") or len(args[1]) >= 4):
-        cheque = await db.admin_find_cheque(args[1])
-        if cheque:
-            await message.answer(format_admin_cheque_card(cheque), reply_markup=get_admin_cheque_kb(cheque))
+    if len(args) > 1 and len(args[1].strip()) >= 3:
+        found = await render_operation_search_result(message, args[1].strip())
+        if found:
             return
 
     try:
@@ -306,7 +415,7 @@ async def cb_admin_backup_db(callback: CallbackQuery):
         await callback.answer("Файл базы данных не найден", show_alert=True)
 
 
-# --- CHEQUE INSPECTOR (FOR ADMIN) ---
+# --- OPERATION & CHEQUE INSPECTOR (FOR ADMIN) ---
 
 @router.message(Command("check"))
 @router.message(Command("cheque_info"))
@@ -317,19 +426,8 @@ async def cmd_check(message: Message, state: FSMContext):
     args = message.text.split(maxsplit=1)
     if len(args) > 1:
         query = args[1].strip()
-        cheque = await db.admin_find_cheque(query)
-        if cheque:
-            await message.answer(format_admin_cheque_card(cheque), reply_markup=get_admin_cheque_kb(cheque))
-            return
-        else:
-            await message.answer(
-                f"❌ Чек по запросу <code>{query}</code> не найден в базе данных.",
-                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text="🔍 Попробовать снова", callback_data="admin_check_cheque")],
-                    [InlineKeyboardButton(text="← В админку", callback_data="admin_menu")]
-                ])
-            )
-            return
+        await render_operation_search_result(message, query)
+        return
 
     await prompt_cheque_search(message, state)
 
@@ -360,9 +458,12 @@ async def prompt_cheque_search(message: Message, state: FSMContext, is_edit: boo
     kb = InlineKeyboardMarkup(inline_keyboard=rows)
 
     text = (
-        "🔍 <b>Проверка чека администратором</b>\n\n"
-        "Отправьте в чат <b>ID чека</b> (например, <code>ch_abc123</code>), часть ID или <b>ссылку на чек</b>.\n\n"
-        "<i>Или выберите один из недавних чеков ниже:</i>"
+        "🔍 <b>Проверка операции / чека / перевода</b>\n\n"
+        "Отправьте в чат:\n"
+        "• <b>Номер перевода / транзакции</b> (например: <code>1C5RC</code> или <code>#SBP-TRX-20261017-1C5RC</code>)\n"
+        "• <b>ID чека</b> (например: <code>ch_abc123</code>)\n"
+        "• Или <b>ссылку на чек</b>\n\n"
+        "<i>Или выберите один из недавних чеков:</i>"
     )
 
     if is_edit:
@@ -380,20 +481,8 @@ async def process_admin_cheque_query(message: Message, state: FSMContext):
         return
 
     query = message.text.strip()
-    cheque = await db.admin_find_cheque(query)
-
-    if not cheque:
-        await message.answer(
-            f"❌ Чек <code>{query}</code> не найден в базе данных.\n\n"
-            f"Проверьте правильность ID или отправьте другой:",
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="❌ Отмена", callback_data="admin_menu")]
-            ])
-        )
-        return
-
     await state.clear()
-    await message.answer(format_admin_cheque_card(cheque), reply_markup=get_admin_cheque_kb(cheque))
+    await render_operation_search_result(message, query)
 
 
 @router.callback_query(F.data.startswith("adm_view_ch:"))
@@ -447,6 +536,101 @@ async def cb_adm_cancel_cheque(callback: CallbackQuery):
             format_admin_cheque_card(updated_cheque),
             reply_markup=get_admin_cheque_kb(updated_cheque)
         )
+
+
+@router.callback_query(F.data.startswith("adm_cancel_pt:"))
+async def cb_adm_cancel_pending_transfer(callback: CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        await callback.answer("Доступ запрещен", show_alert=True)
+        return
+
+    trx_id = callback.data.split(":", 1)[1]
+    pt = await db.cancel_pending_transfer(trx_id)
+
+    if not pt:
+        await callback.answer("Перевод не найден или уже был получен/аннулирован", show_alert=True)
+        return
+
+    amount = pt["amount"]
+    sender_id = pt["sender_id"]
+
+    await callback.answer(f"Перевод аннулирован. {amount:,} ⭐️ возвращены отправителю!", show_alert=True)
+
+    try:
+        await callback.bot.send_message(
+            sender_id,
+            f"ℹ️ Ваш отложенный перевод <code>{pt['trx_id']}</code> для @{pt['recipient_username']} на <b>{amount:,} ⭐️</b> был аннулирован администратором.\n"
+            f"Звёзды возвращены на ваш баланс СБП."
+        )
+    except Exception:
+        pass
+
+    updated_pt = await db.get_pending_transfer_by_query(trx_id)
+    if updated_pt:
+        await callback.message.edit_text(
+            format_admin_pending_transfer_card(updated_pt),
+            reply_markup=get_admin_pending_transfer_kb(updated_pt)
+        )
+
+
+@router.message(Command("refund"))
+@router.message(Command("cancel_transfer"))
+async def cmd_admin_refund(message: Message):
+    if not is_admin(message.from_user.id):
+        return
+
+    args = message.text.split(maxsplit=1)
+    if len(args) < 2:
+        await message.answer(
+            "ℹ️ <b>Использование:</b> <code>/refund &lt;ID транзакции или чека&gt;</code>\n"
+            "Пример: <code>/refund 1C5RC</code> или <code>/refund #SBP-TRX-20261017-1C5RC</code>"
+        )
+        return
+
+    query = args[1].strip()
+
+    # 1. Try pending transfer
+    pt = await db.cancel_pending_transfer(query)
+    if pt:
+        await message.answer(
+            f"✅ <b>Отложенный перевод аннулирован:</b> <code>{pt['trx_id']}</code>\n"
+            f"• Сумма: <b>{pt['amount']:,} ⭐️</b>\n"
+            f"• Отправитель: ID <code>{pt['sender_id']}</code> (@{pt.get('sender_username', '—')})\n"
+            f"• Получатель: @{pt['recipient_username']}\n\n"
+            f"Звёзды успешно возвращены на баланс отправителя!"
+        )
+        try:
+            await message.bot.send_message(
+                pt["sender_id"],
+                f"ℹ️ Ваш перевод <code>{pt['trx_id']}</code> для @{pt['recipient_username']} на <b>{pt['amount']:,} ⭐️</b> был отменён администратором.\n"
+                f"Звёзды возвращены на ваш счёт СБП."
+            )
+        except Exception:
+            pass
+        return
+
+    # 2. Try cheque
+    ch = await db.admin_cancel_cheque(query)
+    if ch:
+        await message.answer(
+            f"✅ <b>Чек аннулирован:</b> <code>{ch['cheque_id']}</code>\n"
+            f"• Сумма: <b>{ch['amount']:,} ⭐️</b>\n"
+            f"• Создатель: ID <code>{ch['creator_id']}</code> (@{ch.get('creator_username', '—')})\n\n"
+            f"Звёзды успешно возвращены на баланс создателя!"
+        )
+        try:
+            await message.bot.send_message(
+                ch["creator_id"],
+                f"ℹ️ Ваш чек <code>{ch['cheque_id']}</code> на <b>{ch['amount']:,} ⭐️</b> был аннулирован администратором.\n"
+                f"Звёзды возвращены на ваш счёт СБП."
+            )
+        except Exception:
+            pass
+        return
+
+    await message.answer(
+        f"❌ Операция <code>{query}</code> не найдена среди активных чеков или ожидающих переводов (возможно, уже получена или была аннулирована ранее)."
+    )
 
 
 # --- USER INSPECTOR & BALANCE MANAGEMENT (FOR ADMIN) ---

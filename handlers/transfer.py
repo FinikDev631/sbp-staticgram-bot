@@ -286,13 +286,43 @@ async def execute_transfer(callback: CallbackQuery, state: FSMContext):
             dt_str=res["created_at"]
         )
 
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="❌ Отменить перевод и вернуть звёзды", callback_data=f"cancel_user_pt:{trx_id}")],
+            [InlineKeyboardButton(text="← В главное меню", callback_data="back_to_menu")]
+        ])
+
         await callback.message.edit_text(
             f"✅ <b>Перевод зарезервирован</b>\n\n"
-            f"Звёзды зачислены в резерв. Как только <b>@{clean_u}</b> откроет бота, "
-            f"он моментально получит <b>{amount:,} ⭐️</b>.\n\n"
+            f"Звёзды временно списаны в безопасный резерв.\n\n"
+            f"⚠️ Пользователь <b>@{clean_u}</b> ещё ни разу не запускал бота.\n"
+            f"Чтобы средства зачислились на его баланс, он должен открыть бота:\n"
+            f"👉 <code>https://staticgram.top/sbpbot</code>\n\n"
+            f"<i>Вы можете отменить этот перевод в любой момент до активации по кнопке ниже.</i>\n\n"
             f"{receipt}",
-            reply_markup=get_back_button()
+            reply_markup=kb
         )
 
     await state.clear()
     await callback.answer()
+
+
+@router.callback_query(F.data.startswith("cancel_user_pt:"))
+async def cb_user_cancel_pending_transfer(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    trx_id = callback.data.split(":", 1)[1]
+
+    pt = await db.cancel_pending_transfer(trx_id, sender_id=user_id)
+    if not pt:
+        await callback.answer("Перевод не найден или уже был активирован/отменен.", show_alert=True)
+        return
+
+    amount = pt["amount"]
+    await callback.answer(f"Перевод отменён. {amount:,} ⭐️ возвращены на ваш счёт!", show_alert=True)
+    await callback.message.edit_text(
+        f"↩️ <b>Перевод успешно отменён</b>\n\n"
+        f"• Номер: <code>{pt['trx_id']}</code>\n"
+        f"• Сумма: <b>{amount:,} ⭐️</b>\n"
+        f"• Получатель: @{pt['recipient_username']}\n\n"
+        f"Звёзды возвращены на ваш счёт СБП.",
+        reply_markup=get_back_button()
+    )

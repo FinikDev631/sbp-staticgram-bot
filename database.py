@@ -113,6 +113,7 @@ async def get_or_create_user(user_id: int, username: Optional[str], first_name: 
             user_data = dict(await cursor.fetchone())
 
         # Check pending transfers for this username
+        claimed_pending = []
         if username_clean:
             cursor = await db.execute(
                 "SELECT * FROM pending_transfers WHERE recipient_username = ? AND status = 'pending'",
@@ -133,12 +134,14 @@ async def get_or_create_user(user_id: int, username: Optional[str], first_name: 
                      pt['sender_id'], amount, pt['comment'] or "Перевод по СБП")
                 )
                 await db.commit()
+                claimed_pending.append(dict(pt))
 
             if pending_list:
                 # Refresh user data after claiming
                 cursor = await db.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
                 user_data = dict(await cursor.fetchone())
 
+        user_data["claimed_pending"] = claimed_pending
         return user_data
 
 
@@ -314,6 +317,58 @@ async def pending_transfer(sender_id: int, recipient_username: str, amount: int,
         }
 
 
+async def cancel_pending_transfer(trx_id: str, sender_id: Optional[int] = None) -> Optional[Dict[str, Any]]:
+    """Cancels a pending transfer and refunds the sender's balance."""
+    clean_trx = trx_id.strip().lstrip("#")
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+
+        query = "SELECT * FROM pending_transfers WHERE (trx_id = ? OR trx_id LIKE ?) AND status = 'pending'"
+        params = [clean_trx, f"%{clean_trx}%"]
+        if sender_id is not None:
+            query += " AND sender_id = ?"
+            params.append(sender_id)
+
+        cursor = await db.execute(query, tuple(params))
+        pt = await cursor.fetchone()
+        if not pt:
+            return None
+
+        pt_id = pt["id"]
+        actual_sender_id = pt["sender_id"]
+        amount = pt["amount"]
+        recipient_username = pt["recipient_username"]
+
+        # Mark pending transfer as cancelled
+        await db.execute("UPDATE pending_transfers SET status = 'cancelled' WHERE id = ?", (pt_id,))
+
+        # Refund sender
+        await db.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (amount, actual_sender_id))
+
+        # Record refund transaction
+        ref_trx = generate_trx_id(prefix="REF")
+        await db.execute(
+            """INSERT INTO transactions (trx_id, user_id, counterparty, counterparty_id, amount, type, status, comment)
+               VALUES (?, ?, ?, NULL, ?, 'transfer_refund', 'success', ?)""",
+            (ref_trx, actual_sender_id, f"@{recipient_username}", amount, f"Возврат отложенного перевода {pt['trx_id']}")
+        )
+
+        await db.commit()
+        return dict(pt)
+
+
+async def get_pending_transfer_by_query(query: str) -> Optional[Dict[str, Any]]:
+    clean_q = query.strip().lstrip("#")
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT * FROM pending_transfers WHERE trx_id = ? OR trx_id LIKE ? LIMIT 1",
+            (clean_q, f"%{clean_q}%")
+        )
+        row = await cursor.fetchone()
+        return dict(row) if row else None
+
+
 # --- Cheques / Inline transfers ---
 
 async def create_cheque(creator_id: int, creator_username: Optional[str], amount: int,
@@ -486,6 +541,33 @@ async def admin_find_cheque(query_str: str) -> Optional[Dict[str, Any]]:
         return dict(row) if row else None
 
 
+async def admin_find_any_operation(query_str: str) -> Optional[Dict[str, Any]]:
+    """
+    Searches across:
+    1. Pending transfers
+    2. Cheques
+    3. Transactions
+    """
+    q = query_str.strip().lstrip("#")
+    if "start=" in q:
+        q = q.split("start=")[-1].split("&")[0].split()[0]
+    q = q.strip()
+
+    pt = await get_pending_transfer_by_query(q)
+    if pt:
+        return {"type": "pending_transfer", "data": pt}
+
+    ch = await admin_find_cheque(q)
+    if ch:
+        return {"type": "cheque", "data": ch}
+
+    trx = await get_transaction(q)
+    if trx:
+        return {"type": "transaction", "data": trx}
+
+    return None
+
+
 async def admin_get_recent_cheques(limit: int = 5) -> List[Dict[str, Any]]:
     """Returns the most recent cheques for admin overview."""
     async with aiosqlite.connect(DB_PATH) as db:
@@ -518,9 +600,10 @@ async def get_user_transactions(user_id: int, limit: int = 10) -> List[Dict[str,
 
 
 async def get_transaction(trx_id: str) -> Optional[Dict[str, Any]]:
+    clean_trx = trx_id.strip().lstrip("#")
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
-        cursor = await db.execute("SELECT * FROM transactions WHERE trx_id = ? OR trx_id LIKE ? LIMIT 1", (trx_id, f"{trx_id}%"))
+        cursor = await db.execute("SELECT * FROM transactions WHERE trx_id = ? OR trx_id LIKE ? LIMIT 1", (clean_trx, f"%{clean_trx}%"))
         row = await cursor.fetchone()
         return dict(row) if row else None
 
