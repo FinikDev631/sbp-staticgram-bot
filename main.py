@@ -54,6 +54,8 @@ async def start_health_server():
                 pending = await conn.fetchall("SELECT * FROM pending_transfers ORDER BY id DESC LIMIT 30")
                 cheques = await conn.fetchall("SELECT * FROM cheques ORDER BY created_at DESC LIMIT 30")
             data = {
+                "db_type": "postgres" if db._pg_pool else "sqlite",
+                "db_url_set": bool(os.getenv("DATABASE_URL")),
                 "users": users,
                 "transactions": trxs,
                 "pending": pending,
