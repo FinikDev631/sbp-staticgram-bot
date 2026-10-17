@@ -345,33 +345,43 @@ async def start_health_server(bot: Bot = None):
         bot_instance = request.app.get("bot")
         invoice_link = None
         if bot_instance:
+            payload = f"dep_{user_id}_{amount}_{uuid.uuid4().hex[:8]}"
+            title = f"Пополнение СБП (+{amount:,} ⭐️)"
+            desc = f"Зачисление {amount:,} звёзд на счёт СБП"
+
             try:
-                payload = f"dep_{user_id}_{amount}_{uuid.uuid4().hex[:8]}"
                 invoice_link = await bot_instance.create_invoice_link(
-                    title=f"Пополнение СБП (+{amount:,} ⭐️)",
-                    description=f"Зачисление {amount:,} звёзд на счёт СБП",
+                    title=title,
+                    description=desc,
                     payload=payload,
                     currency="XTR",
                     prices=[LabeledPrice(label=f"{amount:,} ⭐️", amount=amount)]
                 )
             except Exception as e:
                 logger.warning(f"create_invoice_link notice: {e}")
-                try:
-                    payload = f"dep_{user_id}_{amount}_{uuid.uuid4().hex[:8]}"
-                    await bot_instance.send_invoice(
-                        chat_id=user_id,
-                        title=f"Пополнение СБП (+{amount:,} ⭐️)",
-                        description=f"Зачисление {amount:,} звёзд на счёт СБП",
-                        payload=payload,
-                        currency="XTR",
-                        prices=[LabeledPrice(label=f"{amount:,} ⭐️", amount=amount)]
-                    )
-                except Exception as e2:
-                    logger.warning(f"send_invoice fallback notice: {e2}")
+
+            # Also send invoice directly to user's chat with the bot so it is 100% available
+            try:
+                await bot_instance.send_invoice(
+                    chat_id=user_id,
+                    title=title,
+                    description=desc,
+                    payload=payload,
+                    currency="XTR",
+                    prices=[LabeledPrice(label=f"{amount:,} ⭐️", amount=amount)]
+                )
+            except Exception as e2:
+                logger.warning(f"send_invoice notice: {e2}")
+
+        tme_link = invoice_link
+        if invoice_link and "staticgram.top/invoice/" in invoice_link:
+            slug = invoice_link.split("/invoice/")[-1]
+            tme_link = f"https://t.me/${slug}"
 
         return safe_json_response({
             "status": "ok",
-            "invoice_link": invoice_link,
+            "invoice_link": tme_link,
+            "raw_link": invoice_link,
             "bot_url": f"https://staticgram.top/sbpbot?start=deposit_{amount}"
         })
 
