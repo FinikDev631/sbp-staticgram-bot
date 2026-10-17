@@ -108,6 +108,7 @@ async def cmd_help(message: Message):
         "/deposit — Пополнить баланс\n"
         "/withdraw — Вывести на аккаунт\n"
         "/cheque — Создать чек\n"
-        "/history — История операций",
+        "/history — История операций\n\n"
+        "Официальный канал: @sbpnews",
         reply_markup=get_back_button()
     )
