@@ -1,5 +1,5 @@
-﻿/**
- * SBP StaticGram Stars Bank тАв Material Design 3 Web App
+/**
+ * SBP StaticGram Stars Bank • Material Design 3 Web App
  * Real PostgreSQL API, In-App Stars Checkout, Dedicated Settings Modal, Proper Dark/Light Theme & i18n
  */
 
@@ -12,121 +12,122 @@ const API_BASE = window.location.origin.includes('github.io')
 const I18N = {
   ru: {
     brandName: 'StaticGram Stars',
-    brandStatus: '╨Ю╨╜╨╗╨░╨╣╨╜ ╤И╨╗╤О╨╖',
-    guestGreeting: '╨У╨╛╤Б╤В╨╡╨▓╨╛╨╣ ╤А╨╡╨╢╨╕╨╝',
-    guestSubtext: '╨Ю╤В╨║╤А╨╛╨╣╤В╨╡ ╨┐╤А╨╕╨╗╨╛╨╢╨╡╨╜╨╕╨╡ ╤З╨╡╤А╨╡╨╖ Telegram ╨▒╨╛╤В╨░ @sbpbot',
-    guestNotice: '╨Я╤А╨╕╨╗╨╛╨╢╨╡╨╜╨╕╨╡ ╨╛╤В╨║╤А╤Л╤В╨╛ ╨▓ ╤А╨╡╨╢╨╕╨╝╨╡ ╨┐╤А╨╛╤Б╨╝╨╛╤В╤А╨░. ╨Ф╨╗╤П ╤Г╨┐╤А╨░╨▓╨╗╨╡╨╜╨╕╤П ╨▒╨░╨╗╨░╨╜╤Б╨╛╨╝ ╨╛╤В╨║╤А╨╛╨╣╤В╨╡ ╨б╨С╨Я ╤З╨╡╤А╨╡╨╖ ╨╛╤Д╨╕╤Ж╨╕╨░╨╗╤М╨╜╨╛╨│╨╛ ╨▒╨╛╤В╨░.',
-    userGreeting: '╨Я╤А╨╕╨▓╨╡╤В, {name}!',
-    userSubtext: '{label} тАв ╨б╨╡╤В╤М ╨░╨║╤В╨╕╨▓╨╜╨░',
-    networkActive: '╨б╨╡╤В╤М ╨░╨║╤В╨╕╨▓╨╜╨░',
-    balanceLabel: '╨Ф╨Ю╨б╨в╨г╨Я╨Э╨л╨Щ ╨С╨Р╨Ы╨Р╨Э╨б',
-    balanceSub: '╨Ь╨│╨╜╨╛╨▓╨╡╨╜╨╜╤Л╨╡ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╤Л ╨▓╨╜╤Г╤В╤А╨╕ ╤Б╨╡╤В╨╕ ╨▒╨╡╨╖ ╨║╨╛╨╝╨╕╤Б╤Б╨╕╨╕',
-    inEscrow: '╨Т ╤А╨╡╨╖╨╡╤А╨▓╨╡',
-    activeReserve: '╨Р╨║╤В╨╕╨▓╨╜╤Л╨╡ ╤А╨╡╨╖╨╡╤А╨▓╤Л: {amount} тнРя╕П',
-    viewCheques: '╨б╨╝╨╛╤В╤А╨╡╤В╤М ╤З╨╡╨║╨╕',
-    actionTransfer: '╨Я╨╡╤А╨╡╨▓╨╡╤Б╤В╨╕',
-    actionTransferCaption: '╨Я╨╛ @username ╨╕╨╗╨╕ ╤Б╤З╤С╤В╤Г',
-    actionDeposit: '╨Я╨╛╨┐╨╛╨╗╨╜╨╕╤В╤М',
+    brandStatus: 'Онлайн шлюз',
+    guestGreeting: 'Гостевой режим',
+    guestSubtext: 'Откройте приложение через Telegram бота @sbpbot',
+    guestNotice: 'Приложение открыто в режиме просмотра. Для управления балансом откройте СБП через официального бота.',
+    userGreeting: 'Привет, {name}!',
+    userSubtext: '{label} • Сеть активна',
+    networkActive: 'Сеть активна',
+    balanceLabel: 'ДОСТУПНЫЙ БАЛАНС',
+    balanceSub: 'Мгновенные переводы внутри сети без комиссии',
+    inEscrow: 'В резерве',
+    activeReserve: 'Активные резервы: {amount} ⭐️',
+    viewCheques: 'Смотреть чеки',
+    actionTransfer: 'Перевести',
+    actionTransferCaption: 'По @username или счёту',
+    actionDeposit: 'Пополнить',
     actionDepositCaption: 'Telegram Stars',
-    actionWithdraw: '╨Т╤Л╨▓╨╡╤Б╤В╨╕',
-    actionWithdrawCaption: '╨Э╨░ ╨░╨║╨║╨░╤Г╨╜╤В',
-    actionCheque: '╨б╨╛╨╖╨┤╨░╤В╤М ╤З╨╡╨║',
-    actionChequeCaption: '╨Ф╨╗╤П ╨╛╤В╨┐╤А╨░╨▓╨║╨╕ ╨▓ ╤З╨░╤В╤Л',
-    newsTag: 'ЁЯУв ╨Ю╨д╨Ш╨ж╨Ш╨Р╨Ы╨м╨Э╨л╨Щ ╨Ъ╨Р╨Э╨Р╨Ы ╨б╨С╨Я',
-    newsTitle: '╨Ь╨│╨╜╨╛╨▓╨╡╨╜╨╜╤Л╨╡ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╤Л, ╨╝╤Г╨╗╤М╤В╨╕╨▓╨░╨╗╤О╤В╨╜╤Л╨╣ ╤Г╤З╤С╤В ╨╕ ╤З╨╡╨║╨╕',
-    newsDesc: '╨Э╨╛╨▓╨╛╤Б╤В╨╕ ╤Б╨╕╤Б╤В╨╡╨╝╤Л ╨▒╤Л╤Б╤В╤А╤Л╤Е ╨┐╨╗╨░╤В╨╡╨╢╨╡╨╣, ╨╛╨▒╨╜╨╛╨▓╨╗╨╡╨╜╨╕╤П ╤И╨╗╤О╨╖╨░ ╨╕ ╨║╨▓╨╕╤В╨░╨╜╤Ж╨╕╨╕ ╨╜╨╛╨▓╨╛╨│╨╛ ╨┐╨╛╨║╨╛╨╗╨╡╨╜╨╕╤П.',
-    newsBtn: '╨Я╨╛╨┤╨┐╨╕╤Б╨░╤В╤М╤Б╤П ╨╜╨░ @sbpnews',
-    historyTitle: '╨Ш╤Б╤В╨╛╤А╨╕╤П ╨╛╨┐╨╡╤А╨░╤Ж╨╕╨╣',
-    historySub: '╨Т╤Б╨╡ ╤В╤А╨░╨╜╨╖╨░╨║╤Ж╨╕╨╕, ╨┐╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╤П ╨╕ ╤З╨╡╨║╨╕ ╤Б ╤Н╨╗╨╡╨║╤В╤А╨╛╨╜╨╜╤Л╨╝╨╕ ╨║╨▓╨╕╤В╨░╨╜╤Ж╨╕╤П╨╝╨╕',
-    filterAll: '╨Т╤Б╨╡',
-    filterTransfer: '╨Я╨╡╤А╨╡╨▓╨╛╨┤╤Л',
-    filterDeposit: '╨Я╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╤П',
-    filterCheque: '╨з╨╡╨║╨╕',
-    loadingOps: '╨Ч╨░╨│╤А╤Г╨╖╨║╨░ ╨╛╨┐╨╡╤А╨░╤Ж╨╕╨╣...',
-    noOpsCategory: '╨Т ╤Н╤В╨╛╨╣ ╨║╨░╤В╨╡╨│╨╛╤А╨╕╨╕ ╨┐╨╛╨║╨░ ╨╜╨╡╤В ╨╛╨┐╨╡╤А╨░╤Ж╨╕╨╣',
-    openBot: '╨Ю╤В╨║╤А╤Л╤В╤М ╨▒╨╛╤В╨░',
-    footerPlatform: '╨б╨С╨Я StaticGram Stars тАв ╨Я╨╗╨░╤В╤Д╨╛╤А╨╝╨░ ╨╝╨│╨╜╨╛╨▓╨╡╨╜╨╜╤Л╤Е ╨┐╨╗╨░╤В╨╡╨╢╨╡╨╣',
-    footerNews: '╨Э╨╛╨▓╨╛╤Б╤В╨╕',
-    footerBot: 'Telegram ╨С╨╛╤В',
+    actionWithdraw: 'Вывести',
+    actionWithdrawCaption: 'На аккаунт',
+    actionCheque: 'Создать чек',
+    actionChequeCaption: 'Для отправки в чаты',
+    newsTag: '📢 ОФИЦИАЛЬНЫЙ КАНАЛ СБП',
+    newsTitle: 'Мгновенные переводы, мультивалютный учёт и чеки',
+    newsDesc: 'Новости системы быстрых платежей, обновления шлюза и квитанции нового поколения.',
+    newsBtn: 'Подписаться на @sbpnews',
+    historyTitle: 'История операций',
+    historySub: 'Все транзакции, пополнения и чеки с электронными квитанциями',
+    filterAll: 'Все',
+    filterTransfer: 'Переводы',
+    filterDeposit: 'Пополнения',
+    filterCheque: 'Чеки',
+    loadingOps: 'Загрузка операций...',
+    noOpsCategory: 'В этой категории пока нет операций',
+    openBot: 'Открыть бота',
+    footerPlatform: 'СБП StaticGram Stars • Платформа мгновенных платежей',
+    footerNews: 'Новости',
+    footerBot: 'Telegram Бот',
 
     // Settings
-    settingsTitle: 'тЪЩя╕П ╨Э╨░╤Б╤В╤А╨╛╨╣╨║╨╕',
-    settingsTheme: '╨в╨╡╨╝╨░ ╨╛╤Д╨╛╤А╨╝╨╗╨╡╨╜╨╕╤П',
-    themeLight: '╨б╨▓╨╡╤В╨╗╨░╤П',
-    themeDark: '╨в╤С╨╝╨╜╨░╤П',
-    themeSystem: '╨б╨╕╤Б╤В╨╡╨╝╨╜╨░╤П',
-    settingsLang: '╨п╨╖╤Л╨║ ╨╕╨╜╤В╨╡╤А╤Д╨╡╨╣╤Б╨░',
-    settingsAccount: '╨Р╨║╨║╨░╤Г╨╜╤В ╨б╨С╨Я',
-    settingsUser: '╨Я╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╤М',
-    settingsAccountNum: '╨Э╨╛╨╝╨╡╤А ╤Б╤З╤С╤В╨░',
-    settingsStatus: '╨б╤В╨░╤В╤Г╤Б ╤И╨╗╤О╨╖╨░',
-    settingsLinks: '╨Я╨╛╨╗╨╡╨╖╨╜╤Л╨╡ ╤Б╤Б╤Л╨╗╨║╨╕',
+    settingsTitle: '⚙️ Настройки',
+    settingsTheme: 'Тема оформления',
+    themeLight: 'Светлая',
+    themeDark: 'Тёмная',
+    themeSystem: 'Системная',
+    settingsLang: 'Язык интерфейса',
+    settingsAccount: 'Аккаунт СБП',
+    settingsUser: 'Пользователь',
+    settingsAccountNum: 'Номер счёта',
+    settingsStatus: 'Статус шлюза',
+    settingsLinks: 'Полезные ссылки',
 
     // Modals
-    modalTransferTitle: 'ЁЯТ╕ ╨Я╨╡╤А╨╡╨▓╨╛╨┤ ╨┐╨╛ ╨б╨С╨Я',
-    modalTransferRecipient: '╨Я╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤М (@username, ID ╨╕╨╗╨╕ ╨╜╨╛╨╝╨╡╤А ╤Б╤З╤С╤В╨░ ╨б╨С╨Я)',
-    modalTransferAmount: '╨б╤Г╨╝╨╝╨░ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╨░ (тнРя╕П)',
-    modalTransferComment: '╨Э╨░╨╖╨╜╨░╤З╨╡╨╜╨╕╨╡ ╨┐╨╗╨░╤В╨╡╨╢╨░ / ╨║╨╛╨╝╨╝╨╡╨╜╤В╨░╤А╨╕╨╣ (╨╜╨╡╨╛╨▒╤П╨╖╨░╤В╨╡╨╗╤М╨╜╨╛)',
-    modalTransferSubmit: '╨Ю╤В╨┐╤А╨░╨▓╨╕╤В╤М ╨┐╨╡╤А╨╡╨▓╨╛╨┤',
+    modalTransferTitle: '💸 Перевод по СБП',
+    modalTransferRecipient: 'Получатель (@username, ID или номер счёта СБП)',
+    modalTransferAmount: 'Сумма перевода (⭐️)',
+    modalTransferComment: 'Назначение платежа / комментарий (необязательно)',
+    modalTransferSubmit: 'Отправить перевод',
 
-    modalDepositTitle: 'ЁЯУе ╨Я╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╨╡ ╤Б╤З╤С╤В╨░ Stars',
-    modalDepositDesc: '╨Ю╨┐╨╗╨░╤В╨░ ╨┐╤А╨╛╨╕╨╖╨▓╨╛╨┤╨╕╤В╤Б╤П ╨╝╨│╨╜╨╛╨▓╨╡╨╜╨╜╨╛ ╨┐╤А╤П╨╝╨╛ ╨▓ ╨┐╤А╨╕╨╗╨╛╨╢╨╡╨╜╨╕╨╕ ╤З╨╡╤А╨╡╨╖ ╨┐╨╗╨░╤В╤С╨╢╨╜╤Л╨╣ ╤И╨╗╤О╨╖ Telegram Stars (XTR):',
-    modalDepositCustomLabel: '╨Я╤А╨╛╨╕╨╖╨▓╨╛╨╗╤М╨╜╨░╤П ╤Б╤Г╨╝╨╝╨░ ╨╖╨▓╤С╨╖╨┤ (тнРя╕П)',
-    modalDepositBuy: '╨Ъ╤Г╨┐╨╕╤В╤М',
-    modalDepositPresets: '╨С╤Л╤Б╤В╤А╤Л╨╣ ╨▓╤Л╨▒╨╛╤А ╨┐╨░╨║╨╡╤В╨░:',
+    modalDepositTitle: '📥 Пополнение счёта Stars',
+    modalDepositDesc: 'Оплата производится мгновенно прямо в приложении через платёжный шлюз Telegram Stars (XTR):',
+    modalDepositCustomLabel: 'Произвольная сумма звёзд (⭐️)',
+    modalDepositBuy: 'Купить',
+    modalDepositPresets: 'Быстрый выбор пакета:',
 
-    modalWithdrawTitle: 'ЁЯУд ╨Т╤Л╨▓╨╛╨┤ ╨╖╨▓╤С╨╖╨┤ Stars',
-    modalWithdrawDesc: '╨Ф╨╗╤П ╨┐╤А╤П╨╝╨╛╨│╨╛ ╨▓╤Л╨▓╨╛╨┤╨░ ╨╖╨▓╤С╨╖╨┤ ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╣╤В╨╡ ╨║╨╛╨╝╨░╨╜╨┤╤Г /withdraw ╨▓ Telegram-╨▒╨╛╤В╨╡ ╨╗╨╕╨▒╨╛ ╨╛╤В╨┐╤А╨░╨▓╤М╤В╨╡ ╨┐╨╡╤А╨╡╨▓╨╛╨┤ ╨╜╨░ ╨╜╤Г╨╢╨╜╤Л╨╣ ╨░╨║╨║╨░╤Г╨╜╤В ╨б╨С╨Я.',
-    modalWithdrawBtn: '╨Я╨╡╤А╨╡╨╣╤В╨╕ ╨║ ╨▓╤Л╨▓╨╛╨┤╤Г ╨▓ ╨▒╨╛╤В╨╡',
+    modalWithdrawTitle: '📤 Вывод звёзд Stars',
+    modalWithdrawDesc: 'Для прямого вывода звёзд используйте команду /withdraw в Telegram-боте либо отправьте перевод на нужный аккаунт СБП.',
+    modalWithdrawBtn: 'Перейти к выводу в боте',
 
-    modalChequeTitle: 'ЁЯз╛ ╨б╨╛╨╖╨┤╨░╤В╤М ╤З╨╡╨║ ╨б╨С╨Я',
-    modalChequeAmount: '╨Э╨╛╨╝╨╕╨╜╨░╨╗ ╤З╨╡╨║╨░ (тнРя╕П)',
-    modalChequeType: '╨в╨╕╨┐ ╤З╨╡╨║╨░',
-    modalChequeAny: 'ЁЯМР ╨Ф╨╗╤П ╨▓╤Б╨╡╤Е (╨░╨║╤В╨╕╨▓╨╕╤А╤Г╨╡╤В ╨┐╨╡╤А╨▓╤Л╨╣ ╨╜╨░╨╢╨░╨▓╤И╨╕╨╣ ╨▓ ╤З╨░╤В╨╡)',
-    modalChequeUser: 'ЁЯФТ ╨Ш╨╝╨╡╨╜╨╜╨╛╨╣ ╤З╨╡╨║ (╤В╨╛╨╗╤М╨║╨╛ ╨┤╨╗╤П ╤Г╨║╨░╨╖╨░╨╜╨╜╨╛╨│╨╛ @username)',
-    modalChequeRecipient: '╨Ш╨╝╤П ╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╤П ╨┐╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤П',
-    modalChequeComment: '╨Ъ╨╛╨╝╨╝╨╡╨╜╤В╨░╤А╨╕╨╣ ╨║ ╤З╨╡╨║╤Г',
-    modalChequeSubmit: '╨б╨│╨╡╨╜╨╡╤А╨╕╤А╨╛╨▓╨░╤В╤М ╤З╨╡╨║',
+    modalChequeTitle: '🧾 Создать чек СБП',
+    modalChequeAmount: 'Номинал чека (⭐️)',
+    modalChequeType: 'Тип чека',
+    modalChequeAny: '🌐 Для всех (активирует первый нажавший в чате)',
+    modalChequeUser: '🔒 Именной чек (только для указанного @username)',
+    modalChequeRecipient: 'Имя пользователя получателя',
+    modalChequeComment: 'Комментарий к чеку',
+    modalChequeSubmit: 'Сгенерировать чек',
 
-    modalChequeResultTitle: 'ЁЯОЙ ╨з╨╡╨║ ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╤Б╨╛╨╖╨┤╨░╨╜!',
-    modalChequeResultDesc: '╨Ч╨▓╤С╨╖╨┤╤Л ╨╖╨░╤А╨╡╨╖╨╡╤А╨▓╨╕╤А╨╛╨▓╨░╨╜╤Л ╨▓ Escrow. ╨Ю╤В╨┐╤А╨░╨▓╤М╤В╨╡ ╤Б╤Б╤Л╨╗╨║╤Г ╨╜╨░ ╤З╨╡╨║ ╨▓ ╨╗╤О╨▒╨╛╨╣ ╤З╨░╤В Telegram:',
-    modalChequeResultLink: '╨б╤Б╤Л╨╗╨║╨░ ╨╜╨░ ╨░╨║╤В╨╕╨▓╨░╤Ж╨╕╤О ╤З╨╡╨║╨░',
-    modalChequeResultCopy: '╨б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╤В╤М ╤Б╤Б╤Л╨╗╨║╤Г',
-    modalChequeResultShare: '╨Ю╤В╨┐╤А╨░╨▓╨╕╤В╤М ╨▓ ╤З╨░╤В',
+    modalChequeResultTitle: '🎉 Чек успешно создан!',
+    modalChequeResultDesc: 'Звёзды зарезервированы в Escrow. Отправьте ссылку на чек в любой чат Telegram:',
+    modalChequeResultLink: 'Ссылка на активацию чека',
+    modalChequeResultCopy: 'Скопировать ссылку',
+    modalChequeResultShare: 'Отправить в чат',
 
-    modalReceiptTitle: '╨н╨╗╨╡╨║╤В╤А╨╛╨╜╨╜╤Л╨╣ ╤З╨╡╨║',
-    modalReceiptCopy: '╨б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╤В╤М ╨┤╨░╨╜╨╜╤Л╨╡ ╤З╨╡╨║╨░',
-    receiptTrx: '╨Э╨╛╨╝╨╡╤А ╨║╨▓╨╕╤В╨░╨╜╤Ж╨╕╨╕',
-    receiptFrom: '╨Ю╤В╨┐╤А╨░╨▓╨╕╤В╨╡╨╗╤М',
-    receiptTo: '╨Я╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤М',
-    receiptDate: '╨Ф╨░╤В╨░ ╨╕ ╨▓╤А╨╡╨╝╤П',
-    receiptComment: '╨Э╨░╨╖╨╜╨░╤З╨╡╨╜╨╕╨╡ ╨┐╨╗╨░╤В╨╡╨╢╨░',
-    receiptGateway: '╨Я╨╗╨░╤В╤С╨╢╨╜╤Л╨╣ ╤И╨╗╤О╨╖',
-    receiptExecuted: '╨Ш╤Б╨┐╨╛╨╗╨╜╨╡╨╜',
+    modalReceiptTitle: 'Электронный чек',
+    modalReceiptCopy: 'Скопировать данные чека',
+    receiptTrx: 'Номер квитанции',
+    receiptFrom: 'Отправитель',
+    receiptTo: 'Получатель',
+    receiptDate: 'Дата и время',
+    receiptComment: 'Назначение платежа',
+    receiptGateway: 'Платёжный шлюз',
+    receiptExecuted: 'Исполнен',
 
     // Notifications & Toasts
-    toastCopiedAccount: '╨Э╨╛╨╝╨╡╤А ╤Б╤З╤С╤В╨░ ╤Б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╨╜: {acc}',
-    toastOpenBotForAcc: '╨Ю╤В╨║╤А╨╛╨╣╤В╨╡ ╨▒╨╛╤В╨░ ╨▓ Telegram ╨┤╨╗╤П ╨┐╨╛╨╗╤Г╤З╨╡╨╜╨╕╤П ╤Б╤З╤С╤В╨░',
-    toastOpenBotForTransfer: '╨Ф╨╗╤П ╨╛╤В╨┐╤А╨░╨▓╨║╨╕ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╨░ ╨╛╤В╨║╤А╨╛╨╣╤В╨╡ ╨▒╨╛╤В╨░ @sbpbot',
-    toastOpenBotForDeposit: '╨Ф╨╗╤П ╨┐╨╛╨┐╨╛╨╗╨╜╨╡╨╜╨╕╤П ╨▒╨░╨╗╨░╨╜╤Б╨░ ╨╛╤В╨║╤А╨╛╨╣╤В╨╡ ╨▒╨╛╤В╨░ @sbpbot',
-    toastOpenBotForCheque: '╨Ф╨╗╤П ╤Б╨╛╨╖╨┤╨░╨╜╨╕╤П ╤З╨╡╨║╨░ ╨╛╤В╨║╤А╨╛╨╣╤В╨╡ ╨▒╨╛╤В╨░ @sbpbot',
-    toastPreparingInvoice: '╨Я╨╛╨┤╨│╨╛╤В╨╛╨▓╨║╨░ ╤Б╤З╤С╤В╨░ ╨╜╨░ {amount} тнРя╕П...',
-    toastDepositSuccess: '╨С╨░╨╗╨░╨╜╤Б ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╨┐╨╛╨┐╨╛╨╗╨╜╨╡╨╜ ╨╜╨░ +{amount} тнРя╕П!',
-    toastDepositCancel: '╨Ю╨┐╨╗╨░╤В╨░ ╨╛╤В╨╝╨╡╨╜╨╡╨╜╨░',
-    toastDepositFail: '╨Ю╤И╨╕╨▒╨║╨░ ╨┐╤А╨╕ ╨┐╤А╨╛╨▓╨╡╨┤╨╡╨╜╨╕╨╕ ╨┐╨╗╨░╤В╨╡╨╢╨░',
-    toastSpecifyRecipient: '╨г╨║╨░╨╢╨╕╤В╨╡ ╨┐╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤П (@username, ID ╨╕╨╗╨╕ ╨╜╨╛╨╝╨╡╤А ╤Б╤З╤С╤В╨░)',
-    toastSpecifyAmount: '╨г╨║╨░╨╢╨╕╤В╨╡ ╨║╨╛╤А╤А╨╡╨║╤В╨╜╤Г╤О ╤Б╤Г╨╝╨╝╤Г',
-    toastInsufficientBalance: '╨Э╨╡╨┤╨╛╤Б╤В╨░╤В╨╛╤З╨╜╨╛ ╨╖╨▓╤С╨╖╨┤. ╨Т╨░╤И ╨▒╨░╨╗╨░╨╜╤Б: {bal} тнРя╕П',
-    toastTransferSending: '╨Ю╤В╨┐╤А╨░╨▓╨║╨░...',
-    toastTransferSubmit: '╨Ю╤В╨┐╤А╨░╨▓╨╕╤В╤М ╨┐╨╡╤А╨╡╨▓╨╛╨┤',
-    toastTransferSuccess: '╨Я╨╡╤А╨╡╨▓╨╛╨┤ {amount} тнРя╕П ╤Г╤Б╨┐╨╡╤И╨╜╨╛ ╨╛╤В╨┐╤А╨░╨▓╨╗╨╡╨╜!',
-    toastChequeSpecifyNominal: '╨г╨║╨░╨╢╨╕╤В╨╡ ╨╜╨╛╨╝╨╕╨╜╨░╨╗ ╤З╨╡╨║╨░',
-    toastChequeInsufficient: '╨Э╨╡╨┤╨╛╤Б╤В╨░╤В╨╛╤З╨╜╨╛ ╨╖╨▓╤С╨╖╨┤ ╨╜╨░ ╨▒╨░╨╗╨░╨╜╤Б╨╡ ╨┤╨╗╤П ╤А╨╡╨╖╨╡╤А╨▓╨╕╤А╨╛╨▓╨░╨╜╨╕╤П ╤З╨╡╨║╨░',
-    toastChequeSpecifyUser: '╨г╨║╨░╨╢╨╕╤В╨╡ @username ╨┐╨╛╨╗╤Г╤З╨░╤В╨╡╨╗╤П',
-    toastChequeCreating: '╨б╨╛╨╖╨┤╨░╨╜╨╕╨╡...',
-    toastChequeSubmit: '╨б╨│╨╡╨╜╨╡╤А╨╕╤А╨╛╨▓╨░╤В╤М ╤З╨╡╨║',
-    toastChequeCopied: '╨б╤Б╤Л╨╗╨║╨░ ╨╜╨░ ╤З╨╡╨║ ╤Б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╨╜╨░ ╨▓ ╨▒╤Г╤Д╨╡╤А ╨╛╨▒╨╝╨╡╨╜╨░!',
-    toastReceiptCopied: '╨Ф╨░╨╜╨╜╤Л╨╡ ╤З╨╡╨║╨░ ╤Б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╨╜╤Л ╨▓ ╨▒╤Г╤Д╨╡╤А!'
+    toastCopiedAccount: 'Номер счёта скопирован: {acc}',
+    toastOpenBotForAcc: 'Откройте бота в Telegram для получения счёта',
+    toastOpenBotForTransfer: 'Для отправки перевода откройте бота @sbpbot',
+    toastOpenBotForDeposit: 'Для пополнения баланса откройте бота @sbpbot',
+    toastOpenBotForCheque: 'Для создания чека откройте бота @sbpbot',
+    toastPreparingInvoice: 'Подготовка счёта на {amount} ⭐️...',
+    toastDepositSuccess: 'Баланс успешно пополнен на +{amount} ⭐️!',
+    toastDepositCancel: 'Оплата отменена',
+    toastDepositFail: 'Ошибка при проведении платежа',
+    toastSpecifyRecipient: 'Укажите получателя (@username, ID или номер счёта)',
+    toastSpecifyAmount: 'Укажите корректную сумму',
+    toastInsufficientBalance: 'Недостаточно звёзд. Ваш баланс: {bal} ⭐️',
+    toastTransferSending: 'Отправка...',
+    toastTransferSubmit: 'Отправить перевод',
+    toastTransferSuccess: 'Перевод {amount} ⭐️ успешно отправлен!',
+    toastChequeSpecifyNominal: 'Укажите номинал чека',
+    toastChequeInsufficient: 'Недостаточно звёзд на балансе для резервирования чека',
+    toastChequeSpecifyUser: 'Укажите @username получателя',
+    toastChequeCreating: 'Создание...',
+    toastChequeSubmit: 'Сгенерировать чек',
+    toastChequeCopied: 'Ссылка на чек скопирована в буфер обмена!',
+    toastReceiptCopied: 'Данные чека скопированы в буфер!',
+    confirmTransferPrompt: 'Действительно хотите отправить {amount} ⭐️ получателю {recipient}?'
   },
   en: {
     brandName: 'StaticGram Stars',
@@ -135,12 +136,12 @@ const I18N = {
     guestSubtext: 'Open the app via Telegram bot @sbpbot',
     guestNotice: 'The app is in read-only view. To manage balance and make transfers, open SBP via the official bot.',
     userGreeting: 'Hello, {name}!',
-    userSubtext: '{label} тАв Network Active',
+    userSubtext: '{label} • Network Active',
     networkActive: 'Network Active',
     balanceLabel: 'AVAILABLE BALANCE',
     balanceSub: 'Instant network transfers with zero fees',
     inEscrow: 'In Escrow',
-    activeReserve: 'Active reserves: {amount} тнРя╕П',
+    activeReserve: 'Active reserves: {amount} ⭐️',
     viewCheques: 'View Cheques',
     actionTransfer: 'Transfer',
     actionTransferCaption: 'By @username or account',
@@ -150,7 +151,7 @@ const I18N = {
     actionWithdrawCaption: 'To account',
     actionCheque: 'Create Cheque',
     actionChequeCaption: 'For sharing in chats',
-    newsTag: 'ЁЯУв OFFICIAL SBP CHANNEL',
+    newsTag: '📢 OFFICIAL SBP CHANNEL',
     newsTitle: 'Instant transfers, multi-currency accounting & cheques',
     newsDesc: 'Fast payment system updates, gateway releases and next-gen electronic receipts.',
     newsBtn: 'Subscribe to @sbpnews',
@@ -163,12 +164,12 @@ const I18N = {
     loadingOps: 'Loading transactions...',
     noOpsCategory: 'No transactions in this category yet',
     openBot: 'Open Bot',
-    footerPlatform: 'SBP StaticGram Stars тАв Instant Payment Platform',
+    footerPlatform: 'SBP StaticGram Stars • Instant Payment Platform',
     footerNews: 'News',
     footerBot: 'Telegram Bot',
 
     // Settings
-    settingsTitle: 'тЪЩя╕П Settings',
+    settingsTitle: '⚙️ Settings',
     settingsTheme: 'Theme Appearance',
     themeLight: 'Light',
     themeDark: 'Dark',
@@ -181,32 +182,32 @@ const I18N = {
     settingsLinks: 'Useful Links',
 
     // Modals
-    modalTransferTitle: 'ЁЯТ╕ Transfer via SBP',
+    modalTransferTitle: '💸 Transfer via SBP',
     modalTransferRecipient: 'Recipient (@username, ID or SBP account number)',
-    modalTransferAmount: 'Transfer amount (тнРя╕П)',
+    modalTransferAmount: 'Transfer amount (⭐️)',
     modalTransferComment: 'Payment purpose / comment (optional)',
     modalTransferSubmit: 'Send Transfer',
 
-    modalDepositTitle: 'ЁЯУе Top Up Stars Balance',
+    modalDepositTitle: '📥 Top Up Stars Balance',
     modalDepositDesc: 'Pay instantly inside the Telegram Mini App using the official Telegram Stars (XTR) gateway:',
-    modalDepositCustomLabel: 'Custom star amount (тнРя╕П)',
+    modalDepositCustomLabel: 'Custom star amount (⭐️)',
     modalDepositBuy: 'Buy',
     modalDepositPresets: 'Quick package selection:',
 
-    modalWithdrawTitle: 'ЁЯУд Withdraw Stars',
+    modalWithdrawTitle: '📤 Withdraw Stars',
     modalWithdrawDesc: 'For direct withdrawal of stars, use the /withdraw command in the Telegram bot or send a transfer to your SBP account.',
     modalWithdrawBtn: 'Go to Withdraw in Bot',
 
-    modalChequeTitle: 'ЁЯз╛ Create SBP Cheque',
-    modalChequeAmount: 'Cheque nominal (тнРя╕П)',
+    modalChequeTitle: '🧾 Create SBP Cheque',
+    modalChequeAmount: 'Cheque nominal (⭐️)',
     modalChequeType: 'Cheque type',
-    modalChequeAny: 'ЁЯМР For everyone (first user to click in chat claims it)',
-    modalChequeUser: 'ЁЯФТ Named cheque (only for specified @username)',
+    modalChequeAny: '🌐 For everyone (first user to click in chat claims it)',
+    modalChequeUser: '🔒 Named cheque (only for specified @username)',
     modalChequeRecipient: 'Recipient username',
     modalChequeComment: 'Cheque comment',
     modalChequeSubmit: 'Generate Cheque',
 
-    modalChequeResultTitle: 'ЁЯОЙ Cheque Created Successfully!',
+    modalChequeResultTitle: '🎉 Cheque Created Successfully!',
     modalChequeResultDesc: 'Stars reserved in Escrow. Send the activation link to any Telegram chat:',
     modalChequeResultLink: 'Cheque activation link',
     modalChequeResultCopy: 'Copy Link',
@@ -228,23 +229,24 @@ const I18N = {
     toastOpenBotForTransfer: 'To make transfers, open @sbpbot',
     toastOpenBotForDeposit: 'To top up, open @sbpbot',
     toastOpenBotForCheque: 'To create cheques, open @sbpbot',
-    toastPreparingInvoice: 'Preparing invoice for {amount} тнРя╕П...',
-    toastDepositSuccess: 'Balance topped up by +{amount} тнРя╕П!',
+    toastPreparingInvoice: 'Preparing invoice for {amount} ⭐️...',
+    toastDepositSuccess: 'Balance topped up by +{amount} ⭐️!',
     toastDepositCancel: 'Payment cancelled',
     toastDepositFail: 'Payment error',
     toastSpecifyRecipient: 'Please specify recipient (@username, ID or account)',
     toastSpecifyAmount: 'Please specify valid amount',
-    toastInsufficientBalance: 'Insufficient stars. Your balance: {bal} тнРя╕П',
+    toastInsufficientBalance: 'Insufficient stars. Your balance: {bal} ⭐️',
     toastTransferSending: 'Sending...',
     toastTransferSubmit: 'Send Transfer',
-    toastTransferSuccess: 'Transfer of {amount} тнРя╕П sent!',
+    toastTransferSuccess: 'Transfer of {amount} ⭐️ sent!',
     toastChequeSpecifyNominal: 'Please enter cheque nominal',
     toastChequeInsufficient: 'Insufficient stars on balance to reserve cheque',
     toastChequeSpecifyUser: 'Please specify recipient @username',
     toastChequeCreating: 'Creating...',
     toastChequeSubmit: 'Generate Cheque',
     toastChequeCopied: 'Cheque link copied to clipboard!',
-    toastReceiptCopied: 'Receipt details copied to clipboard!'
+    toastReceiptCopied: 'Receipt details copied to clipboard!',
+    confirmTransferPrompt: 'Do you really want to send {amount} ⭐️ to {recipient}?'
   }
 };
 
@@ -257,7 +259,7 @@ const State = {
   balance: 0,
   escrow: 0,
   isBalanceHidden: false,
-  accountNumber: 'тАФ',
+  accountNumber: '—',
   currentFilter: 'all',
   activeReceipt: null,
   transactions: [],
@@ -369,10 +371,10 @@ function updateSettingsModalInfo() {
 
   if (State.user) {
     if (usernameEl) usernameEl.textContent = State.user.username ? `@${State.user.username}` : (State.user.first_name || 'Client');
-    if (accountNumEl) accountNumEl.textContent = State.user.account_number || 'тАФ';
+    if (accountNumEl) accountNumEl.textContent = State.user.account_number || '—';
   } else {
-    if (usernameEl) usernameEl.textContent = '╨У╨╛╤Б╤В╤М (Guest)';
-    if (accountNumEl) accountNumEl.textContent = '╨Э╨╡ ╨┐╨╛╨┤╨║╨╗╤О╤З╤С╨╜';
+    if (usernameEl) usernameEl.textContent = 'Гость (Guest)';
+    if (accountNumEl) accountNumEl.textContent = 'Не подключён';
   }
 }
 
@@ -406,11 +408,11 @@ function initTelegram() {
   if (tgUser && tgUser.id) {
     State.userId = tgUser.id;
     State.username = tgUser.username || null;
-    State.firstName = tgUser.first_name || '╨Ъ╨╗╨╕╨╡╨╜╤В';
+    State.firstName = tgUser.first_name || 'Клиент';
   } else if (urlParams.get('user_id')) {
     State.userId = parseInt(urlParams.get('user_id'), 10);
     State.username = urlParams.get('username') || null;
-    State.firstName = urlParams.get('first_name') || '╨Ъ╨╗╨╕╨╡╨╜╤В';
+    State.firstName = urlParams.get('first_name') || 'Клиент';
   }
 
   fetchUserData();
@@ -427,11 +429,11 @@ async function fetchUserData() {
     State.isLoading = false;
     State.balance = 0;
     State.escrow = 0;
-    State.accountNumber = 'тАФ';
+    State.accountNumber = '—';
 
     if (greetingEl) greetingEl.textContent = t('guestGreeting');
     if (subtextEl) subtextEl.textContent = t('guestSubtext');
-    if (accountEl) accountEl.textContent = 'тАФ';
+    if (accountEl) accountEl.textContent = '—';
 
     updateBalanceUI();
     renderTransactions();
@@ -453,7 +455,7 @@ async function fetchUserData() {
       State.user = data.user;
       State.balance = data.user.balance || 0;
       State.escrow = data.user.reserved || 0;
-      State.accountNumber = data.user.account_number || 'тАФ';
+      State.accountNumber = data.user.account_number || '—';
       State.transactions = data.transactions || [];
       State.isGuest = false;
       State.isLoading = false;
@@ -499,13 +501,13 @@ function showToast(message, duration = 3500) {
 function updateBalanceUI() {
   const valEl = document.getElementById('balanceValue');
   if (valEl) {
-    valEl.textContent = State.isBalanceHidden ? 'тАвтАвтАвтАвтАвтАв' : State.balance.toLocaleString(State.lang === 'ru' ? 'ru-RU' : 'en-US');
+    valEl.textContent = State.isBalanceHidden ? '••••••' : State.balance.toLocaleString(State.lang === 'ru' ? 'ru-RU' : 'en-US');
   }
 
   const escrowStrip = document.getElementById('escrowStrip');
   const escrowTotal = document.getElementById('escrowTotal');
   if (escrowTotal) {
-    escrowTotal.textContent = `${State.escrow.toLocaleString(State.lang === 'ru' ? 'ru-RU' : 'en-US')} тнРя╕П`;
+    escrowTotal.textContent = `${State.escrow.toLocaleString(State.lang === 'ru' ? 'ru-RU' : 'en-US')} ⭐️`;
   }
   if (escrowStrip) {
     escrowStrip.style.display = State.escrow > 0 ? 'flex' : 'none';
@@ -534,7 +536,7 @@ function initAccountCopy() {
 
   badge.addEventListener('click', async () => {
     haptic('medium');
-    if (State.isGuest || State.accountNumber === 'тАФ') {
+    if (State.isGuest || State.accountNumber === '—') {
       showToast(t('toastOpenBotForAcc'));
       return;
     }
@@ -626,7 +628,7 @@ function initModals() {
     haptic('light');
     const url = document.getElementById('createdChequeUrl')?.value;
     if (url) {
-      const shareText = State.lang === 'ru' ? 'тЪбя╕П ╨Р╨║╤В╨╕╨▓╨╕╤А╤Г╨╣╤В╨╡ ╤З╨╡╨║ ╨б╨С╨Я!' : 'тЪбя╕П Claim SBP Cheque!';
+      const shareText = State.lang === 'ru' ? '⚡️ Активируйте чек СБП!' : '⚡️ Claim SBP Cheque!';
       const shareUrl = `https://staticgram.top/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`;
       if (tg?.openTelegramLink) {
         tg.openTelegramLink(shareUrl);
@@ -722,7 +724,7 @@ function initTransferSubmission() {
   btn.addEventListener('click', async () => {
     const recipient = document.getElementById('transferRecipient')?.value.trim();
     const amount = parseInt(document.getElementById('transferAmount')?.value, 10);
-    const comment = document.getElementById('transferComment')?.value.trim() || '╨Я╨╡╤А╨╡╨▓╨╛╨┤ ╨┐╨╛ ╨б╨С╨Я';
+    const comment = document.getElementById('transferComment')?.value.trim() || 'Перевод по СБП';
 
     if (!recipient) {
       showToast(t('toastSpecifyRecipient'));
@@ -742,46 +744,62 @@ function initTransferSubmission() {
       return;
     }
 
-    btn.disabled = true;
-    btn.textContent = t('toastTransferSending');
+    const confirmText = t('confirmTransferPrompt', { amount, recipient });
 
-    try {
-      const res = await fetch(`${API_BASE}/api/transfer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: State.userId,
-          recipient: recipient,
-          amount: amount,
-          comment: comment
-        })
-      });
+    const proceedTransfer = async () => {
+      btn.disabled = true;
+      btn.textContent = t('toastTransferSending');
 
-      const data = await res.json();
+      try {
+        const res = await fetch(`${API_BASE}/api/transfer`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: State.userId,
+            recipient: recipient,
+            amount: amount,
+            comment: comment
+          })
+        });
 
-      if (!res.ok || data.error) {
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          haptic('error');
+          showToast(data.error || 'Ошибка при выполнении перевода');
+          btn.disabled = false;
+          btn.textContent = t('modalTransferSubmit');
+          return;
+        }
+
+        haptic('success');
+        closeModal('modalTransfer');
+        document.getElementById('transferRecipient').value = '';
+        document.getElementById('transferAmount').value = '';
+        document.getElementById('transferComment').value = '';
+
+        showToast(data.message || t('toastTransferSuccess', { amount }));
+        await fetchUserData();
+
+      } catch (e) {
         haptic('error');
-        showToast(data.error || '╨Ю╤И╨╕╨▒╨║╨░ ╨┐╤А╨╕ ╨▓╤Л╨┐╨╛╨╗╨╜╨╡╨╜╨╕╨╕ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╨░');
+        showToast('Ошибка сети при отправке перевода');
+      } finally {
         btn.disabled = false;
         btn.textContent = t('modalTransferSubmit');
-        return;
       }
+    };
 
-      haptic('success');
-      closeModal('modalTransfer');
-      document.getElementById('transferRecipient').value = '';
-      document.getElementById('transferAmount').value = '';
-      document.getElementById('transferComment').value = '';
-
-      showToast(data.message || t('toastTransferSuccess', { amount }));
-      await fetchUserData();
-
-    } catch (e) {
-      haptic('error');
-      showToast('╨Ю╤И╨╕╨▒╨║╨░ ╤Б╨╡╤В╨╕ ╨┐╤А╨╕ ╨╛╤В╨┐╤А╨░╨▓╨║╨╡ ╨┐╨╡╤А╨╡╨▓╨╛╨┤╨░');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = t('modalTransferSubmit');
+    if (tg?.showConfirm) {
+      tg.showConfirm(confirmText, (confirmed) => {
+        if (confirmed) {
+          proceedTransfer();
+        }
+      });
+    } else {
+      if (window.confirm(confirmText)) {
+        proceedTransfer();
+      }
     }
   });
 }
@@ -804,7 +822,7 @@ function initChequeSubmission() {
     const amount = parseInt(document.getElementById('chequeAmount')?.value, 10);
     const targetType = document.getElementById('chequeTarget')?.value;
     const recipient = targetType === 'user' ? document.getElementById('chequeRecipient')?.value.trim() : null;
-    const comment = document.getElementById('chequeComment')?.value.trim() || '╨б╨С╨Я ╨▒╨╛╨╜╤Г╤Б';
+    const comment = document.getElementById('chequeComment')?.value.trim() || 'СБП бонус';
 
     if (!amount || amount <= 0) {
       showToast(t('toastChequeSpecifyNominal'));
@@ -843,7 +861,7 @@ function initChequeSubmission() {
 
       if (!res.ok || data.error) {
         haptic('error');
-        showToast(data.error || '╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╤Б╨╛╨╖╨┤╨░╤В╤М ╤З╨╡╨║');
+        showToast(data.error || 'Не удалось создать чек');
         btn.disabled = false;
         btn.textContent = t('modalChequeSubmit');
         return;
@@ -862,7 +880,7 @@ function initChequeSubmission() {
 
     } catch (e) {
       haptic('error');
-      showToast('╨Ю╤И╨╕╨▒╨║╨░ ╤Б╨╡╤В╨╕ ╨┐╤А╨╕ ╤Б╨╛╨╖╨┤╨░╨╜╨╕╨╕ ╤З╨╡╨║╨░');
+      showToast('Ошибка сети при создании чека');
     } finally {
       btn.disabled = false;
       btn.textContent = t('modalChequeSubmit');
@@ -881,7 +899,7 @@ window.openReceiptModal = function(txId) {
   if (!content) return;
 
   const isPos = tx.amount > 0;
-  const formatted = `${isPos ? '+' : ''}${tx.amount.toLocaleString(State.lang === 'ru' ? 'ru-RU' : 'en-US')} тнРя╕П`;
+  const formatted = `${isPos ? '+' : ''}${tx.amount.toLocaleString(State.lang === 'ru' ? 'ru-RU' : 'en-US')} ⭐️`;
 
   content.innerHTML = `
     <div style="text-align: center; margin-bottom: 6px;">
@@ -914,7 +932,7 @@ window.openReceiptModal = function(txId) {
     </div>
     <div class="receipt-field">
       <span class="label">${t('receiptGateway')}</span>
-      <span class="value">StaticGram ╨б╨С╨Я тАв Stars Gateway</span>
+      <span class="value">StaticGram СБП • Stars Gateway</span>
     </div>
   `;
 
@@ -926,13 +944,13 @@ window.copyReceiptText = async function() {
   if (!State.activeReceipt) return;
 
   const tx = State.activeReceipt;
-  const text = `ЁЯз╛ ${t('modalReceiptTitle')}\nAmount: ${tx.amount > 0 ? '+' : ''}${tx.amount} тнРя╕П\nStatus: ${tx.status}\nID: #${tx.id}\nDate: ${tx.date}\nPurpose: ${tx.comment}`;
+  const text = `🧾 ${t('modalReceiptTitle')}\nAmount: ${tx.amount > 0 ? '+' : ''}${tx.amount} ⭐️\nStatus: ${tx.status}\nID: #${tx.id}\nDate: ${tx.date}\nPurpose: ${tx.comment}`;
 
   try {
     await navigator.clipboard.writeText(text);
     showToast(t('toastReceiptCopied'));
   } catch (e) {
-    showToast(`╨з╨╡╨║ #${tx.id}`);
+    showToast(`Чек #${tx.id}`);
   }
 };
 
@@ -961,7 +979,7 @@ function renderTransactions() {
   if (State.isGuest) {
     container.innerHTML = `
       <div style="text-align: center; padding: 32px 16px; color: var(--text-secondary); font-size: 13px;">
-        <div style="font-size: 32px; margin-bottom: 8px;">ЁЯФР</div>
+        <div style="font-size: 32px; margin-bottom: 8px;">🔐</div>
         <b>${t('guestNotice')}</b><br><br>
         <a href="https://staticgram.top/sbpbot" target="_blank" class="btn-submit" style="display: inline-block; padding: 10px 20px; text-decoration: none; max-width: 240px;">
           ${t('openBot')}
@@ -986,30 +1004,30 @@ function renderTransactions() {
 
   container.innerHTML = filtered.map(tx => {
     let iconClass = 'tx-cheque';
-    let icon = 'ЁЯз╛';
+    let icon = '🧾';
     let amountClass = 'neutral';
 
     if (tx.type === 'transfer') {
       if (tx.amount < 0) {
         iconClass = 'tx-out';
-        icon = 'тЖЧ';
+        icon = '↗';
         amountClass = 'negative';
       } else {
         iconClass = 'tx-in';
-        icon = 'тЖЩ';
+        icon = '↙';
         amountClass = 'positive';
       }
     } else if (tx.type === 'deposit') {
       iconClass = 'tx-in';
-      icon = 'тЖЩ';
+      icon = '↙';
       amountClass = 'positive';
     } else if (tx.type === 'withdrawal') {
       iconClass = 'tx-out';
-      icon = 'тЖЧ';
+      icon = '↗';
       amountClass = 'negative';
     }
 
-    const formatted = `${tx.amount > 0 ? '+' : ''}${tx.amount.toLocaleString(State.lang === 'ru' ? 'ru-RU' : 'en-US')} тнРя╕П`;
+    const formatted = `${tx.amount > 0 ? '+' : ''}${tx.amount.toLocaleString(State.lang === 'ru' ? 'ru-RU' : 'en-US')} ⭐️`;
 
     return `
       <div class="tx-row" onclick="openReceiptModal('${tx.id}')">
@@ -1017,7 +1035,7 @@ function renderTransactions() {
           <div class="tx-icon-circle ${iconClass}">${icon}</div>
           <div class="tx-meta">
             <span class="tx-name">${tx.title}</span>
-            <span class="tx-sub">${tx.date} тАв ${tx.comment}</span>
+            <span class="tx-sub">${tx.date} • ${tx.comment}</span>
           </div>
         </div>
         <div class="tx-right">
