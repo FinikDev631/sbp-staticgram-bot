@@ -89,18 +89,7 @@ async def start_health_server(bot: Bot = None):
                     "balance": 0,
                     "account_number": "Не подключён",
                     "reserved": 0,
-                    "is_guest": True,
-                    "rank": {
-                        "title": "🥉 Новичок",
-                        "name": "Новичок",
-                        "icon": "🥉",
-                        "is_custom": False,
-                        "turnover": 0,
-                        "progress_pct": 0,
-                        "progress_bar": "░░░░░░░░░░",
-                        "next_title": "🥈 Клиент",
-                        "to_next": 50
-                    }
+                    "is_guest": True
                 },
                 "transactions": []
             })
@@ -199,9 +188,6 @@ async def start_health_server(bot: Bot = None):
                 "cheque_url": f"https://staticgram.top/{bot_username}?start={cid}"
             })
 
-        rank_info = await db.get_user_rank(user_id)
-        from utils.ranks import RANKS
-
         return safe_json_response({
             "status": "ok",
             "bot_username": bot_username,
@@ -215,10 +201,8 @@ async def start_health_server(bot: Bot = None):
                 "reserved": reserved.get("total_reserved", 0),
                 "cheques_count": reserved.get("cheques_count", 0),
                 "pending_count": reserved.get("pending_count", 0),
-                "is_guest": False,
-                "rank": rank_info
+                "is_guest": False
             },
-            "all_ranks": RANKS,
             "transactions": formatted_txs,
             "active_cheques": active_cheques
         })

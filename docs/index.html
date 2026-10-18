@@ -45,10 +45,7 @@
       <!-- User Greeting & Profile Row -->
       <section class="user-strip">
         <div class="user-greeting-wrap">
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <h1 class="user-greeting" id="userGreeting">СБП Банк</h1>
-            <span class="user-rank-chip" id="userRankBadge" onclick="openModal('modalRank')" style="display: none;" title="Нажмите, чтобы открыть статус и ступени рангов">🥉 Новичок</span>
-          </div>
+          <h1 class="user-greeting" id="userGreeting">СБП Банк</h1>
           <p class="user-subtext" id="userSubtext">Загрузка данных кошелька...</p>
         </div>
         <div class="connection-status">
@@ -234,10 +231,6 @@
             <div class="settings-info-row">
               <span class="info-label" data-i18n="settingsAccountNum">Номер счёта</span>
               <span class="info-val" id="settingsAccountNum">—</span>
-            </div>
-            <div class="settings-info-row" style="cursor: pointer;" onclick="closeModal('modalSettings'); openModal('modalRank');" title="Нажмите, чтобы открыть статус и прогресс">
-              <span class="info-label">Ранг СБП</span>
-              <span class="info-val green" id="settingsRankVal">🥉 Новичок ›</span>
             </div>
             <div class="settings-info-row">
               <span class="info-label" data-i18n="settingsStatus">Статус шлюза</span>
@@ -463,22 +456,6 @@
           <button type="button" class="btn-submit" id="btnCopyChequeCode" onclick="copyChequeInlineCode()" style="flex: 1; background: var(--surface-alt); color: var(--text-main); border: 1px solid var(--border-subtle);" data-i18n="modalChequeResultCopy">📋 Скопировать код</button>
           <button type="button" class="btn-submit" id="btnShareChequeInline" onclick="shareChequeAction()" style="flex: 1; background: #007aff;" data-i18n="modalChequeResultShare">⚡️ Отправить в чат</button>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Rank / Status -->
-  <div class="modal-backdrop" id="modalRank">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <h3>🏆 Ваш ранг и статус</h3>
-        <button class="btn-close" onclick="closeModal('modalRank')">×</button>
-      </div>
-      <div class="modal-body" id="modalRankBody">
-        <!-- Rendered via JS -->
-      </div>
-      <div class="modal-footer" style="padding: 12px 16px;">
-        <button class="btn-submit" onclick="closeModal('modalRank')" style="width: 100%;">Понятно</button>
       </div>
     </div>
   </div>

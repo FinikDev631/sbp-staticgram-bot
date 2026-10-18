@@ -67,8 +67,7 @@ async def cmd_start(message: Message, state: FSMContext):
             return
 
     reserved = await db.get_user_reserved_summary(user_id)
-    rank_info = await db.get_user_rank(user_id)
-    text = format_sbp_card(user, reserved, rank_info)
+    text = format_sbp_card(user, reserved)
     await message.answer(text, reply_markup=get_main_menu_inline(user_id, reserved["total_reserved"]))
 
     if user.get("claimed_pending"):
@@ -106,8 +105,7 @@ async def cb_back_to_menu(callback: CallbackQuery, state: FSMContext):
         )
 
     reserved = await db.get_user_reserved_summary(user_id)
-    rank_info = await db.get_user_rank(user_id)
-    text = format_sbp_card(user, reserved, rank_info)
+    text = format_sbp_card(user, reserved)
     try:
         await callback.message.edit_text(text, reply_markup=get_main_menu_inline(user_id, reserved["total_reserved"]))
     except Exception:
@@ -206,39 +204,6 @@ async def cb_cancel_res_pending(callback: CallbackQuery):
     await cb_menu_reserved(callback)
 
 
-@router.callback_query(F.data == "menu_ranks")
-@router.message(Command("rank"))
-@router.message(Command("ranks"))
-async def show_user_rank(event: Message | CallbackQuery):
-    user_id = event.from_user.id
-    user = await db.get_user(user_id)
-    if not user:
-        user = await db.get_or_create_user(
-            user_id,
-            event.from_user.username,
-            event.from_user.first_name or "Клиент",
-            event.from_user.last_name
-        )
-    rank_info = await db.get_user_rank(user_id)
-    from utils.ranks import format_rank_view_text
-    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-    text = format_rank_view_text(user, rank_info)
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="💸 Сделать перевод", callback_data="menu_transfer"),
-            InlineKeyboardButton(text="📥 Пополнить", callback_data="menu_deposit")
-        ],
-        [
-            InlineKeyboardButton(text="← В главное меню", callback_data="back_to_menu")
-        ]
-    ])
-    if isinstance(event, CallbackQuery):
-        await event.message.edit_text(text, reply_markup=kb)
-        await event.answer()
-    else:
-        await event.answer(text, reply_markup=kb)
-
-
 @router.message(Command("help"))
 async def cmd_help(message: Message):
     await message.answer(
@@ -248,8 +213,7 @@ async def cmd_help(message: Message):
         "/deposit — Пополнить баланс\n"
         "/withdraw — Вывести на аккаунт\n"
         "/cheque — Создать чек\n"
-        "/history — История операций\n"
-        "/rank — Мой ранг и статус\n\n"
+        "/history — История операций\n\n"
         '📢 Официальный канал: <a href="https://staticgram.top/sbpnews">@sbpnews</a>',
         reply_markup=get_back_button()
     )

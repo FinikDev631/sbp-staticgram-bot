@@ -395,19 +395,13 @@ function initThemeAndLang() {
 function updateSettingsModalInfo() {
   const usernameEl = document.getElementById('settingsUsername');
   const accountNumEl = document.getElementById('settingsAccountNum');
-  const rankValEl = document.getElementById('settingsRankVal');
 
   if (State.user) {
     if (usernameEl) usernameEl.textContent = State.user.username ? `@${State.user.username}` : (State.user.first_name || 'Client');
     if (accountNumEl) accountNumEl.textContent = State.user.account_number || '—';
-    if (rankValEl) {
-      const r = State.rank || State.user.rank;
-      rankValEl.textContent = r ? `${r.title} ›` : '🥉 Новичок ›';
-    }
   } else {
     if (usernameEl) usernameEl.textContent = 'Гость (Guest)';
     if (accountNumEl) accountNumEl.textContent = 'Не подключён';
-    if (rankValEl) rankValEl.textContent = '🥉 Новичок ›';
   }
 }
 
@@ -494,15 +488,6 @@ async function fetchUserData() {
       State.activeCheques = data.active_cheques || [];
       State.isGuest = false;
       State.isLoading = false;
-
-      State.rank = data.user.rank;
-      State.allRanks = data.all_ranks || [];
-
-      const rankBadgeEl = document.getElementById('userRankBadge');
-      if (rankBadgeEl && data.user.rank) {
-        rankBadgeEl.textContent = data.user.rank.title;
-        rankBadgeEl.style.display = 'inline-flex';
-      }
 
       if (greetingEl) {
         greetingEl.textContent = t('userGreeting', { name: data.user.first_name || 'Client' });
@@ -597,100 +582,9 @@ function initAccountCopy() {
 // --- Modals Management ---
 window.openModal = function(id) {
   haptic('light');
-  if (id === 'modalRank') {
-    renderRankModal();
-  }
   const el = document.getElementById(id);
   if (el) el.classList.add('active');
 };
-
-function renderRankModal() {
-  const body = document.getElementById('modalRankBody');
-  if (!body) return;
-  const r = State.rank || {
-    title: '🥉 Новичок',
-    name: 'Новичок',
-    icon: '🥉',
-    turnover: 0,
-    progress_pct: 0,
-    progress_bar: '░░░░░░░░░░',
-    to_next: 50,
-    next_title: '🥈 Клиент',
-    is_custom: false,
-    desc: 'Базовый уровень участника СБП'
-  };
-
-  let progHtml = '';
-  if (r.is_custom) {
-    progHtml = `
-      <div class="rank-card-custom">
-        <div class="rank-custom-tag">✨ Персональный статус</div>
-        <div class="rank-title-lg">${r.title}</div>
-        <p class="rank-custom-sub">${r.desc || 'Присвоен индивидуально администрацией сервиса'}</p>
-      </div>
-    `;
-  } else {
-    const nextTxt = r.next_title
-      ? `До <b>${r.next_title}</b> осталось: <b>${(r.to_next || 0).toLocaleString()} ⭐️</b>`
-      : '🏆 Вы достигли максимального ранга!';
-    progHtml = `
-      <div class="rank-hero">
-        <div class="rank-icon-big">${r.icon || '🎖'}</div>
-        <div class="rank-hero-info">
-          <div class="rank-title-lg">${r.title}</div>
-          <div class="rank-turnover">Оборот по счёту: <b>${(r.turnover || 0).toLocaleString()} ⭐️</b></div>
-        </div>
-      </div>
-      <div class="rank-progress-wrap">
-        <div class="rank-progress-header">
-          <span>Прогресс уровня</span>
-          <b>${r.progress_pct}%</b>
-        </div>
-        <div class="rank-progress-track">
-          <div class="rank-progress-fill" style="width: ${r.progress_pct}%"></div>
-        </div>
-        <div class="rank-progress-footer">${nextTxt}</div>
-      </div>
-    `;
-  }
-
-  const tiers = (State.allRanks && State.allRanks.length) ? State.allRanks : [
-    { level: 1, title: '🥉 Новичок', name: 'Новичок', icon: '🥉', threshold: 0, perk: 'Переводы и чеки без комиссии' },
-    { level: 2, title: '🥈 Клиент', name: 'Клиент', icon: '🥈', threshold: 50, perk: 'Серебряный бейдж в профиле' },
-    { level: 3, title: '🥇 Резидент', name: 'Резидент', icon: '🥇', threshold: 250, perk: 'Золотой статус доверия' },
-    { level: 4, title: '💎 Премиум', name: 'Премиум', icon: '💎', threshold: 1000, perk: 'Платиновый бейдж и приоритет' },
-    { level: 5, title: '👑 VIP Магнат', name: 'VIP Магнат', icon: '👑', threshold: 5000, perk: 'Корона и персональный статус' },
-    { level: 6, title: '🔱 Легенда', name: 'Легенда', icon: '🔱', threshold: 25000, perk: 'Статус топ-инвестора' }
-  ];
-
-  const tiersHtml = tiers.map(t => {
-    const isCur = (!r.is_custom && t.level === r.level);
-    return `
-      <div class="rank-tier-row ${isCur ? 'active' : ''}">
-        <div class="tier-icon">${t.icon || t.title.split(' ')[0]}</div>
-        <div class="tier-info">
-          <div class="tier-title">
-            ${t.title}
-            ${isCur ? '<span class="tier-current-tag">Текущий</span>' : ''}
-          </div>
-          <div class="tier-perk">${t.perk || ''}</div>
-        </div>
-        <div class="tier-th">${t.threshold ? t.threshold.toLocaleString() + ' ⭐️' : '0 ⭐️'}</div>
-      </div>
-    `;
-  }).join('');
-
-  body.innerHTML = `
-    ${progHtml}
-    <div class="rank-tiers-header">Ступени рангов СБП</div>
-    <div class="rank-tiers-list">
-      ${tiersHtml}
-    </div>
-    <div class="rank-hint">
-      💡 Оборот рассчитывается от суммы всех ваших переводов, пополнений и созданных чеков.
-    </div>
-  `;
-}
 
 window.closeModal = function(id) {
   haptic('light');
