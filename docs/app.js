@@ -668,7 +668,7 @@ function initModals() {
   });
 
   // Copy inline code
-  const copyChequeInlineCode = async () => {
+  window.copyChequeInlineCode = async function() {
     haptic('medium');
     const code = document.getElementById('createdChequeInlineCode')?.value;
     if (code) {
@@ -681,43 +681,19 @@ function initModals() {
     }
   };
 
-  document.getElementById('btnCopyChequeCode')?.addEventListener('click', copyChequeInlineCode);
-  document.getElementById('btnQuickCopyCode')?.addEventListener('click', copyChequeInlineCode);
+  document.getElementById('btnCopyChequeCode')?.addEventListener('click', window.copyChequeInlineCode);
+  document.getElementById('btnQuickCopyCode')?.addEventListener('click', window.copyChequeInlineCode);
 
-  // Send Cheque by Inline Query
-  document.getElementById('btnShareChequeInline')?.addEventListener('click', () => {
-    haptic('medium');
-    const inlineCode = document.getElementById('createdChequeInlineCode')?.value;
+  // Send Cheque by Inline Query with multi-level native fallbacks
+  window.shareChequeAction = function() {
+    const inlineCode = document.getElementById('createdChequeInlineCode')?.value || '';
     const chequeId = State.lastCreatedChequeId || (inlineCode ? inlineCode.split(' ').pop() : '');
-    const botUser = State.botUsername || 'sbpbot';
-
-    if (chequeId) {
-      if (tg?.switchInlineQuery) {
-        try {
-          tg.switchInlineQuery(chequeId, ['users', 'groups', 'channels']);
-          return;
-        } catch (e) {
-          console.warn('switchInlineQuery with types failed:', e);
-          try {
-            tg.switchInlineQuery(chequeId);
-            return;
-          } catch (e2) {
-            console.warn('switchInlineQuery simple failed:', e2);
-          }
-        }
-      }
-
-      // Fallback for browsers or desktop clients without switchInlineQuery
-      const textToShare = `@${botUser} ${chequeId}`;
-      const shareUrl = `https://staticgram.top/share/url?url=${encodeURIComponent(textToShare)}`;
-      if (tg?.openTelegramLink) {
-        tg.openTelegramLink(shareUrl);
-      } else {
-        navigator.clipboard?.writeText(textToShare);
-        showToast(t('toastChequeCopied'));
-      }
+    if (typeof window.shareChequeById === 'function') {
+      window.shareChequeById(chequeId || inlineCode);
     }
-  });
+  };
+
+  document.getElementById('btnShareChequeInline')?.addEventListener('click', window.shareChequeAction);
 
   // Claim Cheque by Code in Mini App
   document.getElementById('btnSubmitClaimCheque')?.addEventListener('click', async () => {
@@ -1051,26 +1027,78 @@ function initChequeSubmission() {
 // Global helper for sharing cheques by ID via inline query
 window.shareChequeById = function(chequeId) {
   haptic('medium');
+  if (!chequeId) {
+    const inlineCode = document.getElementById('createdChequeInlineCode')?.value || '';
+    chequeId = State.lastCreatedChequeId || inlineCode;
+  }
+  if (!chequeId) return;
+
   const botUser = State.botUsername || 'sbpbot';
-  if (tg?.switchInlineQuery) {
+  const cleanId = (chequeId.match(/ch_[a-zA-Z0-9_-]+/) || [])[0] || chequeId.replace(/^@\w+\s*/, '');
+  const textToShare = chequeId.startsWith('@') ? chequeId : `@${botUser} ${cleanId}`;
+
+  // 1. Guaranteed copy to clipboard
+  try {
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(textToShare);
+    }
+  } catch (e) {}
+
+  // 2. Enable bot inline mode in WebView params if accessible
+  try {
+    if (window.Telegram?.WebView?.initParams) {
+      window.Telegram.WebView.initParams.tgWebAppBotInline = true;
+    }
+  } catch (e) {}
+
+  // 3. Try native switchInlineQuery
+  let switched = false;
+  if (tg?.switchInlineQuery && cleanId) {
     try {
-      tg.switchInlineQuery(chequeId, ['users', 'groups', 'channels']);
-      return;
+      tg.switchInlineQuery(cleanId, ['users', 'groups', 'channels']);
+      switched = true;
     } catch (e) {
       try {
-        tg.switchInlineQuery(chequeId);
-        return;
+        tg.switchInlineQuery(cleanId);
+        switched = true;
       } catch (e2) {}
     }
   }
-  const textToShare = `@${botUser} ${chequeId}`;
-  const shareUrl = `https://staticgram.top/share/url?url=${encodeURIComponent(textToShare)}`;
-  if (tg?.openTelegramLink) {
-    tg.openTelegramLink(shareUrl);
-  } else {
-    navigator.clipboard?.writeText(textToShare);
-    showToast(t('toastChequeCopied'));
+
+  // 4. Try native WebView event directly
+  if (!switched && cleanId) {
+    try {
+      if (window.Telegram?.WebView?.postEvent) {
+        window.Telegram.WebView.postEvent('web_app_switch_inline_query', false, {
+          query: cleanId,
+          chat_types: ['users', 'groups', 'channels']
+        });
+        switched = true;
+      }
+    } catch (e) {}
   }
+
+  // 5. Open chat selection via t.me share url (t.me is required for isTmeHostname check)
+  const tmeShareUrl = `https://t.me/share/url?url=&text=${encodeURIComponent(textToShare)}`;
+  try {
+    if (tg?.openTelegramLink) {
+      tg.openTelegramLink(tmeShareUrl);
+    } else if (tg?.openLink) {
+      tg.openLink(tmeShareUrl);
+    } else {
+      window.open(tmeShareUrl, '_blank');
+    }
+  } catch (e) {
+    try {
+      if (tg?.openLink) {
+        tg.openLink(tmeShareUrl);
+      } else {
+        window.open(tmeShareUrl, '_blank');
+      }
+    } catch (err) {}
+  }
+
+  showToast(t('toastChequeCopied'));
 };
 
 // --- Electronic Receipt Details ---

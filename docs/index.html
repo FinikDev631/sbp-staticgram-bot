@@ -445,8 +445,8 @@
         </div>
 
         <div style="display: flex; gap: 10px; margin-top: 6px;">
-          <button type="button" class="btn-submit" id="btnCopyChequeCode" style="flex: 1; background: var(--surface-alt); color: var(--text-main); border: 1px solid var(--border-subtle);" data-i18n="modalChequeResultCopy">📋 Скопировать код</button>
-          <button type="button" class="btn-submit" id="btnShareChequeInline" style="flex: 1; background: #007aff;" data-i18n="modalChequeResultShare">⚡️ Отправить в чат</button>
+          <button type="button" class="btn-submit" id="btnCopyChequeCode" onclick="copyChequeInlineCode()" style="flex: 1; background: var(--surface-alt); color: var(--text-main); border: 1px solid var(--border-subtle);" data-i18n="modalChequeResultCopy">📋 Скопировать код</button>
+          <button type="button" class="btn-submit" id="btnShareChequeInline" onclick="shareChequeAction()" style="flex: 1; background: #007aff;" data-i18n="modalChequeResultShare">⚡️ Отправить в чат</button>
         </div>
       </div>
     </div>
