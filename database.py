@@ -831,12 +831,26 @@ async def get_system_stats() -> Dict[str, Any]:
         r3 = await db.fetchone("SELECT COUNT(*) as c FROM cheques WHERE status = 'active'")
         active_cheques = r3["c"] if r3 else 0
 
+        # Telegram Stars donations/deposits
+        r_don = await db.fetchone("SELECT COUNT(*) as c, SUM(amount) as s FROM transactions WHERE type = 'deposit'")
+        don_count = r_don["c"] if r_don else 0
+        total_donated = r_don["s"] if r_don and r_don.get("s") else 0
+
+        # All deposits including admin credit
+        r_all_dep = await db.fetchone("SELECT COUNT(*) as c, SUM(amount) as s FROM transactions WHERE type IN ('deposit', 'admin_deposit', 'admin_give')")
+        all_dep_count = r_all_dep["c"] if r_all_dep else 0
+        all_dep_sum = r_all_dep["s"] if r_all_dep and r_all_dep.get("s") else 0
+
         return {
             "users_count": u_count or 0,
             "total_user_balance": total_balance or 0,
             "transfers_count": (t_count or 0) // 2,
             "transfers_volume": (total_transfers or 0) // 2,
-            "active_cheques": active_cheques or 0
+            "active_cheques": active_cheques or 0,
+            "total_donated": total_donated or 0,
+            "donations_count": don_count or 0,
+            "total_deposits_all": all_dep_sum or 0,
+            "all_deposits_count": all_dep_count or 0
         }
 
 

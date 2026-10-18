@@ -333,6 +333,34 @@ def get_admin_user_kb(user_id: int) -> InlineKeyboardMarkup:
     ])
 
 
+def format_admin_dashboard_text(bot_stars: Any, stats: Dict[str, Any]) -> str:
+    total_donated = stats.get("total_donated", 0)
+    donations_count = stats.get("donations_count", 0)
+    all_dep_sum = stats.get("total_deposits_all", 0)
+    all_dep_count = stats.get("all_deposits_count", 0)
+
+    effective_donated = total_donated if total_donated > 0 else all_dep_sum
+    effective_count = donations_count if total_donated > 0 else all_dep_count
+
+    admin_part = all_dep_sum - total_donated
+    detail_str = ""
+    if total_donated > 0 and admin_part > 0:
+        detail_str = f" <i>(Stars: {total_donated:,} ⭐️, ручные: {admin_part:,} ⭐️)</i>"
+
+    return (
+        "🏦 <b>Панель управления банком СБП</b>\n\n"
+        f"⭐️ <b>Баланс звёзд бота:</b> <b>{bot_stars} ⭐️</b>\n"
+        "<i>(Используется для внешних выводов пользователям через withdrawStarBalance)</i>\n\n"
+        "📊 <b>Статистика сервиса:</b>\n"
+        f"• Пользователей: <b>{stats['users_count']:,}</b>\n"
+        f"• Баланс на счетах: <b>{stats['total_user_balance']:,} ⭐️</b>\n"
+        f"• 💰 <b>Всего задоначено (пополнений):</b> <b>{effective_donated:,} ⭐️</b> ({effective_count} платежей){detail_str}\n"
+        f"• Переводов: <b>{stats['transfers_count']:,}</b>\n"
+        f"• Объём переводов: <b>{stats['transfers_volume']:,} ⭐️</b>\n"
+        f"• Активных чеков: <b>{stats['active_cheques']}</b>"
+    )
+
+
 @router.message(Command("admin"))
 @router.message(Command("bank"))
 async def cmd_admin(message: Message, state: FSMContext):
@@ -355,19 +383,7 @@ async def cmd_admin(message: Message, state: FSMContext):
         bot_stars = f"Ошибка ({e})"
 
     stats = await db.get_system_stats()
-
-    text = (
-        "🏦 <b>Панель управления банком СБП</b>\n\n"
-        f"⭐️ <b>Баланс звёзд бота:</b> <b>{bot_stars} ⭐️</b>\n"
-        "<i>(Используется для внешних выводов пользователям через withdrawStarBalance)</i>\n\n"
-        "📊 <b>Статистика сервиса:</b>\n"
-        f"• Пользователей: <b>{stats['users_count']:,}</b>\n"
-        f"• Баланс на счетах: <b>{stats['total_user_balance']:,} ⭐️</b>\n"
-        f"• Переводов: <b>{stats['transfers_count']:,}</b>\n"
-        f"• Объём: <b>{stats['transfers_volume']:,} ⭐️</b>\n"
-        f"• Активных чеков: <b>{stats['active_cheques']}</b>"
-    )
-
+    text = format_admin_dashboard_text(bot_stars, stats)
     await message.answer(text, reply_markup=get_admin_dashboard_kb())
 
 
@@ -385,17 +401,7 @@ async def cb_admin_menu(callback: CallbackQuery, state: FSMContext):
         bot_stars = 0
 
     stats = await db.get_system_stats()
-    text = (
-        "🏦 <b>Панель управления банком СБП</b>\n\n"
-        f"⭐️ <b>Баланс звёзд бота:</b> <b>{bot_stars} ⭐️</b>\n"
-        "<i>(Используется для внешних выводов пользователям через withdrawStarBalance)</i>\n\n"
-        "📊 <b>Статистика сервиса:</b>\n"
-        f"• Пользователей: <b>{stats['users_count']:,}</b>\n"
-        f"• Баланс на счетах: <b>{stats['total_user_balance']:,} ⭐️</b>\n"
-        f"• Переводов: <b>{stats['transfers_count']:,}</b>\n"
-        f"• Объём: <b>{stats['transfers_volume']:,} ⭐️</b>\n"
-        f"• Активных чеков: <b>{stats['active_cheques']}</b>"
-    )
+    text = format_admin_dashboard_text(bot_stars, stats)
 
     try:
         await callback.message.edit_text(text, reply_markup=get_admin_dashboard_kb())
@@ -417,17 +423,7 @@ async def cb_admin_refresh(callback: CallbackQuery):
         bot_stars = 0
 
     stats = await db.get_system_stats()
-    text = (
-        "🏦 <b>Панель управления банком СБП</b>\n\n"
-        f"⭐️ <b>Баланс звёзд бота:</b> <b>{bot_stars} ⭐️</b>\n"
-        "<i>(Используется для внешних выводов пользователям через withdrawStarBalance)</i>\n\n"
-        "📊 <b>Статистика сервиса:</b>\n"
-        f"• Пользователей: <b>{stats['users_count']:,}</b>\n"
-        f"• Баланс на счетах: <b>{stats['total_user_balance']:,} ⭐️</b>\n"
-        f"• Переводов: <b>{stats['transfers_count']:,}</b>\n"
-        f"• Объём: <b>{stats['transfers_volume']:,} ⭐️</b>\n"
-        f"• Активных чеков: <b>{stats['active_cheques']}</b>"
-    )
+    text = format_admin_dashboard_text(bot_stars, stats)
 
     await callback.message.edit_text(text, reply_markup=get_admin_dashboard_kb())
     await callback.answer("Данные обновлены")
