@@ -597,11 +597,12 @@ async def start_health_server(bot: Bot = None):
     return runner
 
 
-async def keep_alive():
+async def keep_alive(bot: Bot = None):
     """Periodically pings the public Render URL to keep the free service awake 24/7."""
     external_url = os.getenv("RENDER_EXTERNAL_URL", "https://sbp-staticgram-bot.onrender.com").rstrip("/")
     # Wait 60 seconds after startup before initial ping
     await asyncio.sleep(60)
+    counter = 0
     while True:
         try:
             async with aiohttp.ClientSession() as session:
@@ -609,6 +610,15 @@ async def keep_alive():
                     logger.info(f"Keep-alive ping sent to {external_url} (HTTP {resp.status})")
         except Exception as e:
             logger.debug(f"Keep-alive notice: {e}")
+
+        # Periodically re-verify bot profile and descriptions remain set
+        counter += 1
+        if bot and counter % 5 == 0:  # every ~40 minutes
+            try:
+                await setup_bot_profile(bot)
+            except Exception:
+                pass
+
         # Ping every 8 minutes (Render sleeps after 15 min of HTTP inactivity)
         await asyncio.sleep(480)
 
@@ -632,16 +642,22 @@ async def setup_bot_profile(bot: Bot):
 
     desc = (
         "Работаю ✅\n"
-        "Оффициальный канал: @sbpnews\n"
+        "Оффициальный канал: https://staticgram.top/sbpnews\n"
         "⚡️ СБП: Мгновенные переводы и чеки звёзд в StaticGram"
     )
     short_desc = "⚡️ СБП: Мгновенные переводы и чеки звёзд в StaticGram"
 
-    try:
-        await bot.set_my_description(desc)
-        await bot.set_my_short_description(short_desc)
-    except Exception:
-        pass
+    for lang in [None, "ru", "en"]:
+        try:
+            await bot.set_my_description(desc, language_code=lang)
+        except Exception as e:
+            logger.debug(f"Could not set description for {lang}: {e}")
+        try:
+            await bot.set_my_short_description(short_desc, language_code=lang)
+        except Exception as e:
+            logger.debug(f"Could not set short description for {lang}: {e}")
+
+    logger.info("Bot description successfully configured.")
 
 
 async def main():
@@ -680,7 +696,7 @@ async def main():
         logger.warning(f"Could not clear webhook: {e}")
 
     # 6. Start keep-alive loop to prevent Render from sleeping
-    keep_alive_task = asyncio.create_task(keep_alive())
+    keep_alive_task = asyncio.create_task(keep_alive(bot))
 
     # 7. Start polling
     logger.info("SBP Bot is now running and polling updates from StaticGram...")
