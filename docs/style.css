@@ -717,6 +717,160 @@ body {
   color: var(--text-tertiary);
 }
 
+/* --- Inline Code Badge on Transactions & Cheque Cards --- */
+.tx-inline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 3px 8px;
+  margin-top: 5px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.tx-inline-code {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.3px;
+  user-select: all;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tx-inline-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 12px;
+  border-radius: 4px;
+  transition: transform 0.1s ease, background 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tx-inline-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.tx-inline-btn.primary {
+  color: #007aff;
+}
+
+/* --- Active Cheque Cards in My Cheques Tab --- */
+.active-cheques-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.active-cheque-card {
+  background: var(--surface-alt);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.2s ease;
+}
+
+.active-cheque-card:hover {
+  border-color: var(--gold);
+}
+
+.active-cheque-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.active-cheque-amount {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--gold);
+}
+
+.active-cheque-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(200, 109, 73, 0.15);
+  color: var(--accent-primary);
+}
+
+.active-cheque-code-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.active-cheque-code {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  flex: 1;
+  word-break: break-all;
+  user-select: all;
+}
+
+.active-cheque-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.active-cheque-btn {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface);
+  color: var(--text-main);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.active-cheque-btn:hover {
+  filter: brightness(1.1);
+}
+
+.active-cheque-btn.share {
+  background: #007aff;
+  color: #fff;
+  border-color: #007aff;
+}
+
+.active-cheque-btn.cancel {
+  background: var(--red-soft);
+  color: var(--red-negative);
+  border-color: transparent;
+  flex: 0 0 auto;
+}
+
 /* --- Footer --- */
 .footer {
   display: flex;

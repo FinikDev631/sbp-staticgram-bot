@@ -174,6 +174,20 @@ async def start_health_server(bot: Bot = None):
             except Exception:
                 pass
 
+        active_cheques_raw = await db.get_active_cheques_by_user(user_id)
+        active_cheques = []
+        for ch in active_cheques_raw:
+            cid = ch["cheque_id"]
+            active_cheques.append({
+                "cheque_id": cid,
+                "amount": ch["amount"],
+                "recipient": ch.get("recipient_username"),
+                "comment": ch.get("comment"),
+                "created_at": str(ch.get("created_at") or ""),
+                "inline_code": f"@{bot_username} {cid}",
+                "cheque_url": f"https://staticgram.top/{bot_username}?start={cid}"
+            })
+
         return safe_json_response({
             "status": "ok",
             "bot_username": bot_username,
@@ -189,7 +203,8 @@ async def start_health_server(bot: Bot = None):
                 "pending_count": reserved.get("pending_count", 0),
                 "is_guest": False
             },
-            "transactions": formatted_txs
+            "transactions": formatted_txs,
+            "active_cheques": active_cheques
         })
 
     async def handle_transfer(request):
@@ -437,6 +452,40 @@ async def start_health_server(bot: Bot = None):
                 "error": "Чек не найден или уже аннулирован создателем."
             }, status=404)
 
+    async def handle_cancel_cheque(request):
+        try:
+            body = await request.json()
+        except Exception:
+            return safe_json_response({"error": "Неверный формат данных (JSON)"}, status=400)
+
+        user_id = body.get("user_id")
+        cheque_id = str(body.get("code") or body.get("cheque_id") or "").strip()
+        if " " in cheque_id:
+            cheque_id = cheque_id.split()[-1]
+        cheque_id = cheque_id.strip()
+
+        if not user_id or not cheque_id:
+            return safe_json_response({"error": "Укажите user_id и код чека"}, status=400)
+
+        try:
+            user_id = int(user_id)
+        except ValueError:
+            return safe_json_response({"error": "user_id должен быть числом"}, status=400)
+
+        success = await db.cancel_cheque(cheque_id, user_id)
+        if not success:
+            return safe_json_response({"error": "Чек не найден или уже был активирован/аннулирован"}, status=400)
+
+        user = await db.get_user(user_id)
+        reserved = await db.get_user_reserved_summary(user_id)
+
+        return safe_json_response({
+            "status": "ok",
+            "message": "Чек аннулирован, звёзды возвращены на ваш баланс",
+            "new_balance": user["balance"],
+            "new_escrow": reserved.get("total_reserved", 0)
+        })
+
     async def handle_create_invoice(request):
         try:
             body = await request.json()
@@ -579,6 +628,7 @@ async def start_health_server(bot: Bot = None):
     app.router.add_post("/api/transfer", handle_transfer)
     app.router.add_post("/api/create_cheque", handle_create_cheque)
     app.router.add_post("/api/claim_cheque", handle_claim_cheque)
+    app.router.add_post("/api/cancel_cheque", handle_cancel_cheque)
     app.router.add_post("/api/create_invoice", handle_create_invoice)
     app.router.add_get("/api/diag", handle_diag)
     app.router.add_get("/api/credit", handle_credit)

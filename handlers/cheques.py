@@ -184,7 +184,7 @@ async def finalize_cheque(message: Message, state: FSMContext, comment: str = No
 
     me = await message.bot.get_me()
     bot_u = me.username or "sbpbot"
-    link = f"https://staticgram.top/{bot_u}?start={cheque_id}"
+    inline_code = f"@{bot_u} {cheque_id}"
 
     rec_label = f"@{rec_u}" if rec_u else "для всех"
     comm_str = f"\n• Комментарий: <i>{comment}</i>" if comment else ""
@@ -193,7 +193,7 @@ async def finalize_cheque(message: Message, state: FSMContext, comment: str = No
         f"✅ <b>Чек на {amount:,} ⭐️ создан</b>\n\n"
         f"💡 <i>Сумма {amount:,} ⭐️ временно списана с баланса в этот чек. Если чек не заберут, вы можете в любой момент аннулировать его кнопкой ниже и вернуть звёзды.</i>\n\n"
         f"• Получатель: {rec_label}{comm_str}\n"
-        f"• Ссылка: <code>{link}</code>\n\n"
+        f"• Инлайн-код: <code>{inline_code}</code>\n\n"
         f"Нажмите кнопку ниже, чтобы отправить чек в чат:"
     )
 
@@ -220,14 +220,17 @@ async def show_active_cheques(callback: CallbackQuery):
         await callback.answer()
         return
 
+    me = await callback.message.bot.get_me()
+    bot_u = me.username or "sbpbot"
     text = "<b>Ваши активные чеки:</b>\n\n"
     buttons = []
 
     for ch in cheques:
         rec = f"@{ch['recipient_username']}" if ch.get('recipient_username') else "все"
-        text += f"• <code>{ch['cheque_id']}</code>: <b>{ch['amount']:,} ⭐️</b> ({rec})\n"
+        text += f"• <code>@{bot_u} {ch['cheque_id']}</code>: <b>{ch['amount']:,} ⭐️</b> ({rec})\n"
         buttons.append([
-            InlineKeyboardButton(text=f"Аннулировать {ch['amount']} ⭐️", callback_data=f"cancel_ch:{ch['cheque_id']}")
+            InlineKeyboardButton(text=f"⚡️ Отправить {ch['amount']} ⭐️ в чат", switch_inline_query=ch['cheque_id']),
+            InlineKeyboardButton(text=f"❌ Аннулировать", callback_data=f"cancel_ch:{ch['cheque_id']}")
         ])
 
     buttons.append([InlineKeyboardButton(text="← Назад", callback_data="menu_cheque")])

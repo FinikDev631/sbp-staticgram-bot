@@ -375,9 +375,10 @@
       </div>
 
       <!-- Cheque Modal Tabs -->
-      <div class="modal-tabs" style="display: flex; gap: 6px; background: var(--surface-alt); padding: 4px; border-radius: var(--radius-pill);">
-        <button type="button" class="modal-tab-btn active" id="tabChequeCreate" style="flex: 1; padding: 8px 12px; border: none; border-radius: var(--radius-pill); font-weight: 700; font-size: 13px; cursor: pointer; background: var(--surface); color: var(--text-main); box-shadow: var(--shadow-sm);" data-i18n="modalChequeTabCreate">✨ Создать чек</button>
-        <button type="button" class="modal-tab-btn" id="tabChequeClaim" style="flex: 1; padding: 8px 12px; border: none; border-radius: var(--radius-pill); font-weight: 700; font-size: 13px; cursor: pointer; background: transparent; color: var(--text-secondary);" data-i18n="modalChequeTabClaim">⚡️ Активировать код</button>
+      <div class="modal-tabs" style="display: flex; gap: 6px; background: var(--surface-alt); padding: 4px; border-radius: var(--radius-pill); margin-bottom: 14px;">
+        <button type="button" class="modal-tab-btn active" id="tabChequeCreate" style="flex: 1; padding: 8px 8px; border: none; border-radius: var(--radius-pill); font-weight: 700; font-size: 12px; cursor: pointer; background: var(--surface); color: var(--text-main); box-shadow: var(--shadow-sm);" data-i18n="modalChequeTabCreate">✨ Создать чек</button>
+        <button type="button" class="modal-tab-btn" id="tabChequeList" style="flex: 1; padding: 8px 8px; border: none; border-radius: var(--radius-pill); font-weight: 700; font-size: 12px; cursor: pointer; background: transparent; color: var(--text-secondary);" data-i18n="modalChequeTabList">📋 Мои чеки</button>
+        <button type="button" class="modal-tab-btn" id="tabChequeClaim" style="flex: 1; padding: 8px 8px; border: none; border-radius: var(--radius-pill); font-weight: 700; font-size: 12px; cursor: pointer; background: transparent; color: var(--text-secondary);" data-i18n="modalChequeTabClaim">⚡️ Активировать</button>
       </div>
 
       <!-- Tab 1: Create Cheque -->
@@ -404,7 +405,14 @@
         <button type="button" class="btn-submit" id="btnSubmitCheque" data-i18n="modalChequeSubmit">Сгенерировать инлайн-чек</button>
       </div>
 
-      <!-- Tab 2: Claim Cheque by Code -->
+      <!-- Tab 2: My Active Cheques List -->
+      <div class="modal-body" id="chequeListSection" style="display: none;">
+        <div id="activeChequesContainer">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+      <!-- Tab 3: Claim Cheque by Code -->
       <div class="modal-body" id="chequeClaimSection" style="display: none;">
         <p class="modal-desc" data-i18n="modalChequeClaimDesc">
           Введите инлайн-код чека (например, <code>@sbpbot ch_123456789abc</code> или <code>ch_123456789abc</code>), чтобы моментально получить звёзды на баланс:
@@ -434,7 +442,7 @@
         <div class="form-group">
           <label class="form-label" data-i18n="modalChequeResultInlineCode">Инлайн-код для чата</label>
           <div style="position: relative;">
-            <input type="text" class="form-control" id="createdChequeInlineCode" readonly style="font-family: monospace; font-size: 14px; font-weight: 700; color: var(--gold); padding-right: 44px; background: var(--surface-alt);">
+            <input type="text" class="form-control" id="createdChequeInlineCode" readonly onclick="this.select(); copyChequeInlineCode();" style="font-family: monospace; font-size: 14px; font-weight: 700; color: var(--gold); padding-right: 44px; background: var(--surface-alt); cursor: pointer;">
             <button type="button" id="btnQuickCopyCode" title="Скопировать" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: transparent; border: none; cursor: pointer; font-size: 16px; padding: 4px;">
               📋
             </button>

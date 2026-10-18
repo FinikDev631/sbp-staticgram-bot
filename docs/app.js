@@ -81,7 +81,11 @@ const I18N = {
 
     modalChequeTitle: '🧾 Чеки СБП',
     modalChequeTabCreate: '✨ Создать чек',
+    modalChequeTabList: '📋 Мои чеки',
     modalChequeTabClaim: '⚡️ Активировать код',
+    noActiveCheques: 'У вас пока нет активных чеков',
+    btnCancelCheque: 'Аннулировать чек',
+    toastChequeCancelled: 'Чек аннулирован, звёзды возвращены на баланс!',
     modalChequeAmount: 'Номинал чека (⭐️)',
     modalChequeType: 'Тип чека',
     modalChequeAny: '🌐 Для всех (активирует первый нажавший в чате)',
@@ -208,7 +212,11 @@ const I18N = {
 
     modalChequeTitle: '🧾 SBP Cheques',
     modalChequeTabCreate: '✨ Create Cheque',
+    modalChequeTabList: '📋 My Cheques',
     modalChequeTabClaim: '⚡️ Claim by Code',
+    noActiveCheques: 'You have no active cheques',
+    btnCancelCheque: 'Cancel Cheque',
+    toastChequeCancelled: 'Cheque cancelled, stars refunded to balance!',
     modalChequeAmount: 'Cheque nominal (⭐️)',
     modalChequeType: 'Cheque type',
     modalChequeAny: '🌐 For everyone (first user to click in chat claims it)',
@@ -281,6 +289,7 @@ const State = {
   currentFilter: 'all',
   activeReceipt: null,
   transactions: [],
+  activeCheques: [],
   isGuest: false,
   isLoading: true,
   lang: 'ru',
@@ -476,6 +485,7 @@ async function fetchUserData() {
       State.escrow = data.user.reserved || 0;
       State.accountNumber = data.user.account_number || '—';
       State.transactions = data.transactions || [];
+      State.activeCheques = data.active_cheques || [];
       State.isGuest = false;
       State.isLoading = false;
 
@@ -492,6 +502,7 @@ async function fetchUserData() {
 
       updateBalanceUI();
       renderTransactions();
+      renderActiveCheques();
       updateSettingsModalInfo();
     }
   } catch (err) {
@@ -624,48 +635,51 @@ function initModals() {
   });
 
   document.getElementById('btnFilterCheques')?.addEventListener('click', () => {
-    filterTransactions('cheque');
-    const hist = document.querySelector('.history-card');
-    if (hist) hist.scrollIntoView({ behavior: 'smooth' });
-  });
-
-  // Cheque Tabs switching
-  const tabCreate = document.getElementById('tabChequeCreate');
-  const tabClaim = document.getElementById('tabChequeClaim');
-  const sectionCreate = document.getElementById('chequeCreateSection');
-  const sectionClaim = document.getElementById('chequeClaimSection');
-
-  tabCreate?.addEventListener('click', () => {
-    haptic('light');
-    tabCreate.classList.add('active');
-    tabClaim?.classList.remove('active');
-    tabCreate.style.background = 'var(--surface)';
-    tabCreate.style.color = 'var(--text-main)';
-    tabCreate.style.boxShadow = 'var(--shadow-sm)';
-    if (tabClaim) {
-      tabClaim.style.background = 'transparent';
-      tabClaim.style.color = 'var(--text-secondary)';
-      tabClaim.style.boxShadow = 'none';
+    if (State.isGuest) {
+      showToast(t('toastOpenBotForCheque'));
+      return;
     }
-    if (sectionCreate) sectionCreate.style.display = 'flex';
-    if (sectionClaim) sectionClaim.style.display = 'none';
+    openModal('modalCheque');
+    window.switchChequeTab('list');
   });
 
-  tabClaim?.addEventListener('click', () => {
+  // Cheque Tabs switching (Create, My Cheques, Claim)
+  window.switchChequeTab = function(tabName) {
     haptic('light');
-    tabClaim.classList.add('active');
-    tabCreate?.classList.remove('active');
-    tabClaim.style.background = 'var(--surface)';
-    tabClaim.style.color = 'var(--text-main)';
-    tabClaim.style.boxShadow = 'var(--shadow-sm)';
-    if (tabCreate) {
-      tabCreate.style.background = 'transparent';
-      tabCreate.style.color = 'var(--text-secondary)';
-      tabCreate.style.boxShadow = 'none';
+    const tabCreate = document.getElementById('tabChequeCreate');
+    const tabList = document.getElementById('tabChequeList');
+    const tabClaim = document.getElementById('tabChequeClaim');
+    const sectionCreate = document.getElementById('chequeCreateSection');
+    const sectionList = document.getElementById('chequeListSection');
+    const sectionClaim = document.getElementById('chequeClaimSection');
+
+    const tabs = [
+      { name: 'create', btn: tabCreate, sec: sectionCreate, display: 'block' },
+      { name: 'list', btn: tabList, sec: sectionList, display: 'block' },
+      { name: 'claim', btn: tabClaim, sec: sectionClaim, display: 'block' }
+    ];
+
+    tabs.forEach(t => {
+      const isActive = t.name === tabName;
+      if (t.btn) {
+        t.btn.classList.toggle('active', isActive);
+        t.btn.style.background = isActive ? 'var(--surface)' : 'transparent';
+        t.btn.style.color = isActive ? 'var(--text-main)' : 'var(--text-secondary)';
+        t.btn.style.boxShadow = isActive ? 'var(--shadow-sm)' : 'none';
+      }
+      if (t.sec) {
+        t.sec.style.display = isActive ? t.display : 'none';
+      }
+    });
+
+    if (tabName === 'list') {
+      renderActiveCheques();
     }
-    if (sectionCreate) sectionCreate.style.display = 'none';
-    if (sectionClaim) sectionClaim.style.display = 'flex';
-  });
+  };
+
+  document.getElementById('tabChequeCreate')?.addEventListener('click', () => window.switchChequeTab('create'));
+  document.getElementById('tabChequeList')?.addEventListener('click', () => window.switchChequeTab('list'));
+  document.getElementById('tabChequeClaim')?.addEventListener('click', () => window.switchChequeTab('claim'));
 
   // Copy inline code
   window.copyChequeInlineCode = async function() {
@@ -1264,6 +1278,21 @@ function renderTransactions() {
 
     const formatted = `${tx.amount > 0 ? '+' : ''}${tx.amount.toLocaleString(State.lang === 'ru' ? 'ru-RU' : 'en-US')} ⭐️`;
 
+    const chMatch = (tx.title + ' ' + tx.comment + ' ' + (tx.to || '')).match(/ch_[a-zA-Z0-9]+/);
+    let inlineBadgeHtml = '';
+    if (chMatch) {
+      const chId = chMatch[0];
+      const botUser = State.botUsername || 'sbpbot';
+      const inlineCode = `@${botUser} ${chId}`;
+      inlineBadgeHtml = `
+        <div class="tx-inline-badge" onclick="event.stopPropagation();">
+          <span class="tx-inline-code">${inlineCode}</span>
+          <button type="button" class="tx-inline-btn" onclick="event.stopPropagation(); navigator.clipboard.writeText('${inlineCode}'); showToast(t('toastChequeCopied'));" title="Скопировать инлайн-код">📋</button>
+          <button type="button" class="tx-inline-btn primary" onclick="event.stopPropagation(); shareChequeById('${chId}');" title="Отправить в чат">⚡️</button>
+        </div>
+      `;
+    }
+
     return `
       <div class="tx-row" onclick="openReceiptModal('${tx.id}')">
         <div class="tx-left">
@@ -1271,6 +1300,7 @@ function renderTransactions() {
           <div class="tx-meta">
             <span class="tx-name">${tx.title}</span>
             <span class="tx-sub">${tx.date} • ${tx.comment}</span>
+            ${inlineBadgeHtml}
           </div>
         </div>
         <div class="tx-right">
@@ -1281,6 +1311,97 @@ function renderTransactions() {
     `;
   }).join('');
 }
+
+// --- Active Cheques Management ---
+window.renderActiveCheques = function() {
+  const container = document.getElementById('activeChequesContainer');
+  if (!container) return;
+
+  const tabListBtn = document.getElementById('tabChequeList');
+  const count = State.activeCheques ? State.activeCheques.length : 0;
+  if (tabListBtn) {
+    tabListBtn.textContent = `${t('modalChequeTabList')} (${count})`;
+  }
+
+  if (!State.activeCheques || State.activeCheques.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 28px 12px; color: var(--text-tertiary); font-size: 13px;">
+        <div style="font-size: 32px; margin-bottom: 8px;">🧾</div>
+        <b>${t('noActiveCheques')}</b><br><br>
+        <button type="button" class="btn-submit" onclick="switchChequeTab('create')" style="display: inline-block; padding: 8px 18px; font-size: 13px; max-width: 200px;">
+          ${t('modalChequeTabCreate')}
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  const botUser = State.botUsername || 'sbpbot';
+  container.innerHTML = `
+    <div class="active-cheques-list">
+      ${State.activeCheques.map(ch => {
+        const rec = ch.recipient ? `@${ch.recipient}` : (State.lang === 'ru' ? 'Для всех' : 'For everyone');
+        const inlineCode = ch.inline_code || `@${botUser} ${ch.cheque_id}`;
+        return `
+          <div class="active-cheque-card">
+            <div class="active-cheque-header">
+              <span class="active-cheque-amount">${Number(ch.amount).toLocaleString(State.lang === 'ru' ? 'ru-RU' : 'en-US')} ⭐️</span>
+              <span class="active-cheque-badge">${ch.recipient ? '🔒 ' + rec : '🎁 ' + rec}</span>
+            </div>
+            <div class="active-cheque-code-wrap">
+              <span class="active-cheque-code">${inlineCode}</span>
+            </div>
+            <div class="active-cheque-actions">
+              <button type="button" class="active-cheque-btn" onclick="navigator.clipboard.writeText('${inlineCode}'); showToast(t('toastChequeCopied'));">
+                📋 ${State.lang === 'ru' ? 'Скопировать' : 'Copy'}
+              </button>
+              <button type="button" class="active-cheque-btn share" onclick="shareChequeById('${ch.cheque_id}')">
+                ⚡️ ${State.lang === 'ru' ? 'В чат' : 'Share'}
+              </button>
+              <button type="button" class="active-cheque-btn cancel" onclick="cancelChequeAction('${ch.cheque_id}')" title="${t('btnCancelCheque')}">
+                ❌
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+};
+
+window.cancelChequeAction = async function(chequeId) {
+  haptic('medium');
+  if (State.isGuest) return;
+
+  const btn = event?.currentTarget;
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/cancel_cheque`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: State.user.user_id,
+        cheque_id: chequeId
+      })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      haptic('success');
+      showToast(t('toastChequeCancelled'));
+      await fetchUserData();
+      renderActiveCheques();
+    } else {
+      haptic('error');
+      showToast(data.error || 'Ошибка при аннулировании чека');
+    }
+  } catch (e) {
+    haptic('error');
+    showToast('Ошибка сети при отмене чека');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
 
 function initFilters() {
   document.querySelectorAll('.filter-tab').forEach(tab => {
