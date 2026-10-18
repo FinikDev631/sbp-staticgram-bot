@@ -40,6 +40,10 @@ class AdminTakeState(StatesGroup):
     waiting_for_take_data = State()
 
 
+class AdminRankState(StatesGroup):
+    waiting_for_custom_text = State()
+
+
 def get_admin_dashboard_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
@@ -239,7 +243,8 @@ async def render_operation_search_result(target_event: Message | CallbackQuery, 
         user = await db.admin_find_user(query)
         if user:
             trxs = await db.get_user_transactions(user["user_id"], limit=5)
-            text = format_admin_user_card(user, trxs)
+            rank_info = await db.get_user_rank(user["user_id"])
+            text = format_admin_user_card(user, trxs, rank_info)
             kb = get_admin_user_kb(user["user_id"])
             if isinstance(target_event, CallbackQuery):
                 try:
@@ -290,12 +295,21 @@ async def render_operation_search_result(target_event: Message | CallbackQuery, 
     return True
 
 
-def format_admin_user_card(user: Dict[str, Any], transactions: list) -> str:
+def format_admin_user_card(user: Dict[str, Any], transactions: list, rank_info: Optional[Dict[str, Any]] = None) -> str:
     name = f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or "Клиент"
     u_str = f"@{user['username']}" if user.get("username") else "без username"
     bal = user.get("balance", 0)
     acc = user.get("account_number", "—")
     reg_date = user.get("created_at", "—")
+
+    rank_str = ""
+    if rank_info:
+        if rank_info.get("is_custom"):
+            rank_str = f"\n• <b>Ранг:</b> <b>{rank_info['title']}</b> <i>(Кастомный от админа)</i>"
+        else:
+            pct = rank_info.get("progress_pct", 0)
+            to_val = rank_info.get("turnover", 0)
+            rank_str = f"\n• <b>Ранг:</b> <b>{rank_info['title']}</b> <code>[{rank_info.get('progress_bar', '')}]</code> ({pct}%) • Оборот: <b>{to_val:,} ⭐️</b>"
 
     trx_lines = []
     if transactions:
@@ -313,7 +327,7 @@ def format_admin_user_card(user: Dict[str, Any], transactions: list) -> str:
         f"────────────────────────\n"
         f"• <b>Telegram ID:</b> <code>{user['user_id']}</code>\n"
         f"• <b>Счёт СБП:</b> <code>{acc}</code>\n"
-        f"• <b>Текущий баланс:</b> <b>{bal:,} ⭐️</b>\n"
+        f"• <b>Текущий баланс:</b> <b>{bal:,} ⭐️</b>{rank_str}\n"
         f"• <b>Регистрация:</b> <code>{reg_date}</code>\n\n"
         f"📊 <b>Последние 5 операций:</b>\n"
         f"{trx_block}"
@@ -325,6 +339,9 @@ def get_admin_user_kb(user_id: int) -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton(text="➕ Начислить звёзды", callback_data=f"adm_give_to:{user_id}"),
             InlineKeyboardButton(text="➖ Списать звёзды", callback_data=f"adm_take_from:{user_id}")
+        ],
+        [
+            InlineKeyboardButton(text="🎖 Изменить ранг / статус", callback_data=f"adm_rank_menu:{user_id}")
         ],
         [
             InlineKeyboardButton(text="🔍 Другой пользователь", callback_data="admin_find_user"),
@@ -782,7 +799,8 @@ async def cb_adm_user_view(callback: CallbackQuery):
         return
 
     trxs = await db.get_user_transactions(user["user_id"], limit=5)
-    text = format_admin_user_card(user, trxs)
+    rank_info = await db.get_user_rank(user["user_id"])
+    text = format_admin_user_card(user, trxs, rank_info)
     kb = get_admin_user_kb(user["user_id"])
 
     try:
@@ -964,7 +982,8 @@ async def cmd_user(message: Message, state: FSMContext):
         user = await db.admin_find_user(query)
         if user:
             trxs = await db.get_user_transactions(user["user_id"], limit=5)
-            await message.answer(format_admin_user_card(user, trxs), reply_markup=get_admin_user_kb(user["user_id"]))
+            rank_info = await db.get_user_rank(user["user_id"])
+            await message.answer(format_admin_user_card(user, trxs, rank_info), reply_markup=get_admin_user_kb(user["user_id"]))
             return
         else:
             await message.answer(f"❌ Пользователь <code>{query}</code> не найден в базе данных.")
@@ -1017,7 +1036,8 @@ async def process_admin_user_query(message: Message, state: FSMContext):
 
     await state.clear()
     trxs = await db.get_user_transactions(user["user_id"], limit=5)
-    await message.answer(format_admin_user_card(user, trxs), reply_markup=get_admin_user_kb(user["user_id"]))
+    rank_info = await db.get_user_rank(user["user_id"])
+    await message.answer(format_admin_user_card(user, trxs, rank_info), reply_markup=get_admin_user_kb(user["user_id"]))
 
 
 # --- GIVE STARS / CREDIT MANUAL BALANCE ---
@@ -1380,3 +1400,147 @@ async def cb_cancel_broadcast(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.message.edit_text("❌ Рассылка отменена.")
     await callback.answer()
+
+
+# --- CUSTOM RANK MANAGEMENT ---
+
+@router.callback_query(F.data.startswith("adm_rank_menu:"))
+async def cb_adm_rank_menu(callback: CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        await callback.answer("Доступ запрещен.", show_alert=True)
+        return
+    user_id = int(callback.data.split(":")[1])
+    user = await db.get_user(user_id)
+    if not user:
+        await callback.answer("Пользователь не найден.", show_alert=True)
+        return
+
+    rank_info = await db.get_user_rank(user_id)
+    c_rank = user.get("custom_rank") or "Автоматический по обороту"
+
+    text = (
+        f"🎖 <b>Управление рангом пользователя</b>\n\n"
+        f"• Пользователь: <b>{user.get('first_name', 'Клиент')}</b> (@{user.get('username') or 'без username'})\n"
+        f"• ID: <code>{user_id}</code>\n"
+        f"• Текущий ранг: <b>{rank_info['title']}</b>\n"
+        f"• Статус в базе: <code>{c_rank}</code>\n"
+        f"• Общий оборот: <b>{rank_info['turnover']:,} ⭐️</b>\n\n"
+        "Выберите готовый титул или задайте персональный текст:"
+    )
+
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="👑 Основатель", callback_data=f"adm_set_rank:{user_id}:👑 Основатель"),
+            InlineKeyboardButton(text="💎 VIP Клиент", callback_data=f"adm_set_rank:{user_id}:💎 VIP Клиент")
+        ],
+        [
+            InlineKeyboardButton(text="⭐️ Партнёр", callback_data=f"adm_set_rank:{user_id}:⭐️ Партнёр"),
+            InlineKeyboardButton(text="🛡 Гарант СБП", callback_data=f"adm_set_rank:{user_id}:🛡 Гарант СБП")
+        ],
+        [
+            InlineKeyboardButton(text="🔥 Спонсор", callback_data=f"adm_set_rank:{user_id}:🔥 Спонсор"),
+            InlineKeyboardButton(text="🔱 Легенда", callback_data=f"adm_set_rank:{user_id}:🔱 Легенда")
+        ],
+        [
+            InlineKeyboardButton(text="✏️ Ввести свой текст...", callback_data=f"adm_custom_rank_prompt:{user_id}")
+        ],
+        [
+            InlineKeyboardButton(text="🔄 Сбросить (вернуть авто)", callback_data=f"adm_set_rank:{user_id}:__reset__")
+        ],
+        [
+            InlineKeyboardButton(text="← Назад к карточке", callback_data=f"adm_view_user:{user_id}")
+        ]
+    ])
+
+    await callback.message.edit_text(text, reply_markup=kb)
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("adm_set_rank:"))
+async def cb_adm_set_rank(callback: CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        await callback.answer("Доступ запрещен.", show_alert=True)
+        return
+
+    parts = callback.data.split(":", 2)
+    user_id = int(parts[1])
+    rank_value = parts[2]
+
+    if rank_value == "__reset__":
+        await db.set_user_custom_rank(user_id, None)
+        await callback.answer("Кастомный ранг сброшен. Действует автоматический ранг!", show_alert=True)
+    else:
+        await db.set_user_custom_rank(user_id, rank_value)
+        await callback.answer(f"Установлен ранг: {rank_value}", show_alert=True)
+
+    user = await db.get_user(user_id)
+    trxs = await db.get_user_transactions(user_id, limit=5)
+    rank_info = await db.get_user_rank(user_id)
+    text = format_admin_user_card(user, trxs, rank_info)
+    await callback.message.edit_text(text, reply_markup=get_admin_user_kb(user_id))
+
+
+@router.callback_query(F.data.startswith("adm_custom_rank_prompt:"))
+async def cb_adm_custom_rank_prompt(callback: CallbackQuery, state: FSMContext):
+    if not is_admin(callback.from_user.id):
+        await callback.answer("Доступ запрещен.", show_alert=True)
+        return
+
+    user_id = int(callback.data.split(":")[1])
+    await state.update_data(rank_target_user_id=user_id)
+    await state.set_state(AdminRankState.waiting_for_custom_text)
+
+    await callback.message.edit_text(
+        "✏️ <b>Введите желаемый кастомный ранг для пользователя:</b>\n\n"
+        "Вы можете использовать любой текст и эмодзи (например: <code>🚀 Трейдер</code>, <code>💎 Инвестор</code>, <code>🛡 Гарант</code>):\n\n"
+        "<i>Для отмены нажмите кнопку ниже:</i>",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="❌ Отмена", callback_data=f"adm_view_user:{user_id}")]
+        ])
+    )
+    await callback.answer()
+
+
+@router.message(AdminRankState.waiting_for_custom_text)
+async def process_custom_rank_input(message: Message, state: FSMContext):
+    if not is_admin(message.from_user.id):
+        return
+
+    data = await state.get_data()
+    user_id = data.get("rank_target_user_id")
+    await state.clear()
+
+    if not user_id:
+        await message.answer("Ошибка: пользователь не найден.", reply_markup=get_admin_dashboard_kb())
+        return
+
+    rank_text = message.text.strip()
+    await db.set_user_custom_rank(user_id, rank_text)
+    user = await db.get_user(user_id)
+    trxs = await db.get_user_transactions(user_id, limit=5)
+    rank_info = await db.get_user_rank(user_id)
+
+    await message.answer(
+        f"✅ <b>Ранг успешно установлен:</b> <code>{rank_text}</code>\n\n" +
+        format_admin_user_card(user, trxs, rank_info),
+        reply_markup=get_admin_user_kb(user_id)
+    )
+
+
+@router.callback_query(F.data.startswith("adm_view_user:"))
+async def cb_adm_view_user(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    user_id = int(callback.data.split(":")[1])
+    user = await db.get_user(user_id)
+    if not user:
+        await callback.answer("Пользователь не найден.", show_alert=True)
+        return
+
+    trxs = await db.get_user_transactions(user_id, limit=5)
+    rank_info = await db.get_user_rank(user_id)
+    await callback.message.edit_text(
+        format_admin_user_card(user, trxs, rank_info),
+        reply_markup=get_admin_user_kb(user_id)
+    )
+    await callback.answer()
+

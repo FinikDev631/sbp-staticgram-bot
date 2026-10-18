@@ -6,12 +6,23 @@ def mask_name(first_name: str, last_name: Optional[str] = None) -> str:
         return f"{first_name} {last_name[0]}."
     return first_name
 
-def format_sbp_card(user: Dict[str, Any], reserved: Optional[Dict[str, Any]] = None) -> str:
+def format_sbp_card(user: Dict[str, Any], reserved: Optional[Dict[str, Any]] = None, rank_info: Optional[Dict[str, Any]] = None) -> str:
     """Sleek minimalist fintech card."""
     name = mask_name(user.get("first_name", "Клиент"), user.get("last_name"))
-    acc = user.get("account_number", "SBP-0000-0000")
+    acc = user.get("account_number", "СБП-00000")
     bal = user.get("balance", 0)
     u_str = f"@{user['username']}" if user.get("username") else f"id{user['user_id']}"
+
+    rank_line = ""
+    if rank_info:
+        r_title = rank_info["title"]
+        if rank_info["is_custom"]:
+            rank_line = f"\nРанг: <b>{r_title}</b>"
+        elif rank_info.get("next_title"):
+            pct = rank_info["progress_pct"]
+            rank_line = f"\nРанг: <b>{r_title}</b> <code>[{rank_info['progress_bar']}]</code> <b>{pct}%</b>"
+        else:
+            rank_line = f"\nРанг: <b>{r_title}</b> (MAX 🔱)"
 
     res_lines = []
     if reserved:
@@ -24,7 +35,7 @@ def format_sbp_card(user: Dict[str, Any], reserved: Optional[Dict[str, Any]] = N
 
     return (
         f"⚡️ <b>СБП • Stars</b>\n\n"
-        f"Баланс: <b>{bal:,} ⭐️</b>"
+        f"Баланс: <b>{bal:,} ⭐️</b>{rank_line}"
         f"{res_block}\n"
         f"Счёт: <code>{acc}</code> • {name} ({u_str})\n\n"
         f"📢 Новости СБП: <a href=\"https://staticgram.top/sbpnews\">@sbpnews</a>"

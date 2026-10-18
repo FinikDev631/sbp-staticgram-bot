@@ -17,7 +17,8 @@ def get_main_menu_inline(user_id: int, reserved_total: int = 0) -> InlineKeyboar
             InlineKeyboardButton(text="🧾 Чек", callback_data="menu_cheque")
         ],
         [
-            InlineKeyboardButton(text="📊 История операций", callback_data="menu_history")
+            InlineKeyboardButton(text="📊 История", callback_data="menu_history"),
+            InlineKeyboardButton(text="🏆 Мой ранг", callback_data="menu_ranks")
         ]
     ]
 

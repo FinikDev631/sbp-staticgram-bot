@@ -269,9 +269,10 @@ async def init_db():
             );
             """)
 
-            # Ensure old_account_number column exists and auto-migrate long accounts to short 5-digit format
+            # Ensure old_account_number and custom_rank columns exist
             try:
                 await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS old_account_number TEXT")
+                await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_rank TEXT")
             except Exception:
                 pass
 
@@ -317,6 +318,10 @@ async def init_db():
             """)
             try:
                 await db.execute("ALTER TABLE users ADD COLUMN old_account_number TEXT")
+            except Exception:
+                pass
+            try:
+                await db.execute("ALTER TABLE users ADD COLUMN custom_rank TEXT")
             except Exception:
                 pass
 
@@ -1000,3 +1005,32 @@ async def get_user_reserved_items(user_id: int) -> Dict[str, Any]:
             "cheques": cheques,
             "pending": pending
         }
+
+
+async def get_user_turnover(user_id: int) -> int:
+    """Returns total stars turnover for user across successful operations."""
+    async with get_db() as db:
+        row = await db.fetchone(
+            "SELECT COALESCE(SUM(amount), 0) as s FROM transactions WHERE user_id = ? AND status = 'success'",
+            (user_id,)
+        )
+        return int(row["s"]) if row and row.get("s") else 0
+
+
+async def set_user_custom_rank(user_id: int, custom_rank: Optional[str]) -> bool:
+    """Sets or clears custom rank for user."""
+    val = custom_rank.strip() if custom_rank and custom_rank.strip() else None
+    async with get_db() as db:
+        await db.execute("UPDATE users SET custom_rank = ? WHERE user_id = ?", (val, user_id))
+        await db.commit()
+    return True
+
+
+async def get_user_rank(user_id: int) -> Dict[str, Any]:
+    """Returns full rank dictionary with progress, icon, and tier info."""
+    from utils.ranks import calculate_rank
+    u = await get_user(user_id)
+    turnover = await get_user_turnover(user_id)
+    custom_rank = u.get("custom_rank") if u else None
+    return calculate_rank(turnover, custom_rank)
+
