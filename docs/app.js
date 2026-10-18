@@ -79,20 +79,26 @@ const I18N = {
     modalWithdrawDesc: 'Для прямого вывода звёзд используйте команду /withdraw в Telegram-боте либо отправьте перевод на нужный аккаунт СБП.',
     modalWithdrawBtn: 'Перейти к выводу в боте',
 
-    modalChequeTitle: '🧾 Создать чек СБП',
+    modalChequeTitle: '🧾 Чеки СБП',
+    modalChequeTabCreate: '✨ Создать чек',
+    modalChequeTabClaim: '⚡️ Активировать код',
     modalChequeAmount: 'Номинал чека (⭐️)',
     modalChequeType: 'Тип чека',
     modalChequeAny: '🌐 Для всех (активирует первый нажавший в чате)',
     modalChequeUser: '🔒 Именной чек (только для указанного @username)',
     modalChequeRecipient: 'Имя пользователя получателя',
     modalChequeComment: 'Комментарий к чеку',
-    modalChequeSubmit: 'Сгенерировать чек',
+    modalChequeSubmit: 'Сгенерировать инлайн-чек',
+    modalChequeClaimDesc: 'Введите инлайн-код чека (например, @sbpbot ch_123456789abc или ch_123456789abc), чтобы моментально получить звёзды на баланс:',
+    modalChequeClaimInputLabel: 'Инлайн-код или ID чека',
+    modalChequeClaimBtn: '⚡️ Забрать звёзды на баланс',
 
     modalChequeResultTitle: '🎉 Чек успешно создан!',
-    modalChequeResultDesc: 'Звёзды зарезервированы в Escrow. Отправьте ссылку на чек в любой чат Telegram:',
-    modalChequeResultLink: 'Ссылка на активацию чека',
-    modalChequeResultCopy: 'Скопировать ссылку',
-    modalChequeResultShare: 'Отправить в чат',
+    modalChequeResultDesc: 'Звёзды зарезервированы. Отправьте инлайн-код в любой чат Telegram:',
+    modalChequeResultInlineCode: 'Инлайн-код для чата',
+    modalChequeResultHint: '💡 Нажмите «Отправить в чат» — откроется диалог выбора чата, и чек отправится интерактивной карточкой с кнопкой!',
+    modalChequeResultCopy: '📋 Скопировать код',
+    modalChequeResultShare: '⚡️ Отправить в чат',
 
     modalReceiptTitle: 'Электронный чек',
     modalReceiptCopy: 'Скопировать данные чека',
@@ -109,7 +115,7 @@ const I18N = {
     toastOpenBotForAcc: 'Откройте бота в Telegram для получения счёта',
     toastOpenBotForTransfer: 'Для отправки перевода откройте бота @sbpbot',
     toastOpenBotForDeposit: 'Для пополнения баланса откройте бота @sbpbot',
-    toastOpenBotForCheque: 'Для создания чека откройте бота @sbpbot',
+    toastOpenBotForCheque: 'Для работы с чеками откройте бота @sbpbot',
     toastPreparingInvoice: 'Подготовка счёта на {amount} ⭐️...',
     toastDepositSuccess: 'Баланс успешно пополнен на +{amount} ⭐️!',
     toastDepositCancel: 'Оплата отменена',
@@ -124,8 +130,10 @@ const I18N = {
     toastChequeInsufficient: 'Недостаточно звёзд на балансе для резервирования чека',
     toastChequeSpecifyUser: 'Укажите @username получателя',
     toastChequeCreating: 'Создание...',
-    toastChequeSubmit: 'Сгенерировать чек',
-    toastChequeCopied: 'Ссылка на чек скопирована в буфер обмена!',
+    toastChequeSubmit: 'Сгенерировать инлайн-чек',
+    toastChequeSpecifyCode: 'Введите инлайн-код чека',
+    toastChequeClaiming: 'Активация чека...',
+    toastChequeCopied: 'Инлайн-код чека скопирован в буфер обмена!',
     toastReceiptCopied: 'Данные чека скопированы в буфер!',
     confirmTransferPrompt: 'Действительно хотите отправить {amount} ⭐️ получателю {recipient}?'
   },
@@ -198,20 +206,26 @@ const I18N = {
     modalWithdrawDesc: 'For direct withdrawal of stars, use the /withdraw command in the Telegram bot or send a transfer to your SBP account.',
     modalWithdrawBtn: 'Go to Withdraw in Bot',
 
-    modalChequeTitle: '🧾 Create SBP Cheque',
+    modalChequeTitle: '🧾 SBP Cheques',
+    modalChequeTabCreate: '✨ Create Cheque',
+    modalChequeTabClaim: '⚡️ Claim by Code',
     modalChequeAmount: 'Cheque nominal (⭐️)',
     modalChequeType: 'Cheque type',
     modalChequeAny: '🌐 For everyone (first user to click in chat claims it)',
     modalChequeUser: '🔒 Named cheque (only for specified @username)',
     modalChequeRecipient: 'Recipient username',
     modalChequeComment: 'Cheque comment',
-    modalChequeSubmit: 'Generate Cheque',
+    modalChequeSubmit: 'Generate Inline Cheque',
+    modalChequeClaimDesc: 'Enter cheque inline code (e.g. @sbpbot ch_123456789abc or ch_123456789abc) to claim stars directly to your SBP balance:',
+    modalChequeClaimInputLabel: 'Inline Code or Cheque ID',
+    modalChequeClaimBtn: '⚡️ Claim Stars to Balance',
 
     modalChequeResultTitle: '🎉 Cheque Created Successfully!',
-    modalChequeResultDesc: 'Stars reserved in Escrow. Send the activation link to any Telegram chat:',
-    modalChequeResultLink: 'Cheque activation link',
-    modalChequeResultCopy: 'Copy Link',
-    modalChequeResultShare: 'Share to Chat',
+    modalChequeResultDesc: 'Stars reserved. Send the inline code to any Telegram chat:',
+    modalChequeResultInlineCode: 'Inline Code for Chat',
+    modalChequeResultHint: '💡 Click "Send to Chat" to choose a chat and post the interactive cheque card with button!',
+    modalChequeResultCopy: '📋 Copy Code',
+    modalChequeResultShare: '⚡️ Send to Chat',
 
     modalReceiptTitle: 'Electronic Receipt',
     modalReceiptCopy: 'Copy Receipt Details',
@@ -228,7 +242,7 @@ const I18N = {
     toastOpenBotForAcc: 'Open bot in Telegram to get your account',
     toastOpenBotForTransfer: 'To make transfers, open @sbpbot',
     toastOpenBotForDeposit: 'To top up, open @sbpbot',
-    toastOpenBotForCheque: 'To create cheques, open @sbpbot',
+    toastOpenBotForCheque: 'To manage cheques, open @sbpbot',
     toastPreparingInvoice: 'Preparing invoice for {amount} ⭐️...',
     toastDepositSuccess: 'Balance topped up by +{amount} ⭐️!',
     toastDepositCancel: 'Payment cancelled',
@@ -243,8 +257,10 @@ const I18N = {
     toastChequeInsufficient: 'Insufficient stars on balance to reserve cheque',
     toastChequeSpecifyUser: 'Please specify recipient @username',
     toastChequeCreating: 'Creating...',
-    toastChequeSubmit: 'Generate Cheque',
-    toastChequeCopied: 'Cheque link copied to clipboard!',
+    toastChequeSubmit: 'Generate Inline Cheque',
+    toastChequeSpecifyCode: 'Please enter cheque inline code',
+    toastChequeClaiming: 'Claiming cheque...',
+    toastChequeCopied: 'Cheque inline code copied to clipboard!',
     toastReceiptCopied: 'Receipt details copied to clipboard!',
     confirmTransferPrompt: 'Do you really want to send {amount} ⭐️ to {recipient}?'
   }
@@ -256,6 +272,8 @@ const State = {
   userId: null,
   username: null,
   firstName: null,
+  botUsername: 'sbpbot',
+  lastCreatedChequeId: null,
   balance: 0,
   escrow: 0,
   isBalanceHidden: false,
@@ -453,6 +471,7 @@ async function fetchUserData() {
 
     if (data.status === 'ok' && data.user) {
       State.user = data.user;
+      State.botUsername = data.bot_username || 'sbpbot';
       State.balance = data.user.balance || 0;
       State.escrow = data.user.reserved || 0;
       State.accountNumber = data.user.account_number || '—';
@@ -610,31 +629,146 @@ function initModals() {
     if (hist) hist.scrollIntoView({ behavior: 'smooth' });
   });
 
-  // Cheque result actions
-  document.getElementById('btnCopyChequeLink')?.addEventListener('click', async () => {
+  // Cheque Tabs switching
+  const tabCreate = document.getElementById('tabChequeCreate');
+  const tabClaim = document.getElementById('tabChequeClaim');
+  const sectionCreate = document.getElementById('chequeCreateSection');
+  const sectionClaim = document.getElementById('chequeClaimSection');
+
+  tabCreate?.addEventListener('click', () => {
+    haptic('light');
+    tabCreate.classList.add('active');
+    tabClaim?.classList.remove('active');
+    tabCreate.style.background = 'var(--surface)';
+    tabCreate.style.color = 'var(--text-main)';
+    tabCreate.style.boxShadow = 'var(--shadow-sm)';
+    if (tabClaim) {
+      tabClaim.style.background = 'transparent';
+      tabClaim.style.color = 'var(--text-secondary)';
+      tabClaim.style.boxShadow = 'none';
+    }
+    if (sectionCreate) sectionCreate.style.display = 'flex';
+    if (sectionClaim) sectionClaim.style.display = 'none';
+  });
+
+  tabClaim?.addEventListener('click', () => {
+    haptic('light');
+    tabClaim.classList.add('active');
+    tabCreate?.classList.remove('active');
+    tabClaim.style.background = 'var(--surface)';
+    tabClaim.style.color = 'var(--text-main)';
+    tabClaim.style.boxShadow = 'var(--shadow-sm)';
+    if (tabCreate) {
+      tabCreate.style.background = 'transparent';
+      tabCreate.style.color = 'var(--text-secondary)';
+      tabCreate.style.boxShadow = 'none';
+    }
+    if (sectionCreate) sectionCreate.style.display = 'none';
+    if (sectionClaim) sectionClaim.style.display = 'flex';
+  });
+
+  // Copy inline code
+  const copyChequeInlineCode = async () => {
     haptic('medium');
-    const url = document.getElementById('createdChequeUrl')?.value;
-    if (url) {
+    const code = document.getElementById('createdChequeInlineCode')?.value;
+    if (code) {
       try {
-        await navigator.clipboard.writeText(url);
+        await navigator.clipboard.writeText(code);
         showToast(t('toastChequeCopied'));
       } catch (e) {
-        showToast(url);
+        showToast(code);
+      }
+    }
+  };
+
+  document.getElementById('btnCopyChequeCode')?.addEventListener('click', copyChequeInlineCode);
+  document.getElementById('btnQuickCopyCode')?.addEventListener('click', copyChequeInlineCode);
+
+  // Send Cheque by Inline Query
+  document.getElementById('btnShareChequeInline')?.addEventListener('click', () => {
+    haptic('medium');
+    const inlineCode = document.getElementById('createdChequeInlineCode')?.value;
+    const chequeId = State.lastCreatedChequeId || (inlineCode ? inlineCode.split(' ').pop() : '');
+    const botUser = State.botUsername || 'sbpbot';
+
+    if (chequeId) {
+      if (tg?.switchInlineQuery) {
+        try {
+          tg.switchInlineQuery(chequeId, ['users', 'groups', 'channels']);
+          return;
+        } catch (e) {
+          console.warn('switchInlineQuery with types failed:', e);
+          try {
+            tg.switchInlineQuery(chequeId);
+            return;
+          } catch (e2) {
+            console.warn('switchInlineQuery simple failed:', e2);
+          }
+        }
+      }
+
+      // Fallback for browsers or desktop clients without switchInlineQuery
+      const textToShare = `@${botUser} ${chequeId}`;
+      const shareUrl = `https://staticgram.top/share/url?url=${encodeURIComponent(textToShare)}`;
+      if (tg?.openTelegramLink) {
+        tg.openTelegramLink(shareUrl);
+      } else {
+        navigator.clipboard?.writeText(textToShare);
+        showToast(t('toastChequeCopied'));
       }
     }
   });
 
-  document.getElementById('btnShareChequeLink')?.addEventListener('click', () => {
-    haptic('light');
-    const url = document.getElementById('createdChequeUrl')?.value;
-    if (url) {
-      const shareText = State.lang === 'ru' ? '⚡️ Активируйте чек СБП!' : '⚡️ Claim SBP Cheque!';
-      const shareUrl = `https://staticgram.top/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareText)}`;
-      if (tg?.openTelegramLink) {
-        tg.openTelegramLink(shareUrl);
-      } else {
-        window.open(shareUrl, '_blank');
+  // Claim Cheque by Code in Mini App
+  document.getElementById('btnSubmitClaimCheque')?.addEventListener('click', async () => {
+    haptic('medium');
+    if (State.isGuest) {
+      showToast(t('toastOpenBotForCheque'));
+      return;
+    }
+
+    const input = document.getElementById('chequeClaimInput');
+    const code = input?.value.trim();
+    if (!code) {
+      showToast(t('toastChequeSpecifyCode'));
+      haptic('error');
+      return;
+    }
+
+    const btn = document.getElementById('btnSubmitClaimCheque');
+    btn.disabled = true;
+    btn.textContent = t('toastChequeClaiming');
+
+    try {
+      const res = await fetch(`${API_BASE}/api/claim_cheque`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: State.userId,
+          code: code
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        haptic('error');
+        showToast(data.error || 'Ошибка при активации чека');
+        btn.disabled = false;
+        btn.textContent = t('modalChequeClaimBtn');
+        return;
       }
+
+      haptic('success');
+      showToast(data.message || `+${data.amount} ⭐️ зачислено на ваш баланс!`);
+      closeModal('modalCheque');
+      if (input) input.value = '';
+      await fetchUserData();
+    } catch (e) {
+      haptic('error');
+      showToast('Ошибка сети при активации чека');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = t('modalChequeClaimBtn');
     }
   });
 
@@ -894,8 +1028,12 @@ function initChequeSubmission() {
       document.getElementById('chequeAmount').value = '';
       if (document.getElementById('chequeRecipient')) document.getElementById('chequeRecipient').value = '';
 
-      const urlInput = document.getElementById('createdChequeUrl');
-      if (urlInput) urlInput.value = data.cheque_url;
+      State.lastCreatedChequeId = data.cheque_id;
+      const botUser = data.bot_username || State.botUsername || 'sbpbot';
+      const inlineCode = data.inline_code || `@${botUser} ${data.cheque_id}`;
+
+      const codeInput = document.getElementById('createdChequeInlineCode');
+      if (codeInput) codeInput.value = inlineCode;
 
       openModal('modalChequeResult');
       await fetchUserData();
@@ -910,6 +1048,31 @@ function initChequeSubmission() {
   });
 }
 
+// Global helper for sharing cheques by ID via inline query
+window.shareChequeById = function(chequeId) {
+  haptic('medium');
+  const botUser = State.botUsername || 'sbpbot';
+  if (tg?.switchInlineQuery) {
+    try {
+      tg.switchInlineQuery(chequeId, ['users', 'groups', 'channels']);
+      return;
+    } catch (e) {
+      try {
+        tg.switchInlineQuery(chequeId);
+        return;
+      } catch (e2) {}
+    }
+  }
+  const textToShare = `@${botUser} ${chequeId}`;
+  const shareUrl = `https://staticgram.top/share/url?url=${encodeURIComponent(textToShare)}`;
+  if (tg?.openTelegramLink) {
+    tg.openTelegramLink(shareUrl);
+  } else {
+    navigator.clipboard?.writeText(textToShare);
+    showToast(t('toastChequeCopied'));
+  }
+};
+
 // --- Electronic Receipt Details ---
 window.openReceiptModal = function(txId) {
   haptic('light');
@@ -922,6 +1085,27 @@ window.openReceiptModal = function(txId) {
 
   const isPos = tx.amount > 0;
   const formatted = `${isPos ? '+' : ''}${tx.amount.toLocaleString(State.lang === 'ru' ? 'ru-RU' : 'en-US')} ⭐️`;
+
+  const chMatch = (tx.title + ' ' + tx.comment + ' ' + (tx.to || '')).match(/ch_[a-zA-Z0-9]+/);
+  let chequeInlineSection = '';
+  if (chMatch) {
+    const chId = chMatch[0];
+    const inlineCode = `@${State.botUsername || 'sbpbot'} ${chId}`;
+    chequeInlineSection = `
+      <div class="receipt-field" style="border-top: 1px dashed var(--border-subtle); padding-top: 10px; margin-top: 6px;">
+        <span class="label">Инлайн-код</span>
+        <span class="value" style="font-family: monospace; color: var(--gold); font-weight: 700;">${inlineCode}</span>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 8px;">
+        <button type="button" class="btn-submit" onclick="navigator.clipboard.writeText('${inlineCode}'); showToast(t('toastChequeCopied'));" style="flex: 1; padding: 10px; font-size: 12px; background: var(--surface-alt); color: var(--text-main); border: 1px solid var(--border-subtle);">
+          📋 Скопировать код
+        </button>
+        <button type="button" class="btn-submit" onclick="shareChequeById('${chId}')" style="flex: 1; padding: 10px; font-size: 12px; background: #007aff;">
+          ⚡️ Отправить в чат
+        </button>
+      </div>
+    `;
+  }
 
   content.innerHTML = `
     <div style="text-align: center; margin-bottom: 6px;">
@@ -956,6 +1140,7 @@ window.openReceiptModal = function(txId) {
       <span class="label">${t('receiptGateway')}</span>
       <span class="value">StaticGram СБП • Stars Gateway</span>
     </div>
+    ${chequeInlineSection}
   `;
 
   openModal('modalReceipt');

@@ -56,9 +56,18 @@ async def process_inline_query(query: InlineQuery):
 
     results = []
 
-    # 1. Specific cheque by ID (@sbpbot ch_abc123)
+    # 1. Specific cheque by ID (@sbpbot ch_abc123 or query containing ch_...)
+    target_cheque_id = None
     if raw_text.startswith("ch_"):
-        cheque = await db.get_cheque(raw_text)
+        target_cheque_id = raw_text.split()[0]
+    elif "ch_" in raw_text:
+        for w in raw_text.split():
+            if w.startswith("ch_"):
+                target_cheque_id = w
+                break
+
+    if target_cheque_id:
+        cheque = await db.get_cheque(target_cheque_id)
         if cheque and cheque["status"] == "active":
             creator_label = f"@{cheque['creator_username']}" if cheque.get("creator_username") else f"id{cheque['creator_id']}"
             rec_u = cheque.get("recipient_username")
@@ -71,8 +80,8 @@ async def process_inline_query(query: InlineQuery):
             )
             results.append(InlineQueryResultArticle(
                 id=f"ch_{cheque['cheque_id']}",
-                title=f"Чек на {cheque['amount']:,} ⭐️",
-                description=f"От {creator_label}",
+                title=f"⚡️ Чек СБП на {cheque['amount']:,} ⭐️",
+                description=f"От {creator_label} • Для: {rec_label or 'всех'}",
                 input_message_content=InputTextMessageContent(message_text=msg_text, parse_mode="HTML"),
                 reply_markup=get_inline_claim_kb(cheque["cheque_id"], cheque["amount"])
             ))

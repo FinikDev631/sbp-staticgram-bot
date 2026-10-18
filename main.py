@@ -164,8 +164,19 @@ async def start_health_server(bot: Bot = None):
                 "comment": t.get("comment") or "Операция СБП"
             })
 
+        bot_instance = request.app.get("bot")
+        bot_username = "sbpbot"
+        if bot_instance:
+            try:
+                me = await bot_instance.get_me()
+                if me and me.username:
+                    bot_username = me.username
+            except Exception:
+                pass
+
         return safe_json_response({
             "status": "ok",
+            "bot_username": bot_username,
             "user": {
                 "user_id": user["user_id"],
                 "username": user.get("username"),
@@ -314,18 +325,117 @@ async def start_health_server(bot: Bot = None):
         if not cheque_id:
             return safe_json_response({"error": "Не удалось создать чек"}, status=500)
 
-        cheque_url = f"https://staticgram.top/sbpbot?start={cheque_id}"
+        bot_instance = request.app.get("bot")
+        bot_username = "sbpbot"
+        if bot_instance:
+            try:
+                me = await bot_instance.get_me()
+                if me and me.username:
+                    bot_username = me.username
+            except Exception:
+                pass
+
+        inline_code = f"@{bot_username} {cheque_id}"
+        cheque_url = f"https://staticgram.top/{bot_username}?start={cheque_id}"
         updated_user = await db.get_user(user_id)
         reserved = await db.get_user_reserved_summary(user_id)
 
         return safe_json_response({
             "status": "ok",
             "cheque_id": cheque_id,
+            "inline_code": inline_code,
+            "bot_username": bot_username,
             "cheque_url": cheque_url,
             "new_balance": updated_user["balance"],
             "new_escrow": reserved.get("total_reserved", 0),
             "amount": amount
         })
+
+    async def handle_claim_cheque(request):
+        try:
+            body = await request.json()
+        except Exception:
+            return safe_json_response({"error": "Неверный формат данных (JSON)"}, status=400)
+
+        user_id = body.get("user_id")
+        code = str(body.get("code") or "").strip()
+
+        if not user_id or not code:
+            return safe_json_response({"error": "Укажите код чека"}, status=400)
+
+        try:
+            user_id = int(user_id)
+        except ValueError:
+            return safe_json_response({"error": "Некорректный ID пользователя"}, status=400)
+
+        user = await db.get_user(user_id)
+        if not user:
+            return safe_json_response({"error": "Пользователь не найден в базе данных"}, status=404)
+
+        clean_code = code
+        if "start=" in clean_code:
+            clean_code = clean_code.split("start=")[-1].split("&")[0]
+        if "@" in clean_code:
+            parts = clean_code.split()
+            for p in parts:
+                if p.startswith("ch_"):
+                    clean_code = p
+                    break
+        elif " " in clean_code:
+            for p in clean_code.split():
+                if p.startswith("ch_"):
+                    clean_code = p
+                    break
+        clean_code = clean_code.strip()
+
+        if not clean_code.startswith("ch_"):
+            return safe_json_response({"error": "Неверный формат кода чека (должен начинаться с ch_)"}, status=400)
+
+        username = user.get("username")
+        first_name = user.get("first_name") or "Клиент"
+
+        res = await db.claim_cheque(clean_code, user_id, username, first_name)
+        status = res.get("status")
+
+        if status == "ok":
+            amount = res["amount"]
+            creator_label = f"@{res['creator_username']}" if res.get("creator_username") else f"id{res['creator_id']}"
+            updated_user = await db.get_user(user_id)
+
+            bot_instance = request.app.get("bot")
+            if bot_instance:
+                try:
+                    claimer_label = f"@{username}" if username else first_name
+                    await bot_instance.send_message(
+                        res["creator_id"],
+                        f"🎉 Пользователь {claimer_label} забрал ваш чек на <b>{amount:,} ⭐️</b> через приложение СБП!"
+                    )
+                except Exception:
+                    pass
+
+            return safe_json_response({
+                "status": "ok",
+                "amount": amount,
+                "creator": creator_label,
+                "new_balance": updated_user["balance"],
+                "message": f"Чек на +{amount:,} ⭐️ успешно активирован!"
+            })
+        elif status == "self_claim":
+            return safe_json_response({
+                "error": "Это ваш собственный чек. Вы не можете забрать его сами — он предназначен для других участников чата."
+            }, status=400)
+        elif status == "already_claimed":
+            return safe_json_response({
+                "error": "Этот чек уже кем-то активирован."
+            }, status=400)
+        elif status == "restricted":
+            return safe_json_response({
+                "error": f"Этот чек предназначен только для @{res.get('expected')}."
+            }, status=400)
+        else:
+            return safe_json_response({
+                "error": "Чек не найден или уже аннулирован создателем."
+            }, status=404)
 
     async def handle_create_invoice(request):
         try:
@@ -468,6 +578,7 @@ async def start_health_server(bot: Bot = None):
     app.router.add_get("/api/user_data", handle_user_data)
     app.router.add_post("/api/transfer", handle_transfer)
     app.router.add_post("/api/create_cheque", handle_create_cheque)
+    app.router.add_post("/api/claim_cheque", handle_claim_cheque)
     app.router.add_post("/api/create_invoice", handle_create_invoice)
     app.router.add_get("/api/diag", handle_diag)
     app.router.add_get("/api/credit", handle_credit)

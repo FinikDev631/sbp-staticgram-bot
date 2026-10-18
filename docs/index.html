@@ -366,14 +366,22 @@
     </div>
   </div>
 
-  <!-- Modal: Cheque Creator -->
+  <!-- Modal: Cheque Creator & Claimer -->
   <div class="modal-backdrop" id="modalCheque">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3 data-i18n="modalChequeTitle">🧾 Создать чек СБП</h3>
+        <h3 data-i18n="modalChequeTitle">🧾 Чеки СБП</h3>
         <button class="btn-close" onclick="closeModal('modalCheque')">×</button>
       </div>
-      <div class="modal-body">
+
+      <!-- Cheque Modal Tabs -->
+      <div class="modal-tabs" style="display: flex; gap: 6px; background: var(--surface-alt); padding: 4px; border-radius: var(--radius-pill);">
+        <button type="button" class="modal-tab-btn active" id="tabChequeCreate" style="flex: 1; padding: 8px 12px; border: none; border-radius: var(--radius-pill); font-weight: 700; font-size: 13px; cursor: pointer; background: var(--surface); color: var(--text-main); box-shadow: var(--shadow-sm);" data-i18n="modalChequeTabCreate">✨ Создать чек</button>
+        <button type="button" class="modal-tab-btn" id="tabChequeClaim" style="flex: 1; padding: 8px 12px; border: none; border-radius: var(--radius-pill); font-weight: 700; font-size: 13px; cursor: pointer; background: transparent; color: var(--text-secondary);" data-i18n="modalChequeTabClaim">⚡️ Активировать код</button>
+      </div>
+
+      <!-- Tab 1: Create Cheque -->
+      <div class="modal-body" id="chequeCreateSection">
         <div class="form-group">
           <label class="form-label" data-i18n="modalChequeAmount">Номинал чека (⭐️)</label>
           <input type="number" class="form-control" id="chequeAmount" placeholder="50" min="1">
@@ -393,7 +401,19 @@
           <label class="form-label" data-i18n="modalChequeComment">Комментарий к чеку</label>
           <input type="text" class="form-control" id="chequeComment" placeholder="СБП бонус">
         </div>
-        <button type="button" class="btn-submit" id="btnSubmitCheque" data-i18n="modalChequeSubmit">Сгенерировать чек</button>
+        <button type="button" class="btn-submit" id="btnSubmitCheque" data-i18n="modalChequeSubmit">Сгенерировать инлайн-чек</button>
+      </div>
+
+      <!-- Tab 2: Claim Cheque by Code -->
+      <div class="modal-body" id="chequeClaimSection" style="display: none;">
+        <p class="modal-desc" data-i18n="modalChequeClaimDesc">
+          Введите инлайн-код чека (например, <code>@sbpbot ch_123456789abc</code> или <code>ch_123456789abc</code>), чтобы моментально получить звёзды на баланс:
+        </p>
+        <div class="form-group">
+          <label class="form-label" data-i18n="modalChequeClaimInputLabel">Инлайн-код или ID чека</label>
+          <input type="text" class="form-control" id="chequeClaimInput" placeholder="@sbpbot ch_..." style="font-family: monospace; font-size: 13px;">
+        </div>
+        <button type="button" class="btn-submit" id="btnSubmitClaimCheque" data-i18n="modalChequeClaimBtn">⚡️ Забрать звёзды на баланс</button>
       </div>
     </div>
   </div>
@@ -407,15 +427,26 @@
       </div>
       <div class="modal-body">
         <p class="modal-desc" data-i18n="modalChequeResultDesc">
-          Звёзды зарезервированы в Escrow. Отправьте ссылку на чек в любой чат Telegram:
+          Звёзды зарезервированы. Отправьте инлайн-код в любой чат Telegram:
         </p>
+        
+        <!-- Inline Code Display Box -->
         <div class="form-group">
-          <label class="form-label" data-i18n="modalChequeResultLink">Ссылка на активацию чека</label>
-          <input type="text" class="form-control" id="createdChequeUrl" readonly style="font-family: monospace; font-size: 13px;">
+          <label class="form-label" data-i18n="modalChequeResultInlineCode">Инлайн-код для чата</label>
+          <div style="position: relative;">
+            <input type="text" class="form-control" id="createdChequeInlineCode" readonly style="font-family: monospace; font-size: 14px; font-weight: 700; color: var(--gold); padding-right: 44px; background: var(--surface-alt);">
+            <button type="button" id="btnQuickCopyCode" title="Скопировать" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: transparent; border: none; cursor: pointer; font-size: 16px; padding: 4px;">
+              📋
+            </button>
+          </div>
+          <small style="color: var(--text-tertiary); font-size: 11px; margin-top: 4px; display: block;" data-i18n="modalChequeResultHint">
+            💡 Нажмите «Отправить в чат» — откроется диалог выбора чата, и чек отправится интерактивной карточкой с кнопкой!
+          </small>
         </div>
-        <div style="display: flex; gap: 10px; margin-top: 14px;">
-          <button type="button" class="btn-submit" id="btnCopyChequeLink" style="flex: 1;" data-i18n="modalChequeResultCopy">Скопировать ссылку</button>
-          <button type="button" class="btn-submit" id="btnShareChequeLink" style="flex: 1; background: #2E8B57;" data-i18n="modalChequeResultShare">Отправить в чат</button>
+
+        <div style="display: flex; gap: 10px; margin-top: 6px;">
+          <button type="button" class="btn-submit" id="btnCopyChequeCode" style="flex: 1; background: var(--surface-alt); color: var(--text-main); border: 1px solid var(--border-subtle);" data-i18n="modalChequeResultCopy">📋 Скопировать код</button>
+          <button type="button" class="btn-submit" id="btnShareChequeInline" style="flex: 1; background: #007aff;" data-i18n="modalChequeResultShare">⚡️ Отправить в чат</button>
         </div>
       </div>
     </div>
