@@ -4,6 +4,7 @@ import asyncpg
 import random
 import string
 import uuid
+import hashlib
 import logging
 from datetime import datetime
 from contextlib import asynccontextmanager
@@ -15,10 +16,46 @@ _pg_pool: Optional[asyncpg.Pool] = None
 
 
 def generate_account_number(user_id: int) -> str:
-    """Generates an SBP account format: СБП-XXXX-XXXX"""
-    part1 = f"{abs(hash(str(user_id))) % 9000 + 1000}"
-    part2 = f"{random.randint(1000, 9999)}"
-    return f"СБП-{part1}-{part2}"
+    """Generates a memorable 5-digit SBP account format: СБП-XXXXX"""
+    val = int(hashlib.md5(f"sbp_acc_{user_id}".encode()).hexdigest(), 16)
+    num = (val % 90000) + 10000
+    return f"СБП-{num}"
+
+
+def normalize_account_input(raw: str) -> str:
+    """Normalizes any account input (Latin/Cyrillic, with/without hyphen or prefix) to canonical form."""
+    s = raw.strip()
+    if s.upper().startswith("SBP"):
+        s = "СБП" + s[3:]
+    elif s.upper().startswith("СБП"):
+        s = "СБП" + s[3:]
+
+    if s.startswith("СБП"):
+        rest = s[3:].lstrip(" -:")
+        return f"СБП-{rest}"
+
+    digits = "".join(c for c in s if c.isdigit())
+    if len(digits) == 5:
+        return f"СБП-{digits}"
+    if len(digits) == 8:
+        return f"СБП-{digits[:4]}-{digits[4:]}"
+
+    return s.upper()
+
+
+async def generate_unique_account_number(user_id: int, db) -> str:
+    """Generates a guaranteed unique 5-digit SBP account number."""
+    val = int(hashlib.md5(f"sbp_acc_{user_id}".encode()).hexdigest(), 16)
+    candidate = f"СБП-{(val % 90000) + 10000}"
+    row = await db.fetchone("SELECT user_id FROM users WHERE account_number = ? AND user_id != ?", (candidate, user_id))
+    if not row:
+        return candidate
+    for _ in range(50):
+        cand = f"СБП-{random.randint(10000, 99999)}"
+        r = await db.fetchone("SELECT user_id FROM users WHERE account_number = ?", (cand,))
+        if not r:
+            return cand
+    return f"СБП-{random.randint(100000, 999999)}"
 
 
 def generate_trx_id(prefix: str = "TRX") -> str:
@@ -229,6 +266,28 @@ async def init_db():
             );
             """)
 
+            # Ensure old_account_number column exists and auto-migrate long accounts to short 5-digit format
+            try:
+                await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS old_account_number TEXT")
+            except Exception:
+                pass
+
+            try:
+                old_rows = await conn.fetch("SELECT user_id, account_number FROM users WHERE account_number LIKE '%-%-%' OR LENGTH(account_number) > 10")
+                for r in old_rows:
+                    uid = r["user_id"]
+                    old_acc = r["account_number"]
+                    val = int(hashlib.md5(f"sbp_acc_{uid}".encode()).hexdigest(), 16)
+                    cand = f"СБП-{(val % 90000) + 10000}"
+                    exists = await conn.fetchval("SELECT user_id FROM users WHERE account_number = $1 AND user_id != $2", cand, uid)
+                    if exists:
+                        cand = f"СБП-{random.randint(10000, 99999)}"
+                    await conn.execute("UPDATE users SET account_number = $1, old_account_number = $2 WHERE user_id = $3", cand, old_acc, uid)
+                if old_rows:
+                    logger.info(f"Auto-migrated {len(old_rows)} accounts to short 5-digit format in PostgreSQL.")
+            except Exception as e:
+                logger.warning(f"Could not migrate accounts in PostgreSQL: {e}")
+
             # Check if users is empty and auto-migrate from sqlite
             user_count = await conn.fetchval("SELECT COUNT(*) FROM users")
             if user_count == 0 and os.path.exists(DB_PATH):
@@ -248,10 +307,33 @@ async def init_db():
                 last_name TEXT,
                 balance INTEGER DEFAULT 0,
                 account_number TEXT UNIQUE,
+                old_account_number TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 is_blocked INTEGER DEFAULT 0
             )
             """)
+            try:
+                await db.execute("ALTER TABLE users ADD COLUMN old_account_number TEXT")
+            except Exception:
+                pass
+
+            try:
+                cursor = await db.execute("SELECT user_id, account_number FROM users WHERE account_number LIKE '%-%-%' OR LENGTH(account_number) > 10")
+                old_rows = await cursor.fetchall()
+                for r in old_rows:
+                    uid = r[0]
+                    old_acc = r[1]
+                    val = int(hashlib.md5(f"sbp_acc_{uid}".encode()).hexdigest(), 16)
+                    cand = f"СБП-{(val % 90000) + 10000}"
+                    c2 = await db.execute("SELECT user_id FROM users WHERE account_number = ? AND user_id != ?", (cand, uid))
+                    if await c2.fetchone():
+                        cand = f"СБП-{random.randint(10000, 99999)}"
+                    await db.execute("UPDATE users SET account_number = ?, old_account_number = ? WHERE user_id = ?", (cand, old_acc, uid))
+                if old_rows:
+                    logger.info(f"Auto-migrated {len(old_rows)} accounts to short 5-digit format in SQLite.")
+            except Exception as e:
+                logger.warning(f"Could not migrate accounts in SQLite: {e}")
+
             await db.execute("""
             CREATE TABLE IF NOT EXISTS transactions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -313,7 +395,7 @@ async def get_or_create_user(user_id: int, username: Optional[str], first_name: 
             user_data["first_name"] = first_name
             user_data["last_name"] = last_name
         else:
-            acc_num = generate_account_number(user_id)
+            acc_num = await generate_unique_account_number(user_id, db)
             await db.execute(
                 "INSERT INTO users (user_id, username, first_name, last_name, balance, account_number) VALUES (?, ?, ?, ?, 0, ?)",
                 (user_id, username_clean, first_name, last_name, acc_num)
@@ -360,9 +442,29 @@ async def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
 
 
 async def get_user_by_account(account_number: str) -> Optional[Dict[str, Any]]:
-    clean_acc = account_number.strip().upper()
+    if not account_number or not isinstance(account_number, str):
+        return None
+    raw = account_number.strip()
+    norm = normalize_account_input(raw)
+    digits = "".join(c for c in raw if c.isdigit())
+
+    candidates = {raw, raw.upper(), norm, norm.upper()}
+    if digits:
+        candidates.add(digits)
+        candidates.add(f"СБП-{digits}")
+        candidates.add(f"SBP-{digits}")
+        if len(digits) == 8:
+            candidates.add(f"СБП-{digits[:4]}-{digits[4:]}")
+            candidates.add(f"SBP-{digits[:4]}-{digits[4:]}")
+            candidates.add(f"{digits[:4]}-{digits[4:]}")
+
+    cand_list = list(candidates)
+    placeholders = ", ".join(["?"] * len(cand_list))
+
     async with get_db() as db:
-        return await db.fetchone("SELECT * FROM users WHERE account_number = ?", (clean_acc,))
+        query = f"SELECT * FROM users WHERE account_number IN ({placeholders}) OR old_account_number IN ({placeholders}) LIMIT 1"
+        params = cand_list + cand_list
+        return await db.fetchone(query, tuple(params))
 
 
 async def admin_find_user(query: str) -> Optional[Dict[str, Any]]:
@@ -372,16 +474,24 @@ async def admin_find_user(query: str) -> Optional[Dict[str, Any]]:
         return await get_user_by_username(q[1:])
     if q.lower().startswith("id") and q[2:].isdigit():
         return await get_user(int(q[2:]))
+    if q.upper().startswith("СБП") or q.upper().startswith("SBP"):
+        acc = await get_user_by_account(q)
+        if acc:
+            return acc
     if q.isdigit():
+        if len(q) == 5:
+            acc = await get_user_by_account(q)
+            if acc:
+                return acc
         u = await get_user(int(q))
         if u:
             return u
-    u = await get_user_by_username(q)
-    if u:
-        return u
     acc = await get_user_by_account(q)
     if acc:
         return acc
+    u = await get_user_by_username(q)
+    if u:
+        return u
 
     async with get_db() as db:
         return await db.fetchone(

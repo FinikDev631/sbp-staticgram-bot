@@ -239,27 +239,35 @@ async def start_health_server(bot: Bot = None):
 
         if (recipient_raw == str(user_id) or
             (user.get("username") and recipient_raw.lstrip("@").lower() == user["username"].lower()) or
-            (user.get("account_number") and recipient_raw.upper() == user["account_number"].upper())):
+            (user.get("account_number") and recipient_raw.upper() == user["account_number"].upper()) or
+            (user.get("old_account_number") and recipient_raw.upper() == user["old_account_number"].upper())):
             return safe_json_response({"error": "Нельзя переводить средства самому себе"}, status=400)
 
         target_user = None
         is_pending = False
         res = None
 
-        if recipient_raw.upper().startswith("СБП-"):
-            target_user = await db.get_user_by_account(recipient_raw)
-            if not target_user:
-                return safe_json_response({"error": f"Счёт {recipient_raw} не зарегистрирован в СБП"}, status=404)
+        # 1. Try SBP account lookup first (supports СБП-XXXXX, SBP-XXXXX, old СБП-XXXX-XXXX, or 5-digit raw)
+        target_user = await db.get_user_by_account(recipient_raw)
+        if target_user:
+            if target_user["user_id"] == user_id:
+                return safe_json_response({"error": "Нельзя переводить средства самому себе"}, status=400)
             res = await db.direct_transfer(user_id, target_user["user_id"], amount, comment)
+        elif recipient_raw.upper().startswith("СБП") or recipient_raw.upper().startswith("SBP"):
+            return safe_json_response({"error": f"Счёт {recipient_raw} не зарегистрирован в СБП"}, status=404)
         elif recipient_raw.isdigit():
             target_user = await db.get_user(int(recipient_raw))
             if not target_user:
                 return safe_json_response({"error": f"Пользователь с ID {recipient_raw} не зарегистрирован в СБП"}, status=404)
+            if target_user["user_id"] == user_id:
+                return safe_json_response({"error": "Нельзя переводить средства самому себе"}, status=400)
             res = await db.direct_transfer(user_id, target_user["user_id"], amount, comment)
         else:
             clean_u = recipient_raw.lstrip("@").lower()
             target_user = await db.get_user_by_username(clean_u)
             if target_user:
+                if target_user["user_id"] == user_id:
+                    return safe_json_response({"error": "Нельзя переводить средства самому себе"}, status=400)
                 res = await db.direct_transfer(user_id, target_user["user_id"], amount, comment)
             else:
                 res = await db.pending_transfer(user_id, clean_u, amount, comment)

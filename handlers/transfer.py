@@ -42,7 +42,7 @@ async def start_transfer_flow(event: Message | CallbackQuery, state: FSMContext)
     text = (
         f"<b>Отправка звёзд по СБП</b>\n\n"
         f"Доступно: <b>{user['balance']:,} ⭐️</b>\n\n"
-        f"Введите <b>@username</b>, <b>Telegram ID</b> или <b>номер счёта</b> получателя:"
+        f"Введите <b>@username</b>, <b>номер счёта СБП</b> (например, <code>СБП-12345</code>) или <b>Telegram ID</b>:"
     )
 
     await state.set_state(TransferState.waiting_for_recipient)
@@ -63,12 +63,19 @@ async def process_transfer_recipient(message: Message, state: FSMContext):
     recipient_type = None
     recipient_label = None
 
-    if query.upper().startswith("СБП-") or query.upper().startswith("SBP-"):
-        recipient = await db.get_user_by_account(query)
-        if recipient:
-            recipient_type = "direct"
-            r_name = mask_name(recipient['first_name'], recipient['last_name'])
-            recipient_label = f"{r_name} ({recipient['account_number']})"
+    # 1. Try SBP account search (supports СБП-XXXXX, SBP-XXXXX, old СБП-XXXX-XXXX, or 5-digit raw number)
+    acc_recipient = await db.get_user_by_account(query)
+    if acc_recipient:
+        if acc_recipient["user_id"] == sender_id:
+            await message.answer("Нельзя перевести звёзды самому себе. Введите другого получателя:", reply_markup=get_cancel_kb())
+            return
+        recipient = acc_recipient
+        recipient_type = "direct"
+        r_name = mask_name(recipient['first_name'], recipient['last_name'])
+        recipient_label = f"{r_name} ({recipient['account_number']})"
+    elif query.upper().startswith("СБП-") or query.upper().startswith("SBP-") or query.upper().startswith("СБП") or query.upper().startswith("SBP"):
+        await message.answer("❌ Пользователь с таким счётом СБП не найден. Проверьте номер счёта и попробуйте снова:", reply_markup=get_cancel_kb())
+        return
     elif query.isdigit():
         target_id = int(query)
         if target_id == sender_id:

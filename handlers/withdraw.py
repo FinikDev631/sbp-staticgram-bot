@@ -74,7 +74,7 @@ async def process_target_self(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "wd_target:other", WithdrawState.waiting_for_target)
 async def process_target_other(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
-        "Введите <b>@username</b> или <b>Telegram ID</b> получателя:",
+        "Введите <b>@username</b>, <b>номер счёта СБП</b> (например, <code>СБП-12345</code>) или <b>Telegram ID</b> получателя:",
         reply_markup=get_cancel_kb()
     )
     await callback.answer()
@@ -89,17 +89,17 @@ async def process_target_input(message: Message, state: FSMContext):
     target_id = None
     clean_label = None
 
-    if target_raw.isdigit():
+    # 1. Try SBP account search (supports СБП-XXXXX, SBP-XXXXX, old format, or raw 5-digit number)
+    u = await db.get_user_by_account(target_raw)
+    if u:
+        target_id = u["user_id"]
+        clean_label = f"@{u['username']}" if u.get("username") else f"{u['first_name']} ({u['account_number']})"
+    elif target_raw.upper().startswith("СБП") or target_raw.upper().startswith("SBP"):
+        await message.answer(f"❌ Счёт <code>{target_raw}</code> не найден в СБП. Попробуйте снова:", reply_markup=get_cancel_kb())
+        return
+    elif target_raw.isdigit():
         target_id = int(target_raw)
         clean_label = f"id{target_id}"
-    elif target_raw.upper().startswith("СБП-") or target_raw.upper().startswith("SBP-"):
-        u = await db.get_user_by_account(target_raw)
-        if u:
-            target_id = u["user_id"]
-            clean_label = f"@{u['username']}" if u.get("username") else f"{u['first_name']} (id{target_id})"
-        else:
-            await message.answer(f"❌ Счёт <code>{target_raw}</code> не найден в СБП. Попробуйте снова:", reply_markup=get_cancel_kb())
-            return
     else:
         clean_u = target_raw.lstrip("@").lower()
         # 1. Search in database
