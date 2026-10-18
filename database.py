@@ -214,7 +214,10 @@ async def init_db():
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
         logger.info("Initializing PostgreSQL database...")
-        _pg_pool = await asyncpg.create_pool(dsn=url, min_size=1, max_size=10)
+        pool_kwargs = {"min_size": 1, "max_size": 10}
+        if "pooler.supabase.com" in url or ":6543" in url or "pgbouncer" in url.lower():
+            pool_kwargs["statement_cache_size"] = 0
+        _pg_pool = await asyncpg.create_pool(dsn=url, **pool_kwargs)
         async with _pg_pool.acquire() as conn:
             await conn.execute("""
             CREATE TABLE IF NOT EXISTS users (
