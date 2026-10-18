@@ -567,7 +567,9 @@ async def start_health_server(bot: Bot = None):
                 cheques = await conn.fetchall("SELECT * FROM cheques ORDER BY created_at DESC LIMIT 30")
             data = {
                 "db_type": "postgres" if db._pg_pool else "sqlite",
+                "db_provider": "supabase" if "supabase" in str(getattr(db, "DATABASE_URL", "")) else "render_pg",
                 "db_url_set": bool(os.getenv("DATABASE_URL")),
+                "version": "2026.10.18-supabase",
                 "users": users,
                 "transactions": trxs,
                 "pending": pending,
