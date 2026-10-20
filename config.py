@@ -14,7 +14,7 @@ ADMIN_IDS = {PRIMARY_ADMIN_ID, ADMIN_ID}
 DB_PATH = BASE_DIR / "sbp_bank.db"
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:NwkiHp8GjND3Q5H1@db.ecdqcscosklruehfjgax.supabase.co:5432/postgres"
+    "postgresql://neondb_owner:npg_gqMnS3Dzkv2I@ep-wild-water-b5ens1va-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require"
 )
 
 def is_admin(user_id: int) -> bool:
