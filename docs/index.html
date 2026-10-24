@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1792846371">
-  <script src="https://telegram.org/js/telegram-web-app.js?v=1792846371"></script>
+  <link rel="stylesheet" href="style.css?v=1792846642">
+  <script src="https://telegram.org/js/telegram-web-app.js?v=1792846642"></script>
 </head>
 <body>
   <!-- App Container -->
@@ -55,7 +55,18 @@
       </section>
 
       <!-- Hero Balance Card -->
+            <!-- Hero Balance Card with Sitting Boykisser Mascot on Top -->
       <section class="card balance-card">
+        <!-- Cute Boykisser sitting on top edge of the card -->
+        <div class="boykisser-top-sitter" id="boykisserWidget" onclick="onBoykisserTap()" title="Нажми на меня! :3">
+          <div class="boykisser-speech-bubble" id="boykisserBubble">
+            <span id="boykisserBubbleText">Ты любишь переводить звёзды по СБП, да? :3</span>
+            <button class="boykisser-bubble-close" onclick="event.stopPropagation(); hideBoykisserQuick();" title="Скрыть">×</button>
+          </div>
+          <div class="boykisser-top-avatar">
+            <img src="boykisser.png?v=1792846642" alt="Boykisser" class="boykisser-top-img" id="boykisserImg" />
+          </div>
+        </div>
         <div class="balance-card-header">
           <div class="balance-title-row">
             <span class="balance-label" data-i18n="balanceLabel">ДОСТУПНЫЙ БАЛАНС</span>
@@ -123,20 +134,7 @@
         </div>
       </section>
 
-      <!-- Boykisser Mascot Widget -->
-      <section class="card boykisser-card" id="boykisserWidget" onclick="onBoykisserTap()">
-        <div class="boykisser-content">
-          <div class="boykisser-avatar-wrap">
-            <img src="boykisser.png" alt="Boykisser" class="boykisser-img" id="boykisserImg" />
-            <span class="boykisser-badge">🐾</span>
-          </div>
-          <div class="boykisser-dialogue">
-            <div class="boykisser-name" data-i18n="boykisserName">Бойкиссер ✨</div>
-            <div class="boykisser-speech" id="boykisserBubbleText" data-i18n="boykisserDefaultSpeech">Ты любишь переводить звёзды по СБП, да? :3</div>
-          </div>
-        </div>
-        <button class="boykisser-close-btn" title="Скрыть" onclick="event.stopPropagation(); hideBoykisserQuick();">×</button>
-      </section>
+
 
       <!-- Announcement / Channel Card -->
       <section class="card news-card">
@@ -518,6 +516,6 @@
   <!-- Toast Notification -->
   <div class="toast-snackbar" id="appToast">Уведомление</div>
 
-  <script src="app.js?v=1792846371"></script>
+  <script src="app.js?v=1792846642"></script>
 </body>
 </html>
