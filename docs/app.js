@@ -55,6 +55,12 @@ const I18N = {
     themeLight: 'Светлая',
     themeDark: 'Тёмная',
     themeSystem: 'Системная',
+    themeHalloween: 'Хэллоуин 🎃',
+    settingsMascotTitle: 'Маскот (Boykisser)',
+    mascotToggleName: 'Показывать Бойкиссера',
+    mascotToggleSub: 'Интерактивный помощник на главном экране',
+    boykisserName: 'Бойкиссер ✨',
+    boykisserDefaultSpeech: 'Ты любишь переводить звёзды по СБП, да? :3',
     settingsLang: 'Язык интерфейса',
     settingsAccount: 'Аккаунт СБП',
     settingsUser: 'Пользователь',
@@ -356,13 +362,16 @@ window.selectTheme = function(preference) {
 
   document.getElementById('themeOptLight')?.classList.toggle('active', preference === 'light');
   document.getElementById('themeOptDark')?.classList.toggle('active', preference === 'dark');
+  document.getElementById('themeOptHalloween')?.classList.toggle('active', preference === 'halloween');
   document.getElementById('themeOptSystem')?.classList.toggle('active', preference === 'system');
 
   const resolvedTheme = preference === 'system' ? getSystemTheme() : preference;
   document.documentElement.setAttribute('data-theme', resolvedTheme);
 
   try {
-    const bgColor = resolvedTheme === 'dark' ? '#0C0A09' : '#F6F2ED';
+    let bgColor = '#0C0A09';
+    if (resolvedTheme === 'light') bgColor = '#F6F2ED';
+    else if (resolvedTheme === 'halloween') bgColor = '#0D0805';
     if (tg?.setHeaderColor) tg.setHeaderColor(bgColor);
     if (tg?.setBackgroundColor) tg.setBackgroundColor(bgColor);
   } catch (e) {}
@@ -1413,8 +1422,84 @@ function initFilters() {
 }
 
 // --- App Bootstrap ---
+
+// --- Boykisser Mascot Logic ---
+const BOYKISSER_QUOTES = {
+  ru: [
+    "Ты любишь переводить звёзды по СБП, да? :3",
+    "Ого, какой красивый баланс звёздочек! ✨",
+    "Ты целуешь мальчиков или даришь чеки в чатах? UwU",
+    "0% комиссии на переводы — это так мило! 🐾",
+    "СБП-счёт всего из 5 цифр! Запомнить легче, чем твою улыбку :3",
+    "Не забудь подарить чек другу! 🎁",
+    "Хэллоуинское настроение! Бууу! 🎃👻",
+    "Я тут охраняю твои звёздочки! Муррр 😸"
+  ],
+  en: [
+    "You like transferring Telegram Stars via SBP, don't you? :3",
+    "Wow, look at all those shiny stars! ✨",
+    "You like kissing boys or creating vouchers? UwU",
+    "0% fee on transfers is so cute! 🐾",
+    "5-digit account number is so easy to remember :3",
+    "Don't forget to send a gift cheque to your friend! 🎁",
+    "Spooky Halloween vibes! Booo! 🎃👻",
+    "I'm purr-tecting your stars! Purrr 😸"
+  ]
+};
+
+window.toggleBoykisserSetting = function(forcedVal) {
+  haptic('selection');
+  const toggle = document.getElementById('toggleBoykisser');
+  const isEnabled = typeof forcedVal === 'boolean' ? forcedVal : !(toggle ? toggle.checked : true);
+  if (toggle) toggle.checked = isEnabled;
+  localStorage.setItem('sbp_boykisser_enabled', isEnabled ? 'true' : 'false');
+  applyBoykisserVisibility();
+};
+
+window.hideBoykisserQuick = function() {
+  haptic('light');
+  window.toggleBoykisserSetting(false);
+  showToast(State.lang === 'ru' ? 'Бойкиссер скрыт. Включить можно в Настройках ⚙️' : 'Boykisser hidden. Re-enable in Settings ⚙️');
+};
+
+function applyBoykisserVisibility() {
+  const isEnabled = localStorage.getItem('sbp_boykisser_enabled') !== 'false'; // default true
+  const widget = document.getElementById('boykisserWidget');
+  const toggle = document.getElementById('toggleBoykisser');
+  if (widget) {
+    widget.style.display = isEnabled ? 'flex' : 'none';
+  }
+  if (toggle) {
+    toggle.checked = isEnabled;
+  }
+}
+
+window.onBoykisserTap = function() {
+  haptic('medium');
+  const bubble = document.getElementById('boykisserBubbleText');
+  const img = document.getElementById('boykisserImg');
+  const quotes = BOYKISSER_QUOTES[State.lang] || BOYKISSER_QUOTES.ru;
+  const quote = quotes[Math.floor(Math.random() * quotes.length)];
+  
+  if (bubble) {
+    bubble.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+      bubble.textContent = quote;
+      bubble.style.transform = 'scale(1)';
+    }, 120);
+  }
+  
+  if (img) {
+    img.style.transform = 'scale(1.25) rotate(' + (Math.random() > 0.5 ? '12deg' : '-12deg') + ')';
+    setTimeout(() => {
+      img.style.transform = '';
+    }, 300);
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   initThemeAndLang();
+  applyBoykisserVisibility();
   initBalanceToggle();
   initAccountCopy();
   initModals();

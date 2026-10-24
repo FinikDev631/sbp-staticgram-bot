@@ -123,6 +123,21 @@
         </div>
       </section>
 
+      <!-- Boykisser Mascot Widget -->
+      <section class="card boykisser-card" id="boykisserWidget" onclick="onBoykisserTap()">
+        <div class="boykisser-content">
+          <div class="boykisser-avatar-wrap">
+            <img src="boykisser.png" alt="Boykisser" class="boykisser-img" id="boykisserImg" />
+            <span class="boykisser-badge">🐾</span>
+          </div>
+          <div class="boykisser-dialogue">
+            <div class="boykisser-name" data-i18n="boykisserName">Бойкиссер ✨</div>
+            <div class="boykisser-speech" id="boykisserBubbleText" data-i18n="boykisserDefaultSpeech">Ты любишь переводить звёзды по СБП, да? :3</div>
+          </div>
+        </div>
+        <button class="boykisser-close-btn" title="Скрыть" onclick="event.stopPropagation(); hideBoykisserQuick();">×</button>
+      </section>
+
       <!-- Announcement / Channel Card -->
       <section class="card news-card">
         <div class="news-content">
@@ -183,7 +198,7 @@
         <!-- Theme Section -->
         <div class="settings-group">
           <div class="settings-group-title" data-i18n="settingsTheme">Тема оформления</div>
-          <div class="theme-options-grid">
+          <div class="theme-options-grid" style="grid-template-columns: repeat(4, 1fr);">
             <button type="button" class="theme-option-card" id="themeOptLight" onclick="selectTheme('light')">
               <span class="theme-option-icon">☀️</span>
               <span class="theme-option-name" data-i18n="themeLight">Светлая</span>
@@ -192,10 +207,34 @@
               <span class="theme-option-icon">🌙</span>
               <span class="theme-option-name" data-i18n="themeDark">Тёмная</span>
             </button>
+            <button type="button" class="theme-option-card" id="themeOptHalloween" onclick="selectTheme('halloween')">
+              <span class="theme-option-icon">🎃</span>
+              <span class="theme-option-name" data-i18n="themeHalloween">Хэллоуин</span>
+            </button>
             <button type="button" class="theme-option-card" id="themeOptSystem" onclick="selectTheme('system')">
               <span class="theme-option-icon">📱</span>
               <span class="theme-option-name" data-i18n="themeSystem">Системная</span>
             </button>
+          </div>
+        </div>
+
+        <!-- Boykisser Mascot Setting -->
+        <div class="settings-group">
+          <div class="settings-group-title" data-i18n="settingsMascotTitle">Маскот (Boykisser)</div>
+          <div class="settings-info-card" style="padding: 12px 14px;">
+            <div class="settings-info-row" style="cursor: pointer;" onclick="toggleBoykisserSetting()">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 20px;">🐱</span>
+                <div>
+                  <div style="font-weight: 700; color: var(--text-main); font-size: 13px;" data-i18n="mascotToggleName">Показывать Бойкиссера</div>
+                  <div style="font-size: 11px; color: var(--text-secondary);" data-i18n="mascotToggleSub">Интерактивный помощник в приложении</div>
+                </div>
+              </div>
+              <label class="switch-toggle" onclick="event.stopPropagation();">
+                <input type="checkbox" id="toggleBoykisser" onchange="toggleBoykisserSetting(this.checked)" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
           </div>
         </div>
 

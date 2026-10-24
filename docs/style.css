@@ -1400,3 +1400,218 @@ body {
   background: var(--surface-hover);
   border-color: var(--accent-primary);
 }
+
+
+/* ============================================================
+   HALLOWEEN THEME (Spooky Pumpkin, Deep Night, Ghostly Glow)
+   ============================================================ */
+:root[data-theme="halloween"] {
+  --bg-page: #0D0805;
+  --surface: #18100A;
+  --surface-alt: #251810;
+  --surface-card: #20140D;
+  --surface-hover: #2E1D13;
+  --border-subtle: #3A2315;
+  --border-focus: #FF7518;
+
+  --accent-primary: #FF7518; /* Spooky Pumpkin Orange */
+  --accent-primary-hover: #FF8833;
+  --accent-soft: rgba(255, 117, 24, 0.18);
+  --accent-contrast: #000000;
+
+  --text-main: #FFF0E6;
+  --text-secondary: #C8AEA0;
+  --text-tertiary: #8C7364;
+
+  --green-positive: #55E084;
+  --green-soft: rgba(85, 224, 132, 0.16);
+  --red-negative: #FF4757;
+  --red-soft: rgba(255, 71, 87, 0.16);
+
+  --shadow-sm: 0 2px 10px rgba(255, 117, 24, 0.08);
+  --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 16px 45px rgba(255, 117, 24, 0.15);
+
+  --card-balance-bg: linear-gradient(135deg, #24140B 0%, #150B05 100%);
+  --card-balance-border: #4A2B18;
+  --news-card-bg: #1F120A;
+  --news-card-border: #3D2213;
+}
+
+/* Halloween Spooky Details */
+:root[data-theme="halloween"] .balance-card {
+  box-shadow: 0 10px 35px rgba(255, 117, 24, 0.12), inset 0 1px 0 rgba(255, 165, 0, 0.2);
+}
+
+:root[data-theme="halloween"] .balance-unit {
+  filter: drop-shadow(0 0 8px rgba(255, 117, 24, 0.6));
+}
+
+:root[data-theme="halloween"] .nav-brand .brand-logo {
+  background: linear-gradient(135deg, #FF7518 0%, #9B59B6 100%);
+  box-shadow: 0 0 15px rgba(255, 117, 24, 0.4);
+}
+
+/* ============================================================
+   BOYKISSER MASCOT WIDGET STYLES
+   ============================================================ */
+.boykisser-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.2s ease;
+  user-select: none;
+  overflow: hidden;
+}
+
+.boykisser-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.boykisser-card:active {
+  transform: scale(0.98);
+}
+
+.boykisser-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+
+.boykisser-avatar-wrap {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, var(--accent-soft) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.boykisser-img {
+  width: 52px;
+  height: auto;
+  max-height: 56px;
+  object-fit: contain;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15));
+}
+
+.boykisser-card:hover .boykisser-img {
+  transform: scale(1.12) rotate(4deg);
+}
+
+.boykisser-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  font-size: 14px;
+  line-height: 1;
+  background: var(--surface);
+  border-radius: 50%;
+  padding: 2px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.boykisser-dialogue {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-right: 28px;
+}
+
+.boykisser-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--accent-primary);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.boykisser-speech {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.35;
+  transition: all 0.2s ease;
+}
+
+.boykisser-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.boykisser-close-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-main);
+}
+
+/* Switch Toggle for Settings Modal */
+.switch-toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.switch-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-toggle .slider {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--border-subtle);
+  transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 24px;
+}
+
+.switch-toggle .slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #FFFFFF;
+  transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.switch-toggle input:checked + .slider {
+  background-color: var(--accent-primary);
+}
+
+.switch-toggle input:checked + .slider:before {
+  transform: translateX(20px);
+}
